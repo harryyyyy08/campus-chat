@@ -1,0 +1,17 @@
+# Dependencies
+ws-node/node_modules/
+
+# Uploaded files (huwag i-commit ang actual files ng users)
+uploads/*
+!uploads/.gitkeep
+
+# Sensitive config
+api/config.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+ws-node/npm-debug.log*

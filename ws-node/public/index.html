@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusChat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="chat.css" />
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <!-- LOGIN -->
+    <div id="login">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="login-logo-icon">💬</div>
+          <div>
+            <div class="login-logo-text">Campus<span>Chat</span></div>
+            <div class="login-subtitle">INTRANET MESSAGING</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            placeholder="Enter your username"
+            autocomplete="username"
+          />
+        </div>
+        <div class="field-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+        </div>
+        <button class="btn-primary" onclick="login()">Sign In</button>
+        <p id="loginError"></p>
+        <p
+          style="
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 14px;
+          "
+        >
+          Don't have an account?
+          <a href="/register.html" style="color: var(--accent)"
+            >Register here</a
+          >
+        </p>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app">
+      <!-- SIDEBAR -->
+      <div id="sidebar">
+        <div id="sidebarHeader">
+          <div class="sidebar-top">
+            <span class="sidebar-title">Messages</span>
+            <div class="sidebar-actions">
+              <button
+                class="icon-btn"
+                title="Refresh"
+                onclick="loadConversations()"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M23 4v6h-6" />
+                  <path d="M1 20v-6h6" />
+                  <path
+                    d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                  />
+                </svg>
+              </button>
+              <button
+                class="icon-btn accent"
+                title="New Direct Chat"
+                onclick="openNewChatModal()"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+              <button
+                class="icon-btn accent"
+                title="New Group Chat"
+                onclick="openCreateGroupModal()"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="search-wrap">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Search conversations…"
+              oninput="filterConversations(this.value)"
+            />
+          </div>
+        </div>
+
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" onclick="switchTab(this, 'all')">
+            All
+          </button>
+          <button class="tab-btn" onclick="switchTab(this, 'direct')">
+            Direct
+          </button>
+          <button class="tab-btn" onclick="switchTab(this, 'group')">
+            Groups
+          </button>
+        </div>
+
+        <div id="onlineStrip"></div>
+        <div id="conversationList"></div>
+
+        <div id="sidebarFooter">
+          <div class="my-avatar" id="myAvatar">?</div>
+          <div class="my-info">
+            <div class="my-name" id="myName">—</div>
+            <div class="my-status">● Online</div>
+          </div>
+          <button class="icon-btn" title="Logout" onclick="logout()">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- CHAT PANE -->
+      <div id="chat">
+        <div id="emptyState">
+          <div class="empty-icon">💬</div>
+          <div class="empty-title">No conversation selected</div>
+          <div class="empty-sub">Choose a chat or start a new one</div>
+        </div>
+
+        <div id="chatContent" class="hidden">
+          <div id="chatHeader">
+            <div id="chatHeaderAvatar">?</div>
+            <div id="chatHeaderInfo">
+              <div id="chatHeaderName">—</div>
+              <div id="chatHeaderStatus">—</div>
+            </div>
+            <button
+              class="icon-btn hidden"
+              id="groupInfoBtn"
+              title="Group Members"
+              onclick="openGroupInfoModal()"
+              style="color: var(--text-muted)"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </button>
+            <button
+              class="icon-btn"
+              id="infoBtn"
+              style="color: var(--text-muted)"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </button>
+          </div>
+
+          <div id="messages"></div>
+          <div id="typingLine"></div>
+
+          <!-- Attachment preview bar (shown when file is selected) -->
+          <div id="attachmentPreviewBar" class="hidden">
+            <img id="attachPreviewThumb" src="" alt="" style="display: none" />
+            <div class="attach-preview-info">
+              <div id="attachPreviewName" class="attach-preview-name">
+                filename.ext
+              </div>
+              <div id="attachPreviewSize" class="attach-preview-size">0 KB</div>
+            </div>
+            <div id="attachUploadSpinner" class="hidden">
+              <div class="upload-spinner"></div>
+            </div>
+            <button
+              class="attach-preview-remove"
+              onclick="clearAttachmentPreview()"
+              title="Remove"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div id="inputBar">
+            <div class="input-tools">
+              <button class="tool-btn" title="Emoji">😊</button>
+              <button
+                class="tool-btn"
+                title="Attach file"
+                onclick="triggerFileInput()"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
+                  />
+                </svg>
+              </button>
+            </div>
+            <!-- Hidden file input -->
+            <input
+              type="file"
+              id="fileInput"
+              style="display: none"
+              accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            />
+            <div class="input-row">
+              <textarea
+                id="messageInput"
+                placeholder="Type a message… (Enter to send)"
+                rows="1"
+              ></textarea>
+              <button id="sendBtn" onclick="sendMessage()" title="Send">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: New Direct Chat -->
+    <div class="modal-overlay" id="newChatModal">
+      <div class="modal-box">
+        <div class="modal-title">
+          New Direct Chat
+          <button class="modal-close" onclick="closeModal('newChatModal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-label">Username</div>
+        <input
+          class="modal-input"
+          id="newChatUsername"
+          type="text"
+          placeholder="Enter username to chat with…"
+        />
+        <div class="modal-actions">
+          <button class="btn-ghost" onclick="closeModal('newChatModal')">
+            Cancel
+          </button>
+          <button class="btn-modal-primary" onclick="startChat()">
+            Start Chat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Create Group -->
+    <div class="modal-overlay" id="createGroupModal">
+      <div class="modal-box">
+        <div class="modal-title">
+          Create Group Chat
+          <button class="modal-close" onclick="closeModal('createGroupModal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-label">Group Name</div>
+        <input
+          class="modal-input"
+          id="groupName"
+          type="text"
+          placeholder="e.g. BSIT 3-A, Faculty Lounge…"
+          maxlength="100"
+        />
+        <div class="modal-label">Add Members</div>
+        <div class="member-search-wrap">
+          <input
+            class="modal-input"
+            id="memberSearchInput"
+            type="text"
+            placeholder="Search by name or username…"
+            autocomplete="off"
+            oninput="searchUsers(this.value)"
+          />
+          <div id="userSearchResults" class="user-search-dropdown hidden"></div>
+        </div>
+        <div id="selectedMembers" class="member-chips"></div>
+        <div class="modal-actions">
+          <button class="btn-ghost" onclick="closeModal('createGroupModal')">
+            Cancel
+          </button>
+          <button class="btn-modal-primary" onclick="createGroup()">
+            Create Group
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Group Info -->
+    <div class="modal-overlay" id="groupInfoModal">
+      <div class="modal-box">
+        <div class="modal-title">
+          <span id="groupInfoTitle">Group Members</span>
+          <button class="modal-close" onclick="closeModal('groupInfoModal')">
+            ✕
+          </button>
+        </div>
+        <div id="addMemberSection" class="hidden">
+          <div class="modal-label">Add Member</div>
+          <div class="member-search-wrap">
+            <input
+              class="modal-input"
+              id="addMemberInput"
+              type="text"
+              placeholder="Search by name or username…"
+              autocomplete="off"
+              oninput="searchUsersForAdd(this.value)"
+            />
+            <div
+              id="addMemberResults"
+              class="user-search-dropdown hidden"
+            ></div>
+          </div>
+        </div>
+        <div class="modal-label" style="margin-top: 8px">Members</div>
+        <div id="groupMemberList" class="group-member-list"></div>
+        <div class="modal-actions" style="margin-top: 16px">
+          <button
+            class="btn-ghost danger"
+            onclick="leaveGroup()"
+            id="leaveGroupBtn"
+          >
+            Leave Group
+          </button>
+          <button class="btn-ghost" onclick="closeModal('groupInfoModal')">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

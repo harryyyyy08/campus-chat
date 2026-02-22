@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusChat — Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="chat.css" />
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+    <!-- Admin Login -->
+    <div id="adminLogin">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="login-logo-icon">🛡️</div>
+          <div>
+            <div class="login-logo-text">Campus<span>Chat</span></div>
+            <div class="login-subtitle">ADMIN PANEL</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Username</label>
+          <input
+            id="adminUsername"
+            type="text"
+            placeholder="Admin username"
+            autocomplete="username"
+          />
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input id="adminPassword" type="password" placeholder="Password" />
+        </div>
+        <button class="btn-primary" onclick="adminLogin()">
+          Sign In as Admin
+        </button>
+        <p id="adminLoginError"></p>
+        <p
+          style="
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 14px;
+          "
+        >
+          <a href="/" style="color: var(--accent)">← Back to Chat</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Admin App -->
+    <div id="adminApp" class="hidden">
+      <div id="adminNav">
+        <div class="admin-nav-logo">
+          <span id="adminRoleIcon">🛡️</span>
+          <span>CampusChat Admin</span>
+          <span id="adminRoleBadge" class="admin-role-badge"></span>
+        </div>
+        <div class="admin-nav-tabs">
+          <button
+            class="admin-tab active"
+            data-tab="pending"
+            onclick="switchAdminTab(this, 'pending')"
+          >
+            Pending Approvals
+            <span id="pendingCount" class="admin-badge hidden">0</span>
+          </button>
+          <button
+            class="admin-tab"
+            data-tab="active"
+            onclick="switchAdminTab(this, 'active')"
+          >
+            Active Users
+          </button>
+          <button
+            class="admin-tab"
+            data-tab="disabled"
+            onclick="switchAdminTab(this, 'disabled')"
+          >
+            Disabled
+          </button>
+          <!-- Storage tab: super_admin only — shown via JS after login -->
+          <button
+            class="admin-tab hidden"
+            id="storageTabBtn"
+            data-tab="storage"
+            onclick="switchAdminTab(this, 'storage')"
+          >
+            💾 Storage
+          </button>
+        </div>
+        <div class="admin-nav-right">
+          <span
+            id="adminMyName"
+            style="font-size: 13px; color: var(--text-secondary)"
+          ></span>
+          <button class="icon-btn" title="Logout" onclick="adminLogout()">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="adminContent">
+        <!-- Search + filter bar (hidden on storage tab) -->
+        <div class="admin-toolbar" id="adminToolbar">
+          <div class="admin-search-wrap">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              id="adminSearch"
+              type="text"
+              placeholder="Search users…"
+              oninput="filterUsers(this.value)"
+            />
+          </div>
+          <button
+            class="btn-modal-primary"
+            onclick="loadUsers()"
+            style="padding: 8px 16px; font-size: 13px"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="display: inline; margin-right: 4px; vertical-align: middle"
+            >
+              <path d="M23 4v6h-6" />
+              <path d="M1 20v-6h6" />
+              <path
+                d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+              />
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <!-- User table (shown on user tabs) -->
+        <div id="userTableWrap">
+          <table id="userTable">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Registered</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr>
+                <td colspan="6" class="table-empty">Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Storage panel (super_admin only) -->
+        <div id="storagePanel" class="hidden">
+          <div class="storage-stats">
+            <div class="stat-card">
+              <div class="stat-label">Total Files</div>
+              <div class="stat-value" id="statTotalFiles">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">DB Tracked Size</div>
+              <div class="stat-value" id="statDbSize">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Actual Disk Used</div>
+              <div class="stat-value" id="statDiskUsed">—</div>
+            </div>
+            <div class="stat-card warn">
+              <div class="stat-label">Stale Files (6+ months)</div>
+              <div class="stat-value" id="statStaleCount">—</div>
+            </div>
+            <div class="stat-card warn">
+              <div class="stat-label">Reclaimable Space</div>
+              <div class="stat-value" id="statStaleSize">—</div>
+            </div>
+          </div>
+
+          <div class="storage-toolbar">
+            <span style="font-size: 13px; color: var(--text-secondary)"
+              >Files not accessed in the last 6 months</span
+            >
+            <div style="display: flex; gap: 8px">
+              <button
+                class="btn-modal-primary"
+                onclick="loadStorage()"
+                style="padding: 8px 16px; font-size: 13px"
+              >
+                Refresh
+              </button>
+              <button
+                class="action-btn reject"
+                id="deleteAllBtn"
+                onclick="cleanupAll()"
+                style="padding: 8px 16px; font-size: 13px"
+              >
+                Delete All Stale
+              </button>
+            </div>
+          </div>
+
+          <div id="staleTableWrap">
+            <table id="staleTable">
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      id="selectAllStale"
+                      onchange="toggleSelectAll(this)"
+                    />
+                  </th>
+                  <th>File Name</th>
+                  <th>Type</th>
+                  <th>Size</th>
+                  <th>Uploaded By</th>
+                  <th>Last Accessed</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staleTableBody">
+                <tr>
+                  <td colspan="7" class="table-empty">
+                    Click Refresh to load storage data.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="storage-selection-bar hidden" id="selectionBar">
+            <span id="selectionCount">0 files selected</span>
+            <button class="action-btn reject" onclick="cleanupSelected()">
+              Delete Selected
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+      const API_BASE = "http://localhost/campus-chat/api/index.php";
+      let adminToken = null;
+      let myRole = null; // 'admin' or 'super_admin'
+      let currentTab = "pending";
+      let allUsers = [];
+      let staleFiles = [];
+      let selectedStale = new Set();
+
+      // ── Login ──────────────────────────────────────────────
+      async function adminLogin() {
+        const username = document.getElementById("adminUsername").value.trim();
+        const password = document.getElementById("adminPassword").value;
+        const errEl = document.getElementById("adminLoginError");
+        errEl.textContent = "";
+
+        try {
+          const res = await fetch(`${API_BASE}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            errEl.textContent = data.error || "Login failed.";
+            return;
+          }
+
+          const role = data.user.role;
+          if (role !== "admin" && role !== "super_admin") {
+            errEl.textContent = "Access denied — admin accounts only.";
+            return;
+          }
+
+          adminToken = data.access_token;
+          myRole = role;
+
+          document.getElementById("adminLogin").classList.add("hidden");
+          document.getElementById("adminApp").classList.remove("hidden");
+          document.getElementById("adminMyName").textContent =
+            data.user.full_name || data.user.username;
+
+          // Role badge
+          const badge = document.getElementById("adminRoleBadge");
+          if (role === "super_admin") {
+            badge.textContent = "Super Admin";
+            badge.className = "admin-role-badge super";
+            document.getElementById("adminRoleIcon").textContent = "👑";
+            document.getElementById("storageTabBtn").classList.remove("hidden");
+          } else {
+            badge.textContent = "Admin";
+            badge.className = "admin-role-badge";
+          }
+
+          // FIX: auto-load users immediately on login
+          await loadUsers();
+        } catch (err) {
+          errEl.textContent = "Connection error.";
+          console.error(err);
+        }
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !adminToken) adminLogin();
+      });
+
+      function adminLogout() {
+        adminToken = null;
+        myRole = null;
+        location.reload();
+      }
+
+      // ── Tab switching ─────────────────────────────────────
+      function switchAdminTab(btn, tab) {
+        document
+          .querySelectorAll(".admin-tab")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentTab = tab;
+        document.getElementById("adminSearch").value = "";
+
+        const isStorage = tab === "storage";
+        document
+          .getElementById("userTableWrap")
+          .classList.toggle("hidden", isStorage);
+        document
+          .getElementById("storagePanel")
+          .classList.toggle("hidden", !isStorage);
+        document
+          .getElementById("adminToolbar")
+          .classList.toggle("hidden", isStorage);
+
+        if (isStorage) loadStorage();
+        else renderUsers();
+      }
+
+      // ── Load users ────────────────────────────────────────
+      async function loadUsers() {
+        try {
+          const res = await fetch(`${API_BASE}/admin/users`, {
+            headers: { Authorization: "Bearer " + adminToken },
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed to load users.");
+            return;
+          }
+          allUsers = data.users || [];
+          renderUsers();
+          updatePendingBadge();
+        } catch (err) {
+          showToast("Connection error.");
+          console.error(err);
+        }
+      }
+
+      function updatePendingBadge() {
+        const count = allUsers.filter((u) => u.status === "pending").length;
+        const badge = document.getElementById("pendingCount");
+        badge.textContent = count;
+        badge.classList.toggle("hidden", count === 0);
+      }
+
+      function filterUsers(q) {
+        q = q.toLowerCase();
+        document
+          .querySelectorAll("#userTableBody tr[data-uid]")
+          .forEach((row) => {
+            row.style.display = row.textContent.toLowerCase().includes(q)
+              ? ""
+              : "none";
+          });
+      }
+
+      function renderUsers() {
+        const tbody = document.getElementById("userTableBody");
+        const filtered = allUsers.filter((u) => u.status === currentTab);
+
+        if (filtered.length === 0) {
+          const msgs = {
+            pending: "No pending registrations 🎉",
+            active: "No active users yet",
+            disabled: "No disabled accounts",
+          };
+          tbody.innerHTML = `<tr><td colspan="6" class="table-empty">${msgs[currentTab] || "No users"}</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered
+          .map(
+            (u) => `
+          <tr data-uid="${u.id}">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar-sm">${initials(u.full_name || u.username)}</div>
+                <span>${escapeHtml(u.full_name || "—")}</span>
+              </div>
+            </td>
+            <td><span class="mono">@${escapeHtml(u.username)}</span></td>
+            <td>${roleCell(u)}</td>
+            <td>${escapeHtml(u.department || "—")}</td>
+            <td><span class="mono">${formatDate(u.created_at)}</span></td>
+            <td>${actionButtons(u)}</td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
+      // Role cell: super_admin sees dropdown, admin sees read-only badge
+      function roleCell(u) {
+        if (myRole === "super_admin") {
+          return `<select class="role-select" onchange="changeRole(${u.id}, this.value)">
+            <option value="student"     ${u.role === "student" ? "selected" : ""}>Student</option>
+            <option value="faculty"     ${u.role === "faculty" ? "selected" : ""}>Faculty</option>
+            <option value="admin"       ${u.role === "admin" ? "selected" : ""}>Admin</option>
+            <option value="super_admin" ${u.role === "super_admin" ? "selected" : ""}>Super Admin</option>
+          </select>`;
+        }
+        // Normal admin: read-only role badge
+        const labels = {
+          student: "Student",
+          faculty: "Faculty",
+          admin: "Admin",
+          super_admin: "Super Admin",
+        };
+        const cls =
+          u.role === "super_admin"
+            ? "role-badge-display super"
+            : u.role === "admin"
+              ? "role-badge-display admin"
+              : "role-badge-display";
+        return `<span class="${cls}">${labels[u.role] || u.role}</span>`;
+      }
+
+      function actionButtons(u) {
+        // Prevent normal admin from acting on super_admin accounts
+        const isProtected =
+          u.role === "super_admin" && myRole !== "super_admin";
+
+        if (u.status === "pending") {
+          return `<div class="action-btns">
+            <button class="action-btn approve" onclick="approveUser(${u.id})" ${isProtected ? "disabled" : ""}>✓ Approve</button>
+            <button class="action-btn reject"  onclick="disableUser(${u.id})" ${isProtected ? "disabled" : ""}>✕ Reject</button>
+          </div>`;
+        }
+        if (u.status === "active") {
+          return `<div class="action-btns">
+            <button class="action-btn disable" onclick="disableUser(${u.id})" ${isProtected ? "disabled" : ""}>Disable</button>
+          </div>`;
+        }
+        if (u.status === "disabled") {
+          return `<div class="action-btns">
+            <button class="action-btn approve" onclick="approveUser(${u.id})" ${isProtected ? "disabled" : ""}>Re-enable</button>
+          </div>`;
+        }
+        return "";
+      }
+
+      // ── User actions ──────────────────────────────────────
+      async function approveUser(userId) {
+        // For normal admin approvals, role is locked to student/faculty only
+        // The dropdown in the row shows the current value
+        const roleEl = document.querySelector(
+          `tr[data-uid="${userId}"] .role-select`,
+        );
+        const role = roleEl ? roleEl.value : "student";
+
+        try {
+          const res = await fetch(`${API_BASE}/admin/users/approve`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + adminToken,
+            },
+            body: JSON.stringify({ user_id: userId, role }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+          showToast("User approved!");
+          await loadUsers();
+        } catch {
+          showToast("Connection error.");
+        }
+      }
+
+      async function disableUser(userId) {
+        if (!confirm("Disable this account?")) return;
+        try {
+          const res = await fetch(`${API_BASE}/admin/users/disable`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + adminToken,
+            },
+            body: JSON.stringify({ user_id: userId }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+          showToast("Account disabled.");
+          await loadUsers();
+        } catch {
+          showToast("Connection error.");
+        }
+      }
+
+      async function changeRole(userId, newRole) {
+        try {
+          const res = await fetch(`${API_BASE}/admin/users/role`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + adminToken,
+            },
+            body: JSON.stringify({ user_id: userId, role: newRole }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            await loadUsers();
+            return;
+          }
+          showToast("Role updated.");
+          const u = allUsers.find((u) => u.id === userId);
+          if (u) u.role = newRole;
+        } catch {
+          showToast("Connection error.");
+        }
+      }
+
+      // ── Storage (super_admin only) ────────────────────────
+      async function loadStorage() {
+        document.getElementById("staleTableBody").innerHTML =
+          `<tr><td colspan="7" class="table-empty">Loading…</td></tr>`;
+        try {
+          const res = await fetch(`${API_BASE}/admin/storage`, {
+            headers: { Authorization: "Bearer " + adminToken },
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+
+          document.getElementById("statTotalFiles").textContent =
+            data.total_files.toLocaleString();
+          document.getElementById("statDbSize").textContent = fmtBytes(
+            data.total_bytes,
+          );
+          document.getElementById("statDiskUsed").textContent = fmtBytes(
+            data.disk_bytes,
+          );
+          document.getElementById("statStaleCount").textContent =
+            data.stale_count.toLocaleString();
+          document.getElementById("statStaleSize").textContent = fmtBytes(
+            data.stale_bytes,
+          );
+
+          staleFiles = data.stale_files || [];
+          selectedStale.clear();
+          renderStaleTable();
+          document.getElementById("deleteAllBtn").disabled =
+            staleFiles.length === 0;
+        } catch (err) {
+          showToast("Connection error.");
+          console.error(err);
+        }
+      }
+
+      function renderStaleTable() {
+        const tbody = document.getElementById("staleTableBody");
+        if (!staleFiles.length) {
+          tbody.innerHTML = `<tr><td colspan="7" class="table-empty">🎉 No stale files found!</td></tr>`;
+          updateSelectionBar();
+          return;
+        }
+        tbody.innerHTML = staleFiles
+          .map(
+            (f) => `
+          <tr data-fid="${f.id}">
+            <td><input type="checkbox" class="stale-cb" value="${f.id}" ${selectedStale.has(f.id) ? "checked" : ""} onchange="toggleStaleSelect(${f.id},this.checked)" /></td>
+            <td><span class="mono" title="${escapeHtml(f.original_name)}">${escapeHtml(truncate(f.original_name, 36))}</span></td>
+            <td><span class="mono">${escapeHtml(f.mime_type.split("/")[1] || f.mime_type)}</span></td>
+            <td><span class="mono">${fmtBytes(f.file_size)}</span></td>
+            <td>${escapeHtml(f.uploader_name || f.uploader_username)}</td>
+            <td><span class="mono">${formatDate(f.last_accessed)}</span></td>
+            <td><button class="action-btn reject" onclick="cleanupOne(${f.id})">Delete</button></td>
+          </tr>`,
+          )
+          .join("");
+        updateSelectionBar();
+      }
+
+      function toggleStaleSelect(id, checked) {
+        if (checked) selectedStale.add(id);
+        else selectedStale.delete(id);
+        updateSelectionBar();
+      }
+      function toggleSelectAll(cb) {
+        document.querySelectorAll(".stale-cb").forEach((el) => {
+          el.checked = cb.checked;
+          const id = parseInt(el.value);
+          if (cb.checked) selectedStale.add(id);
+          else selectedStale.delete(id);
+        });
+        updateSelectionBar();
+      }
+      function updateSelectionBar() {
+        document.getElementById("selectionCount").textContent =
+          selectedStale.size +
+          " file" +
+          (selectedStale.size !== 1 ? "s" : "") +
+          " selected";
+        document
+          .getElementById("selectionBar")
+          .classList.toggle("hidden", selectedStale.size === 0);
+      }
+
+      async function cleanupAll() {
+        if (!staleFiles.length) {
+          showToast("No stale files to delete.");
+          return;
+        }
+        if (
+          !confirm(
+            `Delete all ${staleFiles.length} stale file(s)? This cannot be undone.`,
+          )
+        )
+          return;
+        await runCleanup([]);
+      }
+      async function cleanupSelected() {
+        if (!selectedStale.size) return;
+        if (!confirm(`Delete ${selectedStale.size} selected file(s)?`)) return;
+        await runCleanup(Array.from(selectedStale));
+      }
+      async function cleanupOne(id) {
+        if (!confirm("Delete this file? Cannot be undone.")) return;
+        await runCleanup([id]);
+      }
+
+      async function runCleanup(ids) {
+        try {
+          const res = await fetch(`${API_BASE}/admin/cleanup`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + adminToken,
+            },
+            body: JSON.stringify({ ids }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+          showToast(
+            `Deleted ${data.deleted} file(s), freed ${fmtBytes(data.freed_bytes)}.`,
+          );
+          await loadStorage();
+        } catch {
+          showToast("Connection error.");
+        }
+      }
+
+      // ── Helpers ───────────────────────────────────────────
+      function initials(name) {
+        if (!name) return "?";
+        const p = name.trim().split(" ");
+        return p.length >= 2
+          ? (p[0][0] + p[p.length - 1][0]).toUpperCase()
+          : name.slice(0, 2).toUpperCase();
+      }
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      function formatDate(dt) {
+        if (!dt) return "—";
+        return new Date(dt.replace(" ", "T")).toLocaleDateString([], {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+      function fmtBytes(bytes) {
+        if (!bytes) return "0 B";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+        if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + " MB";
+        return (bytes / 1073741824).toFixed(2) + " GB";
+      }
+      function truncate(str, n) {
+        return str.length > n ? str.slice(0, n) + "…" : str;
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove("show"), 3000);
+      }
+    </script>
+  </body>
+</html>
