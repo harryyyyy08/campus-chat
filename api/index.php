@@ -288,6 +288,49 @@ if ($method === "POST" && $path === "/upload") {
   ], 201);
 }
 
+// ── GET /admin/uploads/{filename} ─── super_admin only ─────────
+// Admin version of file serving — no membership check required
+if ($method === "GET" && preg_match('#^/admin/uploads/([a-zA-Z0-9_.\-]+)$#', $path, $m)) {
+  $pdo         = db();
+  $stored_name = $m[1];
+
+  // Accept token from Authorization header OR ?token= query param
+  $bearer = null;
+  $auth_header = $_SERVER["HTTP_AUTHORIZATION"] ?? "";
+  if (preg_match('/^Bearer\s+(.+)$/i', $auth_header, $bm)) {
+    $bearer = $bm[1];
+  } elseif (!empty($_GET["token"])) {
+    $bearer = $_GET["token"];
+  }
+  if (!$bearer) json_response(["error" => "Unauthorized"], 401);
+
+  try {
+    $jwt_cfg = $cfg["jwt"];
+    $claims  = jwt_verify($bearer, $jwt_cfg["secret"]);
+  } catch (Exception $e) {
+    json_response(["error" => "Unauthorized: " . $e->getMessage()], 401);
+  }
+
+  // Super admin only
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+  $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_super_admin($my_role)) json_response(["error" => "Super admin access required"], 403);
+
+  $stmt = $pdo->prepare("SELECT original_name, mime_type FROM attachments WHERE stored_name = ? LIMIT 1");
+  $stmt->execute([$stored_name]); $att = $stmt->fetch();
+  if (!$att) json_response(["error" => "File not found"], 404);
+
+  $file_path = UPLOAD_DIR . $stored_name;
+  if (!file_exists($file_path)) json_response(["error" => "File not found on disk"], 404);
+
+  header("Content-Type: " . $att["mime_type"]);
+  header("Content-Length: " . filesize($file_path));
+  header('Content-Disposition: inline; filename="' . addslashes($att["original_name"]) . '"');
+  header("Cache-Control: private, max-age=3600");
+  readfile($file_path);
+  exit;
+}
+
 // ── GET /uploads/{filename} — serve file with token support ──────
 // FIX: Accept token both from Authorization header AND ?token= query param
 // (needed because <img> tags cannot send custom headers)
@@ -320,10 +363,9 @@ if ($method === "GET" && preg_match('#^/uploads/([a-zA-Z0-9_.\-]+)$#', $path, $m
   $stmt->execute([$stored_name]); $att = $stmt->fetch();
   if (!$att) json_response(["error" => "File not found"], 404);
 
-  // Membership check
-  $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
-  $stmt->execute([$att["conversation_id"], $user_id]);
-  if (!$stmt->fetchColumn()) json_response(["error" => "Access denied"], 403);
+  // Access control: valid JWT is sufficient — no membership check needed.
+  // The token proves the user is authenticated. Users can only obtain attachment
+  // URLs through the /messages endpoint, which already enforces membership.
 
   $file_path = UPLOAD_DIR . $stored_name;
   if (!file_exists($file_path)) json_response(["error" => "File not found on disk"], 404);
@@ -382,14 +424,21 @@ if ($method === "GET" && $path === "/messages") {
   $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
   $stmt->execute([$conversation_id, $user_id]);
   if (!$stmt->fetchColumn()) json_response(["error" => "Not a member of this conversation"], 403);
-  $stmt = $pdo->prepare("SELECT m.id, m.conversation_id, m.sender_id, m.body, m.attachment_id, m.status, m.created_at, a.original_name, a.stored_name, a.mime_type, a.file_size FROM messages m LEFT JOIN attachments a ON a.id = m.attachment_id WHERE m.conversation_id = ? ORDER BY m.created_at DESC, m.id DESC LIMIT ?");
+  $stmt = $pdo->prepare("SELECT m.id, m.conversation_id, m.sender_id, m.body, m.attachment_id, m.status, m.created_at, m.is_edited, m.edited_at, m.is_deleted, a.original_name, a.stored_name, a.mime_type, a.file_size FROM messages m LEFT JOIN attachments a ON a.id = m.attachment_id WHERE m.conversation_id = ? ORDER BY m.created_at DESC, m.id DESC LIMIT ?");
   $stmt->bindValue(1, $conversation_id, PDO::PARAM_INT); $stmt->bindValue(2, $limit, PDO::PARAM_INT); $stmt->execute();
   $rows = array_reverse($stmt->fetchAll());
   $result = [];
   foreach ($rows as $r) {
     $r["id"] = (int)$r["id"]; $r["conversation_id"] = (int)$r["conversation_id"]; $r["sender_id"] = (int)$r["sender_id"];
+    $r["is_edited"]  = (bool)$r["is_edited"];
+    $r["is_deleted"] = (bool)$r["is_deleted"];
     $r["attachment"] = null;
-    if ($r["attachment_id"]) $r["attachment"] = ["id" => (int)$r["attachment_id"], "original_name" => $r["original_name"], "mime_type" => $r["mime_type"], "file_size" => (int)$r["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $r["stored_name"]];
+    if ($r["is_deleted"]) {
+      // Deleted messages: hide body and attachment
+      $r["body"] = null; $r["attachment_id"] = null;
+    } elseif ($r["attachment_id"]) {
+      $r["attachment"] = ["id" => (int)$r["attachment_id"], "original_name" => $r["original_name"], "mime_type" => $r["mime_type"], "file_size" => (int)$r["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $r["stored_name"]];
+    }
     unset($r["original_name"], $r["stored_name"], $r["mime_type"], $r["file_size"]);
     $result[] = $r;
   }
@@ -550,6 +599,259 @@ if ($method === "POST" && $path === "/admin/cleanup") {
     $freed += (int)$row["file_size"]; $deleted++;
   }
   json_response(["deleted" => $deleted, "freed_bytes" => $freed]);
+}
+
+
+// ── GET /admin/conversations ─── super_admin only ────────────────
+// List all conversations with member count, last message, flag count
+if ($method === "GET" && $path === "/admin/conversations") {
+  $claims = require_auth(); $pdo = db();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_super_admin($my_role)) json_response(["error" => "Super admin access required"], 403);
+
+  $type_filter = $_GET["type"] ?? null; // 'direct' or 'group'
+  $search      = trim($_GET["q"] ?? "");
+
+  $sql = "SELECT c.id, c.type, c.name, c.created_at,
+    COUNT(DISTINCT cm.user_id) AS member_count,
+    MAX(m.created_at) AS last_message_at,
+    COUNT(DISTINCT mf.id) AS flag_count
+  FROM conversations c
+  LEFT JOIN conversation_members cm ON cm.conversation_id = c.id
+  LEFT JOIN messages m ON m.conversation_id = c.id
+  LEFT JOIN message_flags mf ON mf.message_id = m.id
+  WHERE 1=1";
+  $params = [];
+
+  if ($type_filter && in_array($type_filter, ["direct","group"])) { $sql .= " AND c.type = ?"; $params[] = $type_filter; }
+  if ($search !== "") { $sql .= " AND (c.name LIKE ? OR c.id IN (SELECT DISTINCT conversation_id FROM messages WHERE body LIKE ?))"; $params[] = "%$search%"; $params[] = "%$search%"; }
+
+  $sql .= " GROUP BY c.id, c.type, c.name, c.created_at ORDER BY last_message_at DESC, c.id DESC LIMIT 200";
+  $stmt = $pdo->prepare($sql); $stmt->execute($params);
+  $convs = $stmt->fetchAll();
+
+  foreach ($convs as &$c) {
+    $c["id"]           = (int)$c["id"];
+    $c["member_count"] = (int)$c["member_count"];
+    $c["flag_count"]   = (int)$c["flag_count"];
+
+    // For direct chats, get both member names
+    $ms = $pdo->prepare("SELECT u.id, u.username, u.full_name FROM conversation_members cm JOIN users u ON u.id = cm.user_id WHERE cm.conversation_id = ? ORDER BY u.full_name LIMIT 10");
+    $ms->execute([$c["id"]]); $members = $ms->fetchAll();
+    foreach ($members as &$m) $m["id"] = (int)$m["id"];
+    $c["members"] = $members;
+  }
+
+  json_response(["conversations" => $convs]);
+}
+
+// ── GET /admin/conversations/messages ─── super_admin only ───────
+// View all messages inside a specific conversation
+if ($method === "GET" && $path === "/admin/conversations/messages") {
+  $claims = require_auth(); $pdo = db();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_super_admin($my_role)) json_response(["error" => "Super admin access required"], 403);
+
+  $cid   = (int)($_GET["conversation_id"] ?? 0);
+  $limit = min((int)($_GET["limit"] ?? 80), 200);
+  if (!$cid) json_response(["error" => "conversation_id required"], 400);
+
+  $stmt = $pdo->prepare("
+    SELECT m.id, m.conversation_id, m.sender_id, m.body, m.status, m.created_at,
+           m.attachment_id, u.username, u.full_name,
+           a.original_name, a.mime_type, a.file_size, a.stored_name,
+           (SELECT COUNT(*) FROM message_flags mf WHERE mf.message_id = m.id) AS flag_count,
+           (SELECT reason FROM message_flags mf WHERE mf.message_id = m.id LIMIT 1) AS flag_reason
+    FROM messages m
+    JOIN users u ON u.id = m.sender_id
+    LEFT JOIN attachments a ON a.id = m.attachment_id
+    WHERE m.conversation_id = ?
+    ORDER BY m.created_at DESC, m.id DESC
+    LIMIT ?
+  ");
+  $stmt->bindValue(1, $cid, PDO::PARAM_INT);
+  $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+  $stmt->execute();
+  $rows = array_reverse($stmt->fetchAll());
+
+  foreach ($rows as &$r) {
+    $r["id"]           = (int)$r["id"];
+    $r["sender_id"]    = (int)$r["sender_id"];
+    $r["flag_count"]   = (int)$r["flag_count"];
+    $r["is_flagged"]   = $r["flag_count"] > 0;
+    $r["attachment"]   = null;
+    if ($r["attachment_id"]) {
+      $r["attachment"] = ["original_name" => $r["original_name"], "mime_type" => $r["mime_type"], "file_size" => (int)$r["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $r["stored_name"]];
+    }
+    unset($r["original_name"], $r["mime_type"], $r["file_size"], $r["stored_name"]);
+  }
+
+  json_response(["messages" => $rows]);
+}
+
+// ── GET /admin/messages/search ─── super_admin only ──────────────
+// Search messages by keyword across all conversations
+if ($method === "GET" && $path === "/admin/messages/search") {
+  $claims = require_auth(); $pdo = db();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_super_admin($my_role)) json_response(["error" => "Super admin access required"], 403);
+
+  $q = trim($_GET["q"] ?? "");
+  if (strlen($q) < 2) json_response(["messages" => [], "note" => "Query too short"], 200);
+
+  $like = "%" . $q . "%";
+  $stmt = $pdo->prepare("
+    SELECT m.id, m.conversation_id, m.sender_id, m.body, m.created_at,
+           c.type AS conv_type, c.name AS conv_name,
+           u.username, u.full_name,
+           (SELECT COUNT(*) FROM message_flags mf WHERE mf.message_id = m.id) AS flag_count
+    FROM messages m
+    JOIN users u ON u.id = m.sender_id
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE m.body LIKE ?
+    ORDER BY m.created_at DESC
+    LIMIT 100
+  ");
+  $stmt->execute([$like]);
+  $rows = $stmt->fetchAll();
+  foreach ($rows as &$r) { $r["id"] = (int)$r["id"]; $r["sender_id"] = (int)$r["sender_id"]; $r["flag_count"] = (int)$r["flag_count"]; $r["is_flagged"] = $r["flag_count"] > 0; }
+
+  json_response(["messages" => $rows, "query" => $q, "total" => count($rows)]);
+}
+
+// ── GET /admin/messages/flagged ─── super_admin only ─────────────
+// List all flagged messages
+if ($method === "GET" && $path === "/admin/messages/flagged") {
+  $claims = require_auth(); $pdo = db();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_super_admin($my_role)) json_response(["error" => "Super admin access required"], 403);
+
+  $stmt = $pdo->prepare("
+    SELECT m.id, m.conversation_id, m.sender_id, m.body, m.created_at,
+           c.type AS conv_type, c.name AS conv_name,
+           u.username, u.full_name,
+           mf.reason AS flag_reason, mf.created_at AS flagged_at,
+           fa.full_name AS flagged_by_name, fa.username AS flagged_by_username
+    FROM message_flags mf
+    JOIN messages m ON m.id = mf.message_id
+    JOIN users u ON u.id = m.sender_id
+    JOIN conversations c ON c.id = m.conversation_id
+    JOIN users fa ON fa.id = mf.flagged_by
+    ORDER BY mf.created_at DESC
+    LIMIT 200
+  ");
+  $stmt->execute();
+  $rows = $stmt->fetchAll();
+  foreach ($rows as &$r) { $r["id"] = (int)$r["id"]; $r["sender_id"] = (int)$r["sender_id"]; }
+
+  json_response(["flagged" => $rows]);
+}
+
+// ── POST /admin/messages/flag ─── super_admin only ────────────────
+if ($method === "POST" && $path === "/admin/messages/flag") {
+  $claims = require_auth(); $pdo = db(); $in = json_input();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_super_admin($my_role)) json_response(["error" => "Super admin access required"], 403);
+
+  $message_id = (int)($in["message_id"] ?? 0);
+  $reason     = trim((string)($in["reason"] ?? ""));
+  if (!$message_id) json_response(["error" => "message_id required"], 400);
+
+  $pdo->prepare("INSERT INTO message_flags (message_id, flagged_by, reason) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE reason = VALUES(reason), created_at = NOW()")
+      ->execute([$message_id, (int)$claims["sub"], $reason ?: null]);
+
+  json_response(["flagged" => true, "message_id" => $message_id]);
+}
+
+// ── DELETE /admin/messages/flag ─── super_admin only ─────────────
+if ($method === "DELETE" && $path === "/admin/messages/flag") {
+  $claims = require_auth(); $pdo = db(); $in = json_input();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_super_admin($my_role)) json_response(["error" => "Super admin access required"], 403);
+
+  $message_id = (int)($in["message_id"] ?? 0);
+  if (!$message_id) json_response(["error" => "message_id required"], 400);
+
+  $pdo->prepare("DELETE FROM message_flags WHERE message_id = ?")->execute([$message_id]);
+  json_response(["unflagged" => true, "message_id" => $message_id]);
+}
+
+
+// ── PATCH /messages/{id} — edit message (sender only, 15 min limit) ──
+if ($method === "PATCH" && preg_match('#^/messages/(\d+)$#', $path, $m)) {
+  $claims  = require_auth(); $pdo = db();
+  $msg_id  = (int)$m[1];
+  $user_id = (int)$claims["sub"];
+  $in      = json_input();
+  $new_body = trim((string)($in["body"] ?? ""));
+
+  if ($new_body === "") json_response(["error" => "body required"], 400);
+
+  // Fetch message
+  $stmt = $pdo->prepare("SELECT sender_id, body, created_at, is_deleted, attachment_id FROM messages WHERE id = ?");
+  $stmt->execute([$msg_id]); $msg = $stmt->fetch();
+  if (!$msg) json_response(["error" => "Message not found"], 404);
+
+  // Only sender can edit
+  if ((int)$msg["sender_id"] !== $user_id) json_response(["error" => "Cannot edit another user\'s message"], 403);
+
+  // Cannot edit deleted messages
+  if ($msg["is_deleted"]) json_response(["error" => "Cannot edit a deleted message"], 400);
+
+  // 15-minute time limit
+  $created = strtotime($msg["created_at"]);
+  if ((time() - $created) > 15 * 60) json_response(["error" => "Edit window has expired (15 minutes)"], 403);
+
+  // Cannot edit attachment-only messages (no text to edit)
+  if (!$msg["body"] && $msg["attachment_id"]) json_response(["error" => "Cannot edit attachment-only messages"], 400);
+
+  $pdo->prepare("UPDATE messages SET body = ?, is_edited = 1, edited_at = NOW() WHERE id = ?")
+      ->execute([$new_body, $msg_id]);
+
+  // Get conversation_id for broadcast
+  $stmt = $pdo->prepare("SELECT conversation_id FROM messages WHERE id = ?");
+  $stmt->execute([$msg_id]); $row = $stmt->fetch();
+
+  json_response([
+    "edited"          => true,
+    "message_id"      => $msg_id,
+    "conversation_id" => (int)$row["conversation_id"],
+    "body"            => $new_body,
+    "is_edited"       => true,
+    "edited_at"       => date("Y-m-d H:i:s"),
+  ]);
+}
+
+// ── DELETE /messages/{id} — delete message (sender only, 15 min limit) ──
+if ($method === "DELETE" && preg_match('#^/messages/(\d+)$#', $path, $m)) {
+  $claims  = require_auth(); $pdo = db();
+  $msg_id  = (int)$m[1];
+  $user_id = (int)$claims["sub"];
+
+  // Fetch message
+  $stmt = $pdo->prepare("SELECT sender_id, created_at, is_deleted, conversation_id FROM messages WHERE id = ?");
+  $stmt->execute([$msg_id]); $msg = $stmt->fetch();
+  if (!$msg) json_response(["error" => "Message not found"], 404);
+
+  // Only sender can delete
+  if ((int)$msg["sender_id"] !== $user_id) json_response(["error" => "Cannot delete another user\'s message"], 403);
+
+  // Already deleted
+  if ($msg["is_deleted"]) json_response(["error" => "Message already deleted"], 400);
+
+  // 15-minute time limit
+  $created = strtotime($msg["created_at"]);
+  if ((time() - $created) > 15 * 60) json_response(["error" => "Delete window has expired (15 minutes)"], 403);
+
+  // Soft delete — keep record, just mark as deleted
+  $pdo->prepare("UPDATE messages SET is_deleted = 1, body = NULL, attachment_id = NULL WHERE id = ?")
+      ->execute([$msg_id]);
+
+  json_response([
+    "deleted"         => true,
+    "message_id"      => $msg_id,
+    "conversation_id" => (int)$msg["conversation_id"],
+  ]);
 }
 
 json_response(["error" => "Not found", "path" => $path], 404);

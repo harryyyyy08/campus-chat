@@ -14,8 +14,42 @@
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
+    <!-- Loading screen shown while checking saved session -->
+    <div
+      id="loadingScreen"
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: var(--bg-base);
+        flex-direction: column;
+        gap: 16px;
+      "
+    >
+      <div
+        style="
+          width: 36px;
+          height: 36px;
+          border: 3px solid var(--border-strong);
+          border-top-color: var(--accent);
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+        "
+      ></div>
+      <div
+        style="
+          font-size: 13px;
+          color: var(--text-muted);
+          font-family: var(--font-mono);
+        "
+      >
+        Loading…
+      </div>
+    </div>
+
     <!-- LOGIN -->
-    <div id="login">
+    <div id="login" style="display: none">
       <div class="login-card">
         <div class="login-logo">
           <div class="login-logo-icon">💬</div>
@@ -68,6 +102,26 @@
           <div class="sidebar-top">
             <span class="sidebar-title">Messages</span>
             <div class="sidebar-actions">
+              <button
+                class="icon-btn"
+                id="sidebarCollapseBtn"
+                title="Close sidebar"
+                onclick="toggleSidebar()"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="9" y1="3" x2="9" y2="21" />
+                </svg>
+              </button>
               <button
                 class="icon-btn"
                 title="Refresh"
@@ -176,6 +230,33 @@
             <div class="my-name" id="myName">—</div>
             <div class="my-status">● Online</div>
           </div>
+          <button
+            id="themeToggleBtn"
+            title="Toggle theme"
+            onclick="toggleTheme()"
+          >
+            <svg
+              id="themeIcon"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          </button>
           <button class="icon-btn" title="Logout" onclick="logout()">
             <svg
               width="15"
@@ -337,7 +418,27 @@
       </div>
     </div>
 
-    <!-- MODAL: New Direct Chat -->
+    <!-- Floating button to re-open sidebar when collapsed -->
+    <button
+      id="sidebarOpenBtn"
+      class="sidebar-open-fab hidden"
+      title="Open sidebar"
+      onclick="toggleSidebar()"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="15" y1="3" x2="15" y2="21" />
+      </svg>
+    </button>
     <div class="modal-overlay" id="newChatModal">
       <div class="modal-box">
         <div class="modal-title">

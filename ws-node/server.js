@@ -31,8 +31,6 @@ io.use((socket, next) => {
 });
 
 // ── Helpers ───────────────────────────────────────────────────────
-
-/** Notify all connected sockets of a given userId about a new room to join */
 function joinUserToRoom(userId, roomName) {
   for (const [, socket] of io.sockets.sockets) {
     if (socket.user?.id === userId) socket.join(roomName);
@@ -75,7 +73,7 @@ io.on("connection", (socket) => {
     socket.emit("online_list", Array.from(onlineUsers)),
   );
 
-  // ── join_conversation (manual, after creating new chat) ───────
+  // ── join_conversation ─────────────────────────────────────────
   socket.on("join_conversation", ({ conversation_id }) => {
     const cid = Number(conversation_id);
     if (cid) socket.join(`conv:${cid}`);
@@ -128,12 +126,12 @@ io.on("connection", (socket) => {
         status: "sent",
         created_at: data.created_at,
         client_msg_id,
+        is_edited: false,
+        is_deleted: false,
       };
 
-      // Broadcast to all room members
       io.to(`conv:${conversation_id}`).emit("new_message", msg);
 
-      // Check if any recipient is connected → mark delivered immediately
       const room = io.sockets.adapter.rooms.get(`conv:${conversation_id}`);
       const others = room
         ? [...room].filter((sid) => {
@@ -156,6 +154,82 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ── edit_message ──────────────────────────────────────────────
+  socket.on(
+    "edit_message",
+    async ({ message_id, conversation_id, body }, ack) => {
+      const mid = Number(message_id);
+      const cid = Number(conversation_id);
+      if (!mid || !cid || !body?.trim()) {
+        if (ack)
+          ack({
+            ok: false,
+            error: "message_id, conversation_id, and body required",
+          });
+        return;
+      }
+      try {
+        const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ body: body.trim() }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          if (ack) ack({ ok: false, error: data?.error || "Edit failed" });
+          return;
+        }
+        // Broadcast edit to all members of the conversation
+        io.to(`conv:${cid}`).emit("message_edited", {
+          message_id: mid,
+          conversation_id: cid,
+          body: data.body,
+          is_edited: true,
+          edited_at: data.edited_at,
+        });
+        if (ack) ack({ ok: true });
+      } catch (err) {
+        if (ack) ack({ ok: false, error: err.message });
+      }
+    },
+  );
+
+  // ── delete_message ────────────────────────────────────────────
+  socket.on("delete_message", async ({ message_id, conversation_id }, ack) => {
+    const mid = Number(message_id);
+    const cid = Number(conversation_id);
+    if (!mid || !cid) {
+      if (ack)
+        ack({ ok: false, error: "message_id and conversation_id required" });
+      return;
+    }
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (ack) ack({ ok: false, error: data?.error || "Delete failed" });
+        return;
+      }
+      // Broadcast delete to all members of the conversation
+      io.to(`conv:${cid}`).emit("message_deleted", {
+        message_id: mid,
+        conversation_id: cid,
+      });
+      if (ack) ack({ ok: true });
+    } catch (err) {
+      if (ack) ack({ ok: false, error: err.message });
+    }
+  });
+
   // ── mark_seen ─────────────────────────────────────────────────
   socket.on("mark_seen", async ({ conversation_id }) => {
     const cid = Number(conversation_id);
@@ -171,7 +245,6 @@ io.on("connection", (socket) => {
       });
       const data = await resp.json();
       if (!resp.ok || !data.unseen_ids?.length) return;
-
       for (const message_id of data.unseen_ids) {
         io.to(`conv:${cid}`).emit("message_status", {
           message_id,
@@ -185,18 +258,10 @@ io.on("connection", (socket) => {
   });
 
   // ── group_created ─────────────────────────────────────────────
-  // After creating a group, client emits this so Node can push
-  // a "you were added to a group" event to all new members and
-  // have them auto-join the socket room.
   socket.on("group_created", async ({ conversation_id, member_ids }) => {
     const cid = Number(conversation_id);
     if (!cid || !Array.isArray(member_ids)) return;
-
-    // Join creator
     socket.join(`conv:${cid}`);
-
-    // For each member, join their active sockets to the room
-    // and emit a notification so they reload conversations
     for (const uid of member_ids) {
       joinUserToRoom(uid, `conv:${cid}`);
       io.to(`user:${uid}`).emit("added_to_group", { conversation_id: cid });
@@ -204,16 +269,12 @@ io.on("connection", (socket) => {
   });
 
   // ── member_added ──────────────────────────────────────────────
-  // Admin adds a member to existing group
   socket.on("member_added", ({ conversation_id, user_id }) => {
     const cid = Number(conversation_id);
     const uid = Number(user_id);
     if (!cid || !uid) return;
-
     joinUserToRoom(uid, `conv:${cid}`);
     io.to(`user:${uid}`).emit("added_to_group", { conversation_id: cid });
-
-    // Notify everyone in room that membership changed
     io.to(`conv:${cid}`).emit("group_updated", { conversation_id: cid });
   });
 
@@ -222,12 +283,9 @@ io.on("connection", (socket) => {
     const cid = Number(conversation_id);
     const uid = Number(user_id);
     if (!cid || !uid) return;
-
-    // Remove from room
     for (const [, s] of io.sockets.sockets) {
       if (s.user?.id === uid) s.leave(`conv:${cid}`);
     }
-
     io.to(`user:${uid}`).emit("removed_from_group", { conversation_id: cid });
     io.to(`conv:${cid}`).emit("group_updated", { conversation_id: cid });
   });

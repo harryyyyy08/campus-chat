@@ -8,6 +8,50 @@
 const API_BASE = "http://localhost/campus-chat/api/index.php";
 const WS_BASE = "http://localhost:3001";
 
+// ════════════════════════════════════════════
+// THEME
+// ════════════════════════════════════════════
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("cc_theme", theme);
+  const icon = document.getElementById("themeIcon");
+  if (!icon) return;
+  if (theme === "light") {
+    // Moon icon for switching to dark
+    icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+    icon.setAttribute("viewBox", "0 0 24 24");
+  } else {
+    // Sun icon for switching to light
+    icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(current === "dark" ? "light" : "dark");
+}
+
+// Load saved theme on startup
+(function () {
+  const saved = localStorage.getItem("cc_theme") || "dark";
+  applyTheme(saved);
+})();
+
+// ════════════════════════════════════════════
+// SIDEBAR TOGGLE
+// ════════════════════════════════════════════
+
+let sidebarCollapsed = false;
+
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  const sidebar = document.getElementById("sidebar");
+  const fabBtn = document.getElementById("sidebarOpenBtn");
+  sidebar.classList.toggle("collapsed", sidebarCollapsed);
+  if (fabBtn) fabBtn.classList.toggle("hidden", !sidebarCollapsed);
+}
+
 // File URLs from PHP are relative paths (e.g. /campus-chat/api/index.php/uploads/...)
 // They must be fetched from Apache (port 80), NOT from Node.js (port 3001).
 function toAbsoluteUrl(url) {
@@ -102,37 +146,38 @@ function isImageMime(mime) {
 }
 
 // Cache of url → blob URL so we don't re-fetch the same image repeatedly
-const blobUrlCache = new Map();
-
-// Fetch a protected image using Authorization header, return a Blob URL.
-// Uses a cache so the same file is only fetched once per session.
-async function loadProtectedImage(imgEl, url) {
+// Build a token-authenticated image URL using ?token= query param.
+// Allows <img src="..."> to work without fetch + Blob — no membership issues.
+function protectedImgUrl(url) {
   const absUrl = toAbsoluteUrl(url);
-  // Already cached?
-  if (blobUrlCache.has(absUrl)) {
-    imgEl.src = blobUrlCache.get(absUrl);
-    return;
-  }
-  try {
-    const res = await fetch(absUrl, {
-      headers: { Authorization: "Bearer " + token },
-    });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    blobUrlCache.set(absUrl, blobUrl);
-    imgEl.src = blobUrl;
-  } catch (err) {
-    console.error("Image load failed:", absUrl, err);
-    const wrap = imgEl.closest(".attach-image-wrap");
-    if (wrap)
-      wrap.innerHTML = `<div class="attach-img-err">Could not load image</div>`;
-  }
+  return (
+    absUrl +
+    (absUrl.includes("?") ? "&" : "?") +
+    "token=" +
+    encodeURIComponent(token)
+  );
+}
+
+// Load a protected image by setting src to a ?token= URL directly.
+async function loadProtectedImage(imgEl, url) {
+  imgEl.src = protectedImgUrl(url);
+  return new Promise((resolve, reject) => {
+    imgEl.onload = () => resolve();
+    imgEl.onerror = () => {
+      const wrap = imgEl.closest(".attach-image-wrap");
+      if (wrap)
+        wrap.innerHTML =
+          '<div class="attach-img-err">Could not load image</div>';
+      reject(new Error("Image load failed: " + url));
+    };
+  });
 }
 
 function logout() {
   if (socket) socket.disconnect();
   token = null;
+  localStorage.removeItem("cc_token");
+  localStorage.removeItem("cc_user");
   location.reload();
 }
 
@@ -173,23 +218,68 @@ async function login() {
     token = data.access_token;
     myUserId = data.user.id;
     myUser = data.user;
-    document.getElementById("login").style.display = "none";
-    document.getElementById("app").classList.add("visible");
-    document.getElementById("myName").textContent =
-      myUser.full_name || myUser.username;
-    document.getElementById("myAvatar").textContent = initials(
-      myUser.full_name || myUser.username,
-    );
 
-    connectSocket();
-    setupInputListeners();
-    await loadUnreadCounts();
-    await loadConversations();
+    // Save session to localStorage so page refresh doesn't log out
+    localStorage.setItem("cc_token", token);
+    localStorage.setItem("cc_user", JSON.stringify(data.user));
+
+    initApp();
   } catch (err) {
     errEl.textContent = "Connection error. Is the server running?";
     console.error(err);
   }
 }
+
+// Shared post-login setup (used by login() and session restore)
+async function initApp() {
+  document.getElementById("loadingScreen").style.display = "none";
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").classList.add("visible");
+  document.getElementById("myName").textContent =
+    myUser.full_name || myUser.username;
+  document.getElementById("myAvatar").textContent = initials(
+    myUser.full_name || myUser.username,
+  );
+
+  connectSocket();
+  setupInputListeners();
+  await loadUnreadCounts();
+  await loadConversations();
+}
+
+// ════════════════════════════════════════════
+// SESSION RESTORE (on page load)
+// ════════════════════════════════════════════
+(async function restoreSession() {
+  const savedToken = localStorage.getItem("cc_token");
+  const savedUserStr = localStorage.getItem("cc_user");
+
+  if (!savedToken || !savedUserStr) {
+    // No saved session — show login
+    document.getElementById("loadingScreen").style.display = "none";
+    document.getElementById("login").style.display = "flex";
+    return;
+  }
+
+  let savedUser;
+  try {
+    savedUser = JSON.parse(savedUserStr);
+  } catch {
+    localStorage.removeItem("cc_token");
+    localStorage.removeItem("cc_user");
+    document.getElementById("loadingScreen").style.display = "none";
+    document.getElementById("login").style.display = "flex";
+    return;
+  }
+
+  // Restore session immediately — no network call
+  // If token expired, the first API call will fail and we handle it there
+  token = savedToken;
+  myUserId = savedUser.id;
+  myUser = savedUser;
+
+  await initApp();
+})();
 
 // ════════════════════════════════════════════
 // SOCKET
@@ -265,6 +355,36 @@ function connectSocket() {
     loadConversations();
   });
 
+  // ── message_edited ──────────────────────────────────────────
+  socket.on(
+    "message_edited",
+    ({ message_id, conversation_id, body, is_edited, edited_at }) => {
+      const row = document.querySelector(
+        `.msgRow[data-msg-id="${message_id}"]`,
+      );
+      if (!row) return;
+      const bubble = row.querySelector(".bubble");
+      if (bubble) bubble.textContent = body;
+      // Add or update "edited" label
+      let editedLabel = row.querySelector(".msg-edited-label");
+      if (!editedLabel) {
+        editedLabel = document.createElement("span");
+        editedLabel.className = "msg-edited-label";
+        row.querySelector(".meta")?.prepend(editedLabel);
+      }
+      editedLabel.textContent = "edited · ";
+      row.dataset.isEdited = "1";
+      row.dataset.body = body;
+    },
+  );
+
+  // ── message_deleted ──────────────────────────────────────────
+  socket.on("message_deleted", ({ message_id, conversation_id }) => {
+    const row = document.querySelector(`.msgRow[data-msg-id="${message_id}"]`);
+    if (!row) return;
+    applyDeletedStyle(row);
+  });
+
   socket.on("connect_error", (err) => {
     showToast("Connection error: " + (err?.message || err));
     console.error(err);
@@ -284,6 +404,8 @@ function getTypingName(userId) {
 // ════════════════════════════════════════════
 
 function setupInputListeners() {
+  if (setupInputListeners._done) return;
+  setupInputListeners._done = true;
   const inputEl = document.getElementById("messageInput");
   const fileInput = document.getElementById("fileInput");
 
@@ -588,17 +710,17 @@ function buildConversationItem(conv) {
   }
 
   el.innerHTML = `
-       <div class="conv-avatar ${isGroup ? "group" : ""}">${isGroup ? "👥" : escapeHtml(initials(title))}${dotHtml}</div>
-       <div class="conv-info">
-         <div class="conv-name-row">
-           <span class="conv-name">${escapeHtml(title)}${groupBadge}</span>
-           <span class="conv-time">${formatTimeShort(lastTime)}</span>
-         </div>
-         <div class="conv-preview">
-           <span class="conv-preview-text">${statusHtml}${escapeHtml(preview)}</span>
-           ${badgeHtml}
-         </div>
-       </div>`;
+                   <div class="conv-avatar ${isGroup ? "group" : ""}">${isGroup ? "👥" : escapeHtml(initials(title))}${dotHtml}</div>
+                   <div class="conv-info">
+                     <div class="conv-name-row">
+                       <span class="conv-name">${escapeHtml(title)}${groupBadge}</span>
+                       <span class="conv-time">${formatTimeShort(lastTime)}</span>
+                     </div>
+                     <div class="conv-preview">
+                       <span class="conv-preview-text">${statusHtml}${escapeHtml(preview)}</span>
+                       ${badgeHtml}
+                     </div>
+                   </div>`;
 }
 
 function refreshConversationItem(conversationId, latestMsg) {
@@ -651,9 +773,9 @@ function renderOnlineStrip() {
     .map((u) => {
       const name = u.full_name || u.username;
       return `<div class="online-avatar" title="${escapeHtml(name)}" onclick="quickChat('${escapeHtml(u.username)}')">
-         <div class="online-avatar-img"><div class="avatar-circle">${escapeHtml(initials(name))}</div><span class="status-dot"></span></div>
-         <div class="online-name">${escapeHtml(name.split(" ")[0])}</div>
-       </div>`;
+                     <div class="online-avatar-img"><div class="avatar-circle">${escapeHtml(initials(name))}</div><span class="status-dot"></span></div>
+                     <div class="online-name">${escapeHtml(name.split(" ")[0])}</div>
+                   </div>`;
     })
     .join("");
 }
@@ -792,29 +914,28 @@ function renderMessage(msg) {
   if (msg.attachment) {
     const att = msg.attachment;
     if (isImageMime(att.mime_type)) {
-      // Inline image — use data-url so we can fetch with Authorization header
-      // after the element is added to the DOM (avoids Apache blocking ?token= param)
+      // Inline image — use ?token= URL directly so <img> can load without fetch
       attachHtml = `
-           <div class="attach-image-wrap" data-imgurl="${escapeHtml(att.url)}" data-imgname="${escapeHtml(att.original_name)}">
-             <img class="attach-image" src="" alt="${escapeHtml(att.original_name)}"
-                  data-protected="${escapeHtml(att.url)}" />
-             <div class="attach-img-loading">
-               <div class="img-spinner"></div>
-             </div>
-             <div class="attach-image-overlay">🔍</div>
-           </div>`;
+                       <div class="attach-image-wrap" data-imgurl="${escapeHtml(att.url)}" data-imgname="${escapeHtml(att.original_name)}">
+                         <img class="attach-image" src="" alt="${escapeHtml(att.original_name)}"
+                              data-protected="${escapeHtml(att.url)}" />
+                         <div class="attach-img-loading">
+                           <div class="img-spinner"></div>
+                         </div>
+                         <div class="attach-image-overlay">🔍</div>
+                       </div>`;
     } else {
       // Document download — use JS download so auth header can be sent
       const icon = fileIcon(att.mime_type);
       attachHtml = `
-           <div class="attach-doc" onclick="downloadProtectedFile('${escapeHtml(att.url)}','${escapeHtml(att.original_name)}')" style="cursor:pointer;">
-             <span class="attach-doc-icon">${icon}</span>
-             <div class="attach-doc-info">
-               <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
-               <div class="attach-doc-size">${formatBytes(att.file_size)}</div>
-             </div>
-             <span class="attach-doc-dl">⬇</span>
-           </div>`;
+                       <div class="attach-doc" onclick="downloadProtectedFile('${escapeHtml(att.url)}','${escapeHtml(att.original_name)}')" style="cursor:pointer;">
+                         <span class="attach-doc-icon">${icon}</span>
+                         <div class="attach-doc-info">
+                           <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
+                           <div class="attach-doc-size">${formatBytes(att.file_size)}</div>
+                         </div>
+                         <span class="attach-doc-dl">⬇</span>
+                       </div>`;
     }
   }
 
@@ -824,34 +945,85 @@ function renderMessage(msg) {
     : "";
 
   row.innerHTML = `
-       ${avatarHtml}
-       <div class="msg-body">
-         ${senderLabel}
-         ${attachHtml}
-         ${bodyHtml}
-         <div class="meta"><span>${formatTimeFull(msg.created_at)}</span>${statusHtml}</div>
-       </div>`;
+                   ${avatarHtml}
+                   <div class="msg-body">
+                     ${senderLabel}
+                     ${attachHtml}
+                     ${bodyHtml}
+                     <div class="meta"><span>${formatTimeFull(msg.created_at)}</span>${statusHtml}</div>
+                   </div>`;
 
   container.appendChild(row);
 
-  // After DOM insertion, load any protected images via fetch + Blob URL
+  // After DOM insertion, set ?token= src on protected images
   row.querySelectorAll("img[data-protected]").forEach((imgEl) => {
     const url = imgEl.dataset.protected;
     const wrap = imgEl.closest(".attach-image-wrap");
-    loadProtectedImage(imgEl, url).then(() => {
-      // Hide spinner once loaded
-      const spinner = wrap?.querySelector(".attach-img-loading");
+    const imgName = wrap?.dataset.imgname || "";
+    const spinner = wrap?.querySelector(".attach-img-loading");
+
+    imgEl.onload = () => {
       if (spinner) spinner.style.display = "none";
-      // Wire up lightbox click once image is ready
       if (wrap) {
-        const imgName = wrap.dataset.imgname || "";
         wrap.style.cursor = "zoom-in";
         wrap.onclick = () => openLightboxBlob(url, imgName);
       }
-    });
+    };
+    imgEl.onerror = () => {
+      if (wrap)
+        wrap.innerHTML =
+          '<div class="attach-img-err">Could not load image</div>';
+    };
+    imgEl.src = protectedImgUrl(url);
   });
 
+  // Store body for edit reference
+  row.dataset.body = msg.body || "";
+  row.dataset.conversationId = msg.conversation_id;
+
+  // Handle deleted messages
+  if (msg.is_deleted) {
+    applyDeletedStyle(row);
+  }
+
+  // Show "edited" label
+  if (msg.is_edited && !msg.is_deleted) {
+    const meta = row.querySelector(".meta");
+    if (meta) {
+      const label = document.createElement("span");
+      label.className = "msg-edited-label";
+      label.textContent = "edited · ";
+      meta.prepend(label);
+    }
+    row.dataset.isEdited = "1";
+  }
+
+  // Attach context menu to own messages only
+  if (isMe) attachMsgContextMenu(row, msg);
+
   scrollToBottom();
+}
+
+// Apply visual style for deleted message
+function applyDeletedStyle(row) {
+  const msgBody = row.querySelector(".msg-body");
+  if (!msgBody) return;
+  // Remove attachment and bubble
+  msgBody
+    .querySelectorAll(".attach-image-wrap, .attach-doc, .bubble")
+    .forEach((el) => el.remove());
+  // Add deleted placeholder if not already there
+  if (!row.querySelector(".msg-deleted")) {
+    const del = document.createElement("div");
+    del.className = "msg-deleted";
+    del.textContent = "🚫 This message was deleted";
+    const meta = msgBody.querySelector(".meta");
+    if (meta) msgBody.insertBefore(del, meta);
+    else msgBody.appendChild(del);
+  }
+  // Remove context menu trigger
+  row.oncontextmenu = null;
+  row.dataset.deleted = "1";
 }
 
 function fileIcon(mime) {
@@ -895,6 +1067,196 @@ function updateMessageStatusInDOM(messageId, status) {
   if (existing) existing.outerHTML = statusIcon(status);
 }
 
+// ════════════════════════════════════════════
+// EDIT / DELETE — Context Menu
+// ════════════════════════════════════════════
+
+const EDIT_DELETE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function attachMsgContextMenu(row, msg) {
+  const trigger = (e) => {
+    e.preventDefault();
+    if (row.dataset.deleted === "1") return;
+    const createdAt = new Date(msg.created_at.replace(" ", "T")).getTime();
+    const withinWindow = Date.now() - createdAt < EDIT_DELETE_WINDOW_MS;
+    showMsgContextMenu(e, msg, row, withinWindow);
+  };
+  row.addEventListener("contextmenu", trigger);
+  // Long press for mobile
+  let pressTimer;
+  row.addEventListener(
+    "touchstart",
+    () => {
+      pressTimer = setTimeout(
+        () =>
+          trigger({
+            preventDefault: () => {},
+            clientX: 0,
+            clientY: 0,
+            touches: [{ clientX: 0, clientY: 0 }],
+          }),
+        500,
+      );
+    },
+    { passive: true },
+  );
+  row.addEventListener("touchend", () => clearTimeout(pressTimer), {
+    passive: true,
+  });
+}
+
+function showMsgContextMenu(e, msg, row, withinWindow) {
+  // Remove any existing menu
+  document.querySelector(".msg-context-menu")?.remove();
+
+  const menu = document.createElement("div");
+  menu.className = "msg-context-menu";
+
+  if (withinWindow && msg.body && !msg.is_deleted) {
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️ Edit";
+    editBtn.onclick = () => {
+      menu.remove();
+      startInlineEdit(msg, row);
+    };
+    menu.appendChild(editBtn);
+  }
+
+  if (withinWindow && !msg.is_deleted) {
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "🗑️ Delete";
+    delBtn.className = "danger";
+    delBtn.onclick = () => {
+      menu.remove();
+      confirmDeleteMessage(msg, row);
+    };
+    menu.appendChild(delBtn);
+  }
+
+  if (menu.children.length === 0) {
+    const noOp = document.createElement("div");
+    noOp.className = "msg-context-noaction";
+    noOp.textContent = "Edit/delete window has expired";
+    menu.appendChild(noOp);
+  }
+
+  // Position near click/touch
+  const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+  const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+  menu.style.cssText = `position:fixed;z-index:9999;left:${x}px;top:${y}px;`;
+  document.body.appendChild(menu);
+
+  // Adjust if off-screen
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) menu.style.left = x - rect.width + "px";
+  if (rect.bottom > window.innerHeight) menu.style.top = y - rect.height + "px";
+
+  // Close on outside click
+  const close = (ev) => {
+    if (!menu.contains(ev.target)) {
+      menu.remove();
+      document.removeEventListener("click", close);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", close), 0);
+}
+
+function startInlineEdit(msg, row) {
+  const bubble = row.querySelector(".bubble");
+  if (!bubble) return;
+  const originalText = bubble.textContent;
+
+  bubble.style.display = "none";
+
+  const wrap = document.createElement("div");
+  wrap.className = "msg-edit-wrap";
+
+  const textarea = document.createElement("textarea");
+  textarea.className = "msg-edit-input";
+  textarea.value = originalText;
+  textarea.rows = Math.max(1, Math.ceil(originalText.length / 40));
+
+  const actions = document.createElement("div");
+  actions.className = "msg-edit-actions";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "msg-edit-save";
+  saveBtn.textContent = "Save";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "msg-edit-cancel";
+  cancelBtn.textContent = "Cancel";
+
+  const cancel = () => {
+    wrap.remove();
+    bubble.style.display = "";
+  };
+
+  saveBtn.onclick = async () => {
+    const newBody = textarea.value.trim();
+    if (!newBody || newBody === originalText) {
+      cancel();
+      return;
+    }
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+
+    socket.emit(
+      "edit_message",
+      {
+        message_id: msg.id,
+        conversation_id: msg.conversation_id,
+        body: newBody,
+      },
+      (ack) => {
+        if (ack?.ok) {
+          // UI update handled by message_edited socket event
+          wrap.remove();
+          bubble.style.display = "";
+        } else {
+          showToast(ack?.error || "Edit failed.");
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save";
+        }
+      },
+    );
+  };
+
+  cancelBtn.onclick = cancel;
+
+  // Ctrl+Enter to save, Escape to cancel
+  textarea.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault();
+      saveBtn.click();
+    }
+    if (e.key === "Escape") cancel();
+  });
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+  wrap.appendChild(textarea);
+  wrap.appendChild(actions);
+  bubble.after(wrap);
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
+function confirmDeleteMessage(msg, row) {
+  if (!confirm("Delete this message? This cannot be undone.")) return;
+  socket.emit(
+    "delete_message",
+    {
+      message_id: msg.id,
+      conversation_id: msg.conversation_id,
+    },
+    (ack) => {
+      if (!ack?.ok) showToast(ack?.error || "Delete failed.");
+      // UI update handled by message_deleted socket event
+    },
+  );
+}
+
 function scrollToBottom() {
   const c = document.getElementById("messages");
   c.scrollTop = c.scrollHeight;
@@ -916,25 +1278,24 @@ function ensureLightbox() {
     lb = document.createElement("div");
     lb.id = "lightbox";
     lb.innerHTML = `
-         <div id="lightboxBackdrop"></div>
-         <div id="lightboxContent">
-           <button id="lightboxClose" onclick="closeLightbox()">✕</button>
-           <div id="lightboxSpinner"><div class="img-spinner"></div></div>
-           <img id="lightboxImg" src="" alt="" style="display:none;" />
-           <div id="lightboxName"></div>
-         </div>`;
+                     <div id="lightboxBackdrop"></div>
+                     <div id="lightboxContent">
+                       <button id="lightboxClose" onclick="closeLightbox()">✕</button>
+                       <div id="lightboxSpinner"><div class="img-spinner"></div></div>
+                       <img id="lightboxImg" src="" alt="" style="display:none;" />
+                       <div id="lightboxName"></div>
+                     </div>`;
     document.body.appendChild(lb);
     document.getElementById("lightboxBackdrop").onclick = closeLightbox;
   }
   return lb;
 }
 
-// Open lightbox using cached Blob URL (image was already fetched)
+// Open lightbox using ?token= URL directly
 function openLightboxBlob(url, name) {
   const lb = ensureLightbox();
   const img = document.getElementById("lightboxImg");
   const spinner = document.getElementById("lightboxSpinner");
-  const absUrl = toAbsoluteUrl(url);
   document.getElementById("lightboxName").textContent = name;
 
   img.style.display = "none";
@@ -942,17 +1303,15 @@ function openLightboxBlob(url, name) {
   lb.classList.add("open");
   document.body.style.overflow = "hidden";
 
-  // Use cached blob if available, else fetch again
-  if (blobUrlCache.has(absUrl)) {
-    img.src = blobUrlCache.get(absUrl);
+  img.onload = () => {
     img.style.display = "block";
     spinner.style.display = "none";
-  } else {
-    loadProtectedImage(img, absUrl).then(() => {
-      img.style.display = "block";
-      spinner.style.display = "none";
-    });
-  }
+  };
+  img.onerror = () => {
+    spinner.style.display = "none";
+    img.style.display = "none";
+  };
+  img.src = protectedImgUrl(url);
 }
 
 function closeLightbox() {
@@ -1152,10 +1511,10 @@ function renderGroupInfoModal() {
           ? `<button class="member-remove-btn" onclick="removeMember(${m.id})" title="Remove">✕</button>`
           : "";
       return `<div class="group-member-item">
-         <div class="gm-avatar">${escapeHtml(initials(m.full_name || m.username))}</div>
-         <div class="gm-info"><span class="gm-name">${escapeHtml(m.full_name || m.username)}${isMe ? " (you)" : ""}</span>${roleBadge}</div>
-         ${removeBtn}
-       </div>`;
+                     <div class="gm-avatar">${escapeHtml(initials(m.full_name || m.username))}</div>
+                     <div class="gm-info"><span class="gm-name">${escapeHtml(m.full_name || m.username)}${isMe ? " (you)" : ""}</span>${roleBadge}</div>
+                     ${removeBtn}
+                   </div>`;
     })
     .join("");
 }

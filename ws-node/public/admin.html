@@ -14,8 +14,42 @@
     <link rel="stylesheet" href="admin.css" />
   </head>
   <body>
+    <!-- Loading screen shown while checking saved session -->
+    <div
+      id="adminLoadingScreen"
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: var(--bg-base);
+        flex-direction: column;
+        gap: 16px;
+      "
+    >
+      <div
+        style="
+          width: 36px;
+          height: 36px;
+          border: 3px solid var(--border-strong);
+          border-top-color: var(--accent);
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+        "
+      ></div>
+      <div
+        style="
+          font-size: 13px;
+          color: var(--text-muted);
+          font-family: var(--font-mono);
+        "
+      >
+        Checking session…
+      </div>
+    </div>
+
     <!-- Admin Login -->
-    <div id="adminLogin">
+    <div id="adminLogin" class="hidden">
       <div class="login-card">
         <div class="login-logo">
           <div class="login-logo-icon">🛡️</div>
@@ -88,6 +122,23 @@
           <!-- Storage tab: super_admin only — shown via JS after login -->
           <button
             class="admin-tab hidden"
+            id="chatsTabBtn"
+            data-tab="chats"
+            onclick="switchAdminTab(this, 'chats')"
+          >
+            💬 Chat Monitor
+            <span id="flaggedCount" class="admin-badge hidden">0</span>
+          </button>
+          <button
+            class="admin-tab hidden"
+            id="flaggedTabBtn"
+            data-tab="flagged"
+            onclick="switchAdminTab(this, 'flagged')"
+          >
+            🚩 Flagged
+          </button>
+          <button
+            class="admin-tab hidden"
             id="storageTabBtn"
             data-tab="storage"
             onclick="switchAdminTab(this, 'storage')"
@@ -100,6 +151,34 @@
             id="adminMyName"
             style="font-size: 13px; color: var(--text-secondary)"
           ></span>
+          <button
+            id="adminThemeBtn"
+            class="icon-btn"
+            title="Toggle theme"
+            onclick="toggleTheme()"
+          >
+            <svg
+              id="adminThemeIcon"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          </button>
           <button class="icon-btn" title="Logout" onclick="adminLogout()">
             <svg
               width="15"
@@ -188,6 +267,108 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Chat Monitor panel (super_admin only) -->
+        <div id="chatsPanel" class="hidden">
+          <!-- Global message search -->
+          <div class="monitor-search-bar">
+            <div class="admin-search-wrap" style="max-width: 480px">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                id="msgSearchInput"
+                type="text"
+                placeholder="Search messages across all chats…"
+                oninput="debounceMessageSearch(this.value)"
+              />
+            </div>
+            <div class="conv-type-filter">
+              <button
+                class="filter-btn active"
+                onclick="setConvFilter(this, 'all')"
+              >
+                All
+              </button>
+              <button
+                class="filter-btn"
+                onclick="setConvFilter(this, 'direct')"
+              >
+                Direct
+              </button>
+              <button class="filter-btn" onclick="setConvFilter(this, 'group')">
+                Groups
+              </button>
+            </div>
+            <button
+              class="btn-modal-primary"
+              onclick="refreshChats()"
+              style="padding: 8px 16px; font-size: 13px"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <!-- Search results (hidden by default) -->
+          <div id="msgSearchResults" class="hidden">
+            <div class="section-label">
+              Search Results
+              <span id="searchResultCount" class="muted-count"></span>
+            </div>
+            <div id="msgSearchList"></div>
+          </div>
+
+          <!-- Conversation list + message viewer -->
+          <div id="monitorLayout" class="monitor-layout">
+            <!-- Left: conversation list -->
+            <div id="monitorConvList" class="monitor-conv-list">
+              <div class="table-empty" style="padding: 32px 16px">
+                Click Refresh to load conversations.
+              </div>
+            </div>
+
+            <!-- Right: message viewer -->
+            <div id="monitorMsgPane" class="monitor-msg-pane">
+              <div class="monitor-empty">
+                <div style="font-size: 32px; margin-bottom: 12px">💬</div>
+                <div style="font-size: 14px; color: var(--text-muted)">
+                  Select a conversation to view messages
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Flagged Messages panel (super_admin only) -->
+        <div id="flaggedPanel" class="hidden">
+          <div class="storage-toolbar">
+            <span style="font-size: 13px; color: var(--text-secondary)"
+              >All flagged messages — click 🚩 to unflag</span
+            >
+            <button
+              class="btn-modal-primary"
+              onclick="loadFlaggedMessages()"
+              style="padding: 8px 16px; font-size: 13px"
+            >
+              Refresh
+            </button>
+          </div>
+          <div id="flaggedList">
+            <div class="table-empty" style="padding: 48px">
+              Click Refresh to load flagged messages.
+            </div>
+          </div>
         </div>
 
         <!-- Storage panel (super_admin only) -->
@@ -280,6 +461,30 @@
     <div id="toast"></div>
 
     <script>
+      // ════════════════════════════════════════════
+      // THEME
+      // ════════════════════════════════════════════
+      function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("cc_theme", theme);
+        const icon = document.getElementById("adminThemeIcon");
+        if (!icon) return;
+        if (theme === "light") {
+          icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+        } else {
+          icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+        }
+      }
+      function toggleTheme() {
+        const current =
+          document.documentElement.getAttribute("data-theme") || "dark";
+        applyTheme(current === "dark" ? "light" : "dark");
+      }
+      // Load saved theme on startup — shared with chat.css via localStorage key
+      (function () {
+        applyTheme(localStorage.getItem("cc_theme") || "dark");
+      })();
+
       const API_BASE = "http://localhost/campus-chat/api/index.php";
       let adminToken = null;
       let myRole = null; // 'admin' or 'super_admin'
@@ -287,6 +492,71 @@
       let allUsers = [];
       let staleFiles = [];
       let selectedStale = new Set();
+
+      // ── Shared post-login UI setup ─────────────────────────
+      async function initAdminApp(user) {
+        document.getElementById("adminLoadingScreen").style.display = "none";
+        document.getElementById("adminLogin").classList.add("hidden");
+        document.getElementById("adminApp").classList.remove("hidden");
+        document.getElementById("adminMyName").textContent =
+          user.full_name || user.username;
+
+        const badge = document.getElementById("adminRoleBadge");
+        if (myRole === "super_admin") {
+          badge.textContent = "Super Admin";
+          badge.className = "admin-role-badge super";
+          document.getElementById("adminRoleIcon").textContent = "👑";
+          document.getElementById("storageTabBtn").classList.remove("hidden");
+          document.getElementById("chatsTabBtn").classList.remove("hidden");
+          document.getElementById("flaggedTabBtn").classList.remove("hidden");
+        } else {
+          badge.textContent = "Admin";
+          badge.className = "admin-role-badge";
+        }
+
+        await loadUsers();
+      }
+
+      // ── Session restore on page load ───────────────────────
+      (async function restoreAdminSession() {
+        const savedToken = localStorage.getItem("cc_admin_token");
+        const savedUserStr = localStorage.getItem("cc_admin_user");
+
+        if (!savedToken || !savedUserStr) {
+          // No saved session — show login
+          document.getElementById("adminLoadingScreen").style.display = "none";
+          document.getElementById("adminLogin").classList.remove("hidden");
+          return;
+        }
+
+        let savedUser;
+        try {
+          savedUser = JSON.parse(savedUserStr);
+        } catch {
+          localStorage.removeItem("cc_admin_token");
+          localStorage.removeItem("cc_admin_user");
+          document.getElementById("adminLoadingScreen").style.display = "none";
+          document.getElementById("adminLogin").classList.remove("hidden");
+          return;
+        }
+
+        const role = savedUser.role;
+        if (role !== "admin" && role !== "super_admin") {
+          localStorage.removeItem("cc_admin_token");
+          localStorage.removeItem("cc_admin_user");
+          document.getElementById("adminLoadingScreen").style.display = "none";
+          document.getElementById("adminLogin").classList.remove("hidden");
+          return;
+        }
+
+        // Restore session immediately from localStorage — no network call needed
+        // If token is truly expired, the first API call (loadUsers) will fail with 401
+        adminToken = savedToken;
+        myRole = role;
+
+        document.getElementById("adminLoadingScreen").style.display = "none";
+        await initAdminApp(savedUser);
+      })();
 
       // ── Login ──────────────────────────────────────────────
       async function adminLogin() {
@@ -316,25 +586,11 @@
           adminToken = data.access_token;
           myRole = role;
 
-          document.getElementById("adminLogin").classList.add("hidden");
-          document.getElementById("adminApp").classList.remove("hidden");
-          document.getElementById("adminMyName").textContent =
-            data.user.full_name || data.user.username;
+          // Save admin session to localStorage
+          localStorage.setItem("cc_admin_token", adminToken);
+          localStorage.setItem("cc_admin_user", JSON.stringify(data.user));
 
-          // Role badge
-          const badge = document.getElementById("adminRoleBadge");
-          if (role === "super_admin") {
-            badge.textContent = "Super Admin";
-            badge.className = "admin-role-badge super";
-            document.getElementById("adminRoleIcon").textContent = "👑";
-            document.getElementById("storageTabBtn").classList.remove("hidden");
-          } else {
-            badge.textContent = "Admin";
-            badge.className = "admin-role-badge";
-          }
-
-          // FIX: auto-load users immediately on login
-          await loadUsers();
+          await initAdminApp(data.user);
         } catch (err) {
           errEl.textContent = "Connection error.";
           console.error(err);
@@ -348,6 +604,8 @@
       function adminLogout() {
         adminToken = null;
         myRole = null;
+        localStorage.removeItem("cc_admin_token");
+        localStorage.removeItem("cc_admin_user");
         location.reload();
       }
 
@@ -361,17 +619,31 @@
         document.getElementById("adminSearch").value = "";
 
         const isStorage = tab === "storage";
+        const isChats = tab === "chats";
+        const isFlagged = tab === "flagged";
+        const isUserTab = !isStorage && !isChats && !isFlagged;
+
         document
           .getElementById("userTableWrap")
-          .classList.toggle("hidden", isStorage);
+          .classList.toggle("hidden", !isUserTab);
+        document
+          .getElementById("adminToolbar")
+          .classList.toggle("hidden", !isUserTab);
         document
           .getElementById("storagePanel")
           .classList.toggle("hidden", !isStorage);
         document
-          .getElementById("adminToolbar")
-          .classList.toggle("hidden", isStorage);
+          .getElementById("chatsPanel")
+          .classList.toggle("hidden", !isChats);
+        document
+          .getElementById("flaggedPanel")
+          .classList.toggle("hidden", !isFlagged);
 
         if (isStorage) loadStorage();
+        else if (isChats) {
+          loadConversations();
+          loadFlaggedMessages();
+        } else if (isFlagged) loadFlaggedMessages();
         else renderUsers();
       }
 
@@ -383,6 +655,13 @@
           });
           const data = await res.json();
           if (!res.ok) {
+            if (res.status === 401) {
+              // Token expired — clear session and reload to show login
+              localStorage.removeItem("cc_admin_token");
+              localStorage.removeItem("cc_admin_user");
+              location.reload();
+              return;
+            }
             showToast(data.error || "Failed to load users.");
             return;
           }
@@ -750,6 +1029,517 @@
         t.classList.add("show");
         clearTimeout(t._t);
         t._t = setTimeout(() => t.classList.remove("show"), 3000);
+      }
+
+      // ══════════════════════════════════════════════
+      // CHAT MONITORING (super_admin only)
+      // ══════════════════════════════════════════════
+
+      let allConversations = [];
+      let convTypeFilter = "all";
+      let currentMonitorCid = null;
+      let msgSearchDebounce = null;
+
+      // ── Conversations ─────────────────────────────
+      async function loadConversations() {
+        const listEl = document.getElementById("monitorConvList");
+        listEl.innerHTML = `<div class="table-empty" style="padding:32px;">Loading…</div>`;
+        try {
+          const params = new URLSearchParams();
+          if (convTypeFilter !== "all") params.set("type", convTypeFilter);
+          const res = await fetch(`${API_BASE}/admin/conversations?${params}`, {
+            headers: { Authorization: "Bearer " + adminToken },
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+          allConversations = data.conversations || [];
+          renderConversationList();
+        } catch (err) {
+          showToast("Connection error.");
+          console.error(err);
+        }
+      }
+
+      function setConvFilter(btn, type) {
+        document
+          .querySelectorAll(".filter-btn")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        convTypeFilter = type;
+        loadConversations();
+      }
+
+      function renderConversationList() {
+        const listEl = document.getElementById("monitorConvList");
+        if (!allConversations.length) {
+          listEl.innerHTML = `<div class="table-empty" style="padding:32px;">No conversations found.</div>`;
+          return;
+        }
+        listEl.innerHTML = allConversations
+          .map((c) => {
+            const isGroup = c.type === "group";
+            const title = isGroup
+              ? c.name || "Group #" + c.id
+              : c.members.map((m) => m.full_name || m.username).join(" & ");
+            const flagBadge =
+              c.flag_count > 0
+                ? `<span class="conv-flag-badge">🚩 ${c.flag_count}</span>`
+                : "";
+            const typeBadge = isGroup
+              ? `<span class="conv-type-badge group">Group</span>`
+              : `<span class="conv-type-badge">Direct</span>`;
+            const active = c.id === currentMonitorCid ? "active" : "";
+            return `<div class="monitor-conv-item ${active}" onclick="openMonitorConv(${c.id})" data-cid="${c.id}">
+            <div class="monitor-conv-avatar">${isGroup ? "👥" : "👤"}</div>
+            <div class="monitor-conv-info">
+              <div class="monitor-conv-title">${escapeHtml(truncate(title, 40))} ${typeBadge} ${flagBadge}</div>
+              <div class="monitor-conv-meta">${c.member_count} members · ${c.last_message_at ? formatDate(c.last_message_at) : "No messages"}</div>
+            </div>
+          </div>`;
+          })
+          .join("");
+      }
+
+      // ── Messages viewer ───────────────────────────
+      async function openMonitorConv(cid) {
+        currentMonitorCid = cid;
+        // Highlight active conv
+        document
+          .querySelectorAll(".monitor-conv-item")
+          .forEach((el) =>
+            el.classList.toggle("active", Number(el.dataset.cid) === cid),
+          );
+
+        const pane = document.getElementById("monitorMsgPane");
+        const conv = allConversations.find((c) => c.id === cid);
+        const isGroup = conv?.type === "group";
+        const title = isGroup
+          ? conv?.name || "Group"
+          : conv?.members?.map((m) => m.full_name || m.username).join(" & ") ||
+            "Conversation";
+
+        pane.innerHTML = `
+          <div class="monitor-msg-header">
+            <div>
+              <div class="monitor-msg-title">${escapeHtml(title)}</div>
+              <div class="monitor-msg-meta">
+                ${conv?.members?.map((m) => `<span class="member-pill">${escapeHtml(m.full_name || m.username)}</span>`).join("") || ""}
+              </div>
+            </div>
+          </div>
+          <div class="monitor-msg-list" id="monitorMsgList"><div class="table-empty" style="padding:32px;">Loading messages…</div></div>`;
+
+        try {
+          const res = await fetch(
+            `${API_BASE}/admin/conversations/messages?conversation_id=${cid}&limit=80`,
+            { headers: { Authorization: "Bearer " + adminToken } },
+          );
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+          renderMonitorMessages(data.messages || [], cid);
+        } catch (err) {
+          showToast("Connection error.");
+          console.error(err);
+        }
+      }
+
+      function renderMonitorMessages(messages, cid) {
+        const listEl = document.getElementById("monitorMsgList");
+        if (!messages.length) {
+          listEl.innerHTML = `<div class="table-empty" style="padding:32px;">No messages yet.</div>`;
+          return;
+        }
+        listEl.innerHTML = messages.map((m) => buildMonitorMsgHtml(m)).join("");
+        listEl.scrollTop = listEl.scrollHeight;
+      }
+
+      // Convert regular uploads URL to admin uploads URL
+      function toAdminFileUrl(url) {
+        if (!url) return url;
+        // Rewrite /uploads/filename to /admin/uploads/filename
+        return url.replace(/\/uploads\//, "/admin/uploads/");
+      }
+
+      // Fetch a file as blob using admin token (for images in monitor view)
+      const adminBlobCache = new Map();
+      async function loadAdminImage(imgEl, url) {
+        const absUrl = "http://localhost" + url;
+        if (adminBlobCache.has(absUrl)) {
+          imgEl.src = adminBlobCache.get(absUrl);
+          return;
+        }
+        try {
+          const res = await fetch(absUrl, {
+            headers: { Authorization: "Bearer " + adminToken },
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          adminBlobCache.set(absUrl, blobUrl);
+          imgEl.src = blobUrl;
+        } catch (err) {
+          imgEl.parentElement.innerHTML = `<div class="attach-err">Could not load image</div>`;
+        }
+      }
+
+      async function downloadAdminFile(url, filename) {
+        try {
+          const absUrl = "http://localhost" + url;
+          const res = await fetch(absUrl, {
+            headers: { Authorization: "Bearer " + adminToken },
+          });
+          if (!res.ok) {
+            showToast("Download failed.");
+            return;
+          }
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = blobUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        } catch {
+          showToast("Download error.");
+        }
+      }
+
+      function buildAttachmentHtml(att) {
+        if (!att) return "";
+        const adminUrl = toAdminFileUrl(att.url);
+        const isImage = [
+          "image/jpeg",
+          "image/png",
+          "image/gif",
+          "image/webp",
+        ].includes(att.mime_type);
+        if (isImage) {
+          const uid = "adminimg_" + Math.random().toString(36).slice(2);
+          // Load image after render using setTimeout
+          setTimeout(() => {
+            const el = document.getElementById(uid);
+            if (el) loadAdminImage(el, adminUrl);
+          }, 50);
+          return `<div class="monitor-attach-image-wrap">
+            <img id="${uid}" src="" alt="${escapeHtml(att.original_name)}"
+                 class="monitor-attach-image" />
+          </div>`;
+        }
+        // Document
+        const icons = {
+          "application/pdf": "📄",
+          "application/msword": "📝",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            "📝",
+          "application/vnd.ms-excel": "📊",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            "📊",
+          "application/vnd.ms-powerpoint": "📑",
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+            "📑",
+        };
+        const icon = icons[att.mime_type] || "📎";
+        const size =
+          att.file_size < 1048576
+            ? (att.file_size / 1024).toFixed(1) + " KB"
+            : (att.file_size / 1048576).toFixed(1) + " MB";
+        return `<div class="monitor-attach-doc" onclick="downloadAdminFile('${escapeHtml(adminUrl)}','${escapeHtml(att.original_name)}')">
+          <span>${icon}</span>
+          <div>
+            <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
+            <div class="attach-doc-size">${size}</div>
+          </div>
+          <span>⬇</span>
+        </div>`;
+      }
+
+      function buildMonitorMsgHtml(m, highlight = "") {
+        const flagged = m.is_flagged || m.flag_count > 0;
+        const bodyText = m.body || "";
+        const displayBody = highlight
+          ? escapeHtml(bodyText).replace(
+              new RegExp(`(${escapeRegex(highlight)})`, "gi"),
+              `<mark>$1</mark>`,
+            )
+          : escapeHtml(bodyText);
+        const attachHtml = buildAttachmentHtml(m.attachment);
+        return `<div class="monitor-msg-row ${flagged ? "flagged" : ""}" data-mid="${m.id}">
+          <div class="monitor-msg-sender">
+            <span class="monitor-sender-name">${escapeHtml(m.full_name || m.username)}</span>
+            <span class="monitor-sender-handle">@${escapeHtml(m.username)}</span>
+            <span class="monitor-msg-time">${formatDateTime(m.created_at)}</span>
+            ${flagged ? `<span class="flag-indicator" title="${escapeHtml(m.flag_reason || "")}">🚩 Flagged</span>` : ""}
+          </div>
+          ${attachHtml}
+          ${displayBody ? `<div class="monitor-msg-body">${displayBody}</div>` : ""}
+          <div class="monitor-msg-actions">
+            ${
+              flagged
+                ? `<button class="monitor-btn unflag" onclick="unflagMessage(${m.id}, this)">Remove Flag</button>`
+                : `<button class="monitor-btn flag" onclick="showFlagDialog(${m.id}, this)">🚩 Flag</button>`
+            }
+          </div>
+        </div>`;
+      }
+
+      // ── Flag / Unflag ─────────────────────────────
+      async function showFlagDialog(messageId, btn) {
+        const reason =
+          prompt(
+            "Optional: Enter reason for flagging this message (or leave blank):",
+          ) ?? null;
+        if (reason === null) return; // cancelled
+        try {
+          const res = await fetch(`${API_BASE}/admin/messages/flag`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + adminToken,
+            },
+            body: JSON.stringify({ message_id: messageId, reason }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+          showToast("Message flagged.");
+          // Update row in DOM
+          const row = document.querySelector(
+            `.monitor-msg-row[data-mid="${messageId}"]`,
+          );
+          if (row) {
+            row.classList.add("flagged");
+            row.querySelector(".monitor-msg-actions").innerHTML =
+              `<button class="monitor-btn unflag" onclick="unflagMessage(${messageId}, this)">Remove Flag</button>`;
+          }
+          updateFlaggedBadge(1);
+          loadFlaggedMessages();
+        } catch {
+          showToast("Connection error.");
+        }
+      }
+
+      async function unflagMessage(messageId, btn) {
+        if (!confirm("Remove flag from this message?")) return;
+        try {
+          const res = await fetch(`${API_BASE}/admin/messages/flag`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + adminToken,
+            },
+            body: JSON.stringify({ message_id: messageId }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+          showToast("Flag removed.");
+          const row = document.querySelector(
+            `.monitor-msg-row[data-mid="${messageId}"]`,
+          );
+          if (row) {
+            row.classList.remove("flagged");
+            row.querySelector(".monitor-msg-actions").innerHTML =
+              `<button class="monitor-btn flag" onclick="showFlagDialog(${messageId}, this)">🚩 Flag</button>`;
+            row.querySelector(".flag-indicator")?.remove();
+          }
+          updateFlaggedBadge(-1);
+          loadFlaggedMessages();
+        } catch {
+          showToast("Connection error.");
+        }
+      }
+
+      function updateFlaggedBadge(delta) {
+        const badge = document.getElementById("flaggedCount");
+        let count = parseInt(badge.textContent || "0") + delta;
+        if (count < 0) count = 0;
+        badge.textContent = count;
+        badge.classList.toggle("hidden", count === 0);
+      }
+
+      // ── Flagged messages panel ────────────────────
+      async function loadFlaggedMessages() {
+        try {
+          const res = await fetch(`${API_BASE}/admin/messages/flagged`, {
+            headers: { Authorization: "Bearer " + adminToken },
+          });
+          const data = await res.json();
+          if (!res.ok) return;
+          const flagged = data.flagged || [];
+
+          // Update badge on Flagged tab
+          const badge = document.getElementById("flaggedCount");
+          badge.textContent = flagged.length;
+          badge.classList.toggle("hidden", flagged.length === 0);
+
+          const listEl = document.getElementById("flaggedList");
+          if (!flagged.length) {
+            listEl.innerHTML = `<div class="table-empty" style="padding:48px;">🎉 No flagged messages.</div>`;
+            return;
+          }
+          listEl.innerHTML = flagged
+            .map(
+              (m) => `
+            <div class="flagged-msg-card" data-mid="${m.id}">
+              <div class="flagged-msg-header">
+                <div>
+                  <span class="monitor-sender-name">${escapeHtml(m.full_name || m.username)}</span>
+                  <span class="monitor-sender-handle">@${escapeHtml(m.username)}</span>
+                  <span class="conv-type-badge ${m.conv_type === "group" ? "group" : ""}" style="margin-left:6px;">${m.conv_type === "group" ? escapeHtml(m.conv_name || "Group") : "Direct"}</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <span class="monitor-msg-time">${formatDateTime(m.created_at)}</span>
+                  <button class="monitor-btn unflag" onclick="unflagMessage(${m.id}, this)">Remove Flag</button>
+                  <button class="monitor-btn view" onclick="viewConvFromFlag(${m.conversation_id})">View Chat</button>
+                </div>
+              </div>
+              <div class="flagged-msg-body">${escapeHtml(m.body || "[attachment]")}</div>
+              ${m.flag_reason ? `<div class="flag-reason">Reason: ${escapeHtml(m.flag_reason)}</div>` : ""}
+              <div class="flag-meta">Flagged by ${escapeHtml(m.flagged_by_name || m.flagged_by_username)} · ${formatDateTime(m.flagged_at)}</div>
+            </div>`,
+            )
+            .join("");
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      async function viewConvFromFlag(cid) {
+        // 1. Clear search so we don't stay in search-results mode
+        const searchInput = document.getElementById("msgSearchInput");
+        if (searchInput) searchInput.value = "";
+        document.getElementById("msgSearchResults").classList.add("hidden");
+        document.getElementById("monitorLayout").classList.remove("hidden");
+
+        // 2. Switch to Chat Monitor tab (but DON'T let it auto-call loadConversations —
+        //    we'll do it ourselves so we can await it properly)
+        document
+          .querySelectorAll(".admin-tab")
+          .forEach((b) => b.classList.remove("active"));
+        const chatsBtn = document.querySelector('[data-tab="chats"]');
+        if (chatsBtn) chatsBtn.classList.add("active");
+        currentTab = "chats";
+        document.getElementById("userTableWrap").classList.add("hidden");
+        document.getElementById("adminToolbar").classList.add("hidden");
+        document.getElementById("storagePanel").classList.add("hidden");
+        document.getElementById("chatsPanel").classList.remove("hidden");
+        document.getElementById("flaggedPanel").classList.add("hidden");
+
+        // 3. Load conversations if not yet loaded, then open target conversation
+        if (!allConversations.length) {
+          await loadConversations();
+        }
+        await openMonitorConv(cid);
+
+        // 4. Scroll the conversation item into view in the left panel
+        setTimeout(() => {
+          const el = document.querySelector(
+            `.monitor-conv-item[data-cid="${cid}"]`,
+          );
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 100);
+      }
+
+      // ── Refresh chats (conv list + current open conversation) ──
+      async function refreshChats() {
+        await loadConversations();
+        if (currentMonitorCid) {
+          await openMonitorConv(currentMonitorCid);
+        }
+      }
+
+      // ── Message Search ────────────────────────────
+      function debounceMessageSearch(q) {
+        clearTimeout(msgSearchDebounce);
+        if (q.trim().length < 2) {
+          document.getElementById("msgSearchResults").classList.add("hidden");
+          document.getElementById("monitorLayout").classList.remove("hidden");
+          return;
+        }
+        msgSearchDebounce = setTimeout(() => runMessageSearch(q.trim()), 400);
+      }
+
+      async function runMessageSearch(q) {
+        document.getElementById("monitorLayout").classList.add("hidden");
+        document.getElementById("msgSearchResults").classList.remove("hidden");
+        document.getElementById("msgSearchList").innerHTML =
+          `<div class="table-empty" style="padding:24px;">Searching…</div>`;
+
+        try {
+          const res = await fetch(
+            `${API_BASE}/admin/messages/search?q=${encodeURIComponent(q)}`,
+            { headers: { Authorization: "Bearer " + adminToken } },
+          );
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed.");
+            return;
+          }
+
+          const msgs = data.messages || [];
+          document.getElementById("searchResultCount").textContent =
+            `${msgs.length} result${msgs.length !== 1 ? "s" : ""} for "${q}"`;
+
+          if (!msgs.length) {
+            document.getElementById("msgSearchList").innerHTML =
+              `<div class="table-empty" style="padding:24px;">No messages found.</div>`;
+            return;
+          }
+
+          document.getElementById("msgSearchList").innerHTML = msgs
+            .map((m) => {
+              const convLabel =
+                m.conv_type === "group" ? m.conv_name || "Group" : "Direct";
+              return `<div class="search-msg-row ${m.is_flagged ? "flagged" : ""}" data-mid="${m.id}">
+              <div class="search-msg-meta">
+                <span class="monitor-sender-name">${escapeHtml(m.full_name || m.username)}</span>
+                <span class="monitor-sender-handle">@${escapeHtml(m.username)}</span>
+                <span class="conv-type-badge ${m.conv_type === "group" ? "group" : ""}">${escapeHtml(convLabel)}</span>
+                <span class="monitor-msg-time">${formatDateTime(m.created_at)}</span>
+                ${m.is_flagged ? '<span class="flag-indicator">🚩</span>' : ""}
+              </div>
+              <div class="search-msg-body">${escapeHtml(m.body || "[attachment]").replace(new RegExp("(" + escapeRegex(q) + ")", "gi"), "<mark>$1</mark>")}</div>
+              <div class="monitor-msg-actions">
+                <button class="monitor-btn view" onclick="viewConvFromFlag(${m.conversation_id})">View Chat</button>
+                ${
+                  m.is_flagged
+                    ? `<button class="monitor-btn unflag" onclick="unflagMessage(${m.id},this)">Remove Flag</button>`
+                    : `<button class="monitor-btn flag" onclick="showFlagDialog(${m.id},this)">🚩 Flag</button>`
+                }
+              </div>
+            </div>`;
+            })
+            .join("");
+        } catch (err) {
+          showToast("Connection error.");
+          console.error(err);
+        }
+      }
+
+      // ── Helpers ───────────────────────────────────
+      function formatDateTime(dt) {
+        if (!dt) return "—";
+        const d = new Date(dt.replace(" ", "T"));
+        return (
+          d.toLocaleDateString([], { month: "short", day: "numeric" }) +
+          " " +
+          d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        );
+      }
+      function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
     </script>
   </body>
