@@ -1,4 +1,18 @@
 <?php
+/**
+ * Helper Functions Module
+ * 
+ * Purpose: Utility functions for common API operations
+ * Type: PHP Utility/Helper Module
+ * 
+ * Exports:
+ * - json_input() - Parses incoming JSON request body
+ * - json_response() - Sends JSON response with HTTP status code
+ * - bearer_token() - Extracts JWT token from Authorization header
+ * 
+ * Usage: Called throughout API routes to standardize request/response handling
+ */
+
 function json_input(): array {
   $raw = file_get_contents("php://input");
   $data = json_decode($raw, true);

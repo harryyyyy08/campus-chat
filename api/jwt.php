@@ -1,4 +1,20 @@
 <?php
+/**
+ * JWT (JSON Web Token) Authentication Module
+ * 
+ * Purpose: Implements JWT signing and verification for secure user authentication
+ * Type: PHP Cryptography/Authentication Module
+ * 
+ * Exports:
+ * - base64url_encode/decode() - URL-safe Base64 encoding for JWT segments
+ * - jwt_sign() - Creates a signed JWT token with HS256 algorithm
+ * - jwt_verify() - Verifies JWT signature and returns decoded payload
+ * 
+ * Algorithm: HMAC SHA-256 (HS256)
+ * Usage: Used to create and validate authentication tokens for API requests
+ * Token Format: header.payload.signature (3 Base64-URL encoded segments)
+ */
+
 function base64url_encode(string $data): string {
   return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }

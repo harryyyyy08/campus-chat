@@ -1,3 +1,28 @@
+/**
+ * WebSocket Client Test Utility
+ * 
+ * Purpose: Testing and debugging tool for WebSocket connections and messaging
+ * Type: Node.js Test/Debug Client
+ * 
+ * Features:
+ * - Connects to WebSocket server with JWT authentication
+ * - Simulates user joining conversations
+ * - Sends test messages to verify real-time delivery
+ * - Logs all events received from server
+ * - Can be run with multiple instances to test multi-user scenarios
+ * 
+ * Usage:
+ * PowerShell: set TOKEN=<jwt_token> ; set CONV_ID=3 ; set NAME=harry ; node client_test.js
+ * Or: $env:TOKEN='...'; $env:CONV_ID=3; $env:NAME='harry'; node client_test.js
+ * 
+ * Environment Variables:
+ * - TOKEN: JWT authentication token from login (required)
+ * - CONV_ID: Conversation ID to join and test with (required)
+ * - NAME: Display name for this test client (default: 'client')
+ * 
+ * Development: Uncomment socket.emit() lines to test message sending
+ */
+
 const { io } = require("socket.io-client");
 
 const TOKEN = process.env.TOKEN; // set in PowerShell

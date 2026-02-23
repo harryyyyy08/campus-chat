@@ -1,3 +1,35 @@
+/**
+ * WebSocket Real-Time Communication Server
+ * 
+ * Purpose: Enables real-time messaging, typing indicators, and online presence
+ * Type: Node.js Express + Socket.IO Server
+ * 
+ * Features:
+ * - JWT-authenticated WebSocket connections
+ * - Real-time message broadcasting to conversation members
+ * - Typing indicators (shows "User is typing...")
+ * - Online presence tracking with user list
+ * - Message read receipt updates
+ * - Conversation joining/leaving
+ * 
+ * Events Handled:
+ * - connect - Authenticate user and load their conversations
+ * - disconnect - Remove user from online list
+ * - send_message - Broadcast message to conversation members
+ * - typing_start/typing_stop - Notify members of typing status
+ * - join_conversation - Subscribe user to conversation events
+ * - leave_conversation - Unsubscribe user from conversation
+ * - mark_read - Update message read status and broadcast
+ * 
+ * Configuration:
+ * - PORT: 3001 (WebSocket server)
+ * - JWT_SECRET: Must match api/config.php for token verification
+ * - PHP_API_BASE: Backend API URL for fetching conversation members
+ * 
+ * Architecture: Maintains in-memory maps of online users and conversation subscriptions
+ * Deployment: Run as separate Node.js process alongside PHP Apache server
+ */
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
