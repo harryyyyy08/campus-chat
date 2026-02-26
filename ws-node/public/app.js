@@ -848,9 +848,11 @@ function updateChatHeaderStatus() {
 async function openConversation(id) {
   currentConversation = id;
   unreadCounts[id] = 0;
-  // Mobile: show chat pane, hide sidebar
-  if (window.innerWidth <= 600) {
+  // Mobile: show chat pane, hide sidebar + push history state
+  if (window.innerWidth <= 900) {
     document.getElementById("app").classList.add("chat-open");
+    // Push a state so the phone's back button triggers popstate instead of closing the app
+    history.pushState({ chatOpen: true, conversationId: id }, "");
   }
   clearAttachmentPreview();
   refreshConversationItem(id);
@@ -1251,6 +1253,25 @@ function closeChatMobile() {
   document.getElementById("emptyState").style.display = "";
 }
 
+// Handle phone back button — intercept popstate so app doesn't close
+window.addEventListener("popstate", (e) => {
+  if (window.innerWidth > 900) return; // desktop lang, ignore
+  // If a chat was open, close it instead of navigating away
+  const appEl = document.getElementById("app");
+  if (appEl.classList.contains("chat-open")) {
+    closeChatMobile();
+    // Push a neutral state again so back button always works consistently
+    history.pushState(null, "");
+  }
+});
+
+// On first load, push an initial state so popstate fires on first back press
+window.addEventListener("load", () => {
+  if (window.innerWidth <= 900) {
+    history.replaceState({ chatOpen: false }, "");
+  }
+});
+
 function scrollToBottom() {
   const c = document.getElementById("messages");
   c.scrollTop = c.scrollHeight;
@@ -1324,8 +1345,41 @@ document.addEventListener("keydown", (e) => {
 
 function openNewChatModal() {
   document.getElementById("newChatUsername").value = "";
+  const resultsEl = document.getElementById("directSearchResults");
+  if (resultsEl) { resultsEl.innerHTML = ""; resultsEl.classList.add("hidden"); }
   openModal("newChatModal");
   setTimeout(() => document.getElementById("newChatUsername").focus(), 60);
+}
+
+async function searchUsersForDirect(q) {
+  const resultsEl = document.getElementById("directSearchResults");
+  if (!resultsEl) return;
+  q = q.trim();
+  if (q.length < 1) { resultsEl.innerHTML = ""; resultsEl.classList.add("hidden"); return; }
+  try {
+    const res = await fetch(`${API_BASE}/users/search?q=${encodeURIComponent(q)}`, {
+      headers: { Authorization: "Bearer " + token },
+    });
+    const data = await res.json();
+    const users = data.users || [];
+    resultsEl.classList.remove("hidden");
+    resultsEl.innerHTML = users.length
+      ? users.map(u =>
+          `<div class="search-result-item" onclick="selectDirectUser('${escapeHtml(u.username)}','${escapeHtml(u.full_name || u.username)}')">
+            <span>${escapeHtml(u.full_name || u.username)}</span>
+            <span class="username-hint">@${escapeHtml(u.username)}</span>
+          </div>`
+        ).join("")
+      : `<div class="search-result-item muted">No users found</div>`;
+  } catch (err) {
+    console.error("Direct search error:", err);
+  }
+}
+
+function selectDirectUser(username, fullName) {
+  document.getElementById("newChatUsername").value = username;
+  const resultsEl = document.getElementById("directSearchResults");
+  if (resultsEl) { resultsEl.innerHTML = ""; resultsEl.classList.add("hidden"); }
 }
 
 async function startChat() {

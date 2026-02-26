@@ -488,13 +488,16 @@
             ✕
           </button>
         </div>
-        <div class="modal-label">Username</div>
+        <div class="modal-label">Search by name or username</div>
         <input
           class="modal-input"
           id="newChatUsername"
           type="text"
-          placeholder="Enter username to chat with…"
+          placeholder="Type a name or @username…"
+          oninput="searchUsersForDirect(this.value)"
+          autocomplete="off"
         />
+        <div id="directSearchResults" class="search-results-dropdown hidden"></div>
         <div class="modal-actions">
           <button class="btn-ghost" onclick="closeModal('newChatModal')">
             Cancel
