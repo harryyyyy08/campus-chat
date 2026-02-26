@@ -1873,3 +1873,72 @@ body {
 .msg-edit-cancel:hover {
   background: var(--bg-active);
 }
+
+/* ════════════════════════════════════════════
+   PWA / MOBILE IMPROVEMENTS
+   ════════════════════════════════════════════ */
+
+/* Safe area insets for notch/home bar on iOS/Android */
+#app {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent text selection on touch (feels more app-like) */
+.sidebar-title, .msg-sender, .my-name,
+.tab-btn, .icon-btn, .btn-primary {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Better tap targets on mobile */
+@media (max-width: 600px) {
+  .icon-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  /* Full-screen chat on mobile */
+  #app {
+    flex-direction: column;
+  }
+
+  #sidebar {
+    width: 100%;
+    height: 100dvh;
+    border-right: none;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  #sidebar.collapsed {
+    display: none;
+  }
+
+  #chat {
+    width: 100%;
+    height: 100dvh;
+  }
+
+  /* Hide sidebar when chat is open on mobile */
+  #app.chat-open #sidebar {
+    display: none;
+  }
+
+  #app.chat-open #chat {
+    display: flex;
+  }
+
+  /* Back button in chat header on mobile */
+  #mobileBackBtn {
+    display: flex;
+  }
+
+  #inputBar {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Hide mobile back button on desktop */
+#mobileBackBtn {
+  display: none;
+}

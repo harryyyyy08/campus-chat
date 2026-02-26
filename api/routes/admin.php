@@ -1,32 +1,4 @@
 <?php
-/**
- * Admin Management Routes Module
- * 
- * Purpose: Provides admin and super-admin functionality for user and system management
- * Type: PHP Route Handler / Admin Controller
- * 
- * Routes:
- * - GET /admin/users - List all users with their status and roles
- * - POST /admin/users/approve - Approve pending user registration with role assignment
- * - POST /admin/users/disable - Disable user account (revokes access)
- * - GET /admin/stats - System statistics (user count, message count, storage used)
- * - DELETE /admin/messages/{id} - Delete message (super-admin only, for moderation)
- * 
- * Role-Based Access:
- * - Admin: Can approve/disable students and faculty, view dashboard
- * - Super Admin: All admin privileges + delete messages + assign admin roles
- * 
- * Features:
- * - Pending user queue management
- * - Role assignment during approval (student/faculty/admin)
- * - Account disabling without data deletion
- * - Dashboard statistics and monitoring
- * - Message flagging/deletion for moderation
- * 
- * Dependencies: db.php, auth.php, helpers.php
- * Usage: Included by api/index.php to handle /admin/* endpoints
- */
-
 // ── GET /admin/users ─────────────────────────────────────────────
 if ($method === "GET" && $path === "/admin/users") {
   $claims = require_auth(); $pdo = db();
@@ -145,13 +117,22 @@ if ($method === "GET" && $path === "/admin/conversations/messages") {
   $cid   = (int)($_GET["conversation_id"] ?? 0);
   $limit = min((int)($_GET["limit"] ?? 80), 200);
   if (!$cid) json_response(["error" => "conversation_id required"], 400);
-  $stmt = $pdo->prepare("SELECT m.id, m.conversation_id, m.sender_id, m.body, m.status, m.created_at, m.attachment_id, u.username, u.full_name, a.original_name, a.mime_type, a.file_size, a.stored_name, (SELECT COUNT(*) FROM message_flags mf WHERE mf.message_id = m.id) AS flag_count, (SELECT reason FROM message_flags mf WHERE mf.message_id = m.id LIMIT 1) AS flag_reason FROM messages m JOIN users u ON u.id = m.sender_id LEFT JOIN attachments a ON a.id = m.attachment_id WHERE m.conversation_id = ? ORDER BY m.created_at DESC, m.id DESC LIMIT ?");
+  $stmt = $pdo->prepare("SELECT m.id, m.conversation_id, m.sender_id, m.body, m.status, m.created_at, m.attachment_id, m.is_edited, m.edited_at, m.is_deleted, u.username, u.full_name, a.original_name, a.mime_type, a.file_size, a.stored_name, (SELECT COUNT(*) FROM message_flags mf WHERE mf.message_id = m.id) AS flag_count, (SELECT reason FROM message_flags mf WHERE mf.message_id = m.id LIMIT 1) AS flag_reason FROM messages m JOIN users u ON u.id = m.sender_id LEFT JOIN attachments a ON a.id = m.attachment_id WHERE m.conversation_id = ? ORDER BY m.created_at DESC, m.id DESC LIMIT ?");
   $stmt->bindValue(1, $cid, PDO::PARAM_INT); $stmt->bindValue(2, $limit, PDO::PARAM_INT); $stmt->execute();
   $rows = array_reverse($stmt->fetchAll());
   foreach ($rows as &$r) {
-    $r["id"] = (int)$r["id"]; $r["sender_id"] = (int)$r["sender_id"]; $r["flag_count"] = (int)$r["flag_count"]; $r["is_flagged"] = $r["flag_count"] > 0;
+    $r["id"]         = (int)$r["id"];
+    $r["sender_id"]  = (int)$r["sender_id"];
+    $r["flag_count"] = (int)$r["flag_count"];
+    $r["is_flagged"] = $r["flag_count"] > 0;
+    $r["is_edited"]  = (bool)$r["is_edited"];
+    $r["is_deleted"] = (bool)$r["is_deleted"];
     $r["attachment"] = null;
-    if ($r["attachment_id"]) $r["attachment"] = ["original_name" => $r["original_name"], "mime_type" => $r["mime_type"], "file_size" => (int)$r["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $r["stored_name"]];
+    if ($r["is_deleted"]) {
+      $r["body"] = null; $r["attachment_id"] = null;
+    } elseif ($r["attachment_id"]) {
+      $r["attachment"] = ["original_name" => $r["original_name"], "mime_type" => $r["mime_type"], "file_size" => (int)$r["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $r["stored_name"]];
+    }
     unset($r["original_name"], $r["mime_type"], $r["file_size"], $r["stored_name"]);
   }
   json_response(["messages" => $rows]);

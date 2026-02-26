@@ -194,7 +194,7 @@
     </style>
 
     <script>
-      const API_BASE = "http://localhost/campus-chat/api/index.php";
+      const API_BASE = `http://${window.location.hostname}/campus-chat/api/index.php`;
 
       async function submitRegistration() {
         const full_name = document.getElementById("reg_full_name").value.trim();

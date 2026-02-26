@@ -516,7 +516,7 @@
         applyTheme(localStorage.getItem("cc_theme") || "dark");
       })();
 
-      const API_BASE = "http://localhost/campus-chat/api/index.php";
+      const API_BASE = `http://${window.location.hostname}/campus-chat/api/index.php`;
       let adminToken = null;
       let myRole = null; // 'admin' or 'super_admin'
       let currentTab = "pending";
@@ -1293,24 +1293,39 @@
       }
 
       function buildMonitorMsgHtml(m, highlight = "") {
-        const flagged = m.is_flagged || m.flag_count > 0;
-        const bodyText = m.body || "";
-        const displayBody = highlight
-          ? escapeHtml(bodyText).replace(
-              new RegExp(`(${escapeRegex(highlight)})`, "gi"),
-              `<mark>$1</mark>`,
-            )
-          : escapeHtml(bodyText);
-        const attachHtml = buildAttachmentHtml(m.attachment);
-        return `<div class="monitor-msg-row ${flagged ? "flagged" : ""}" data-mid="${m.id}">
+        const flagged   = m.is_flagged || m.flag_count > 0;
+        const isDeleted = m.is_deleted;
+        const isEdited  = m.is_edited && !isDeleted;
+        const bodyText  = m.body || "";
+
+        let displayBody = "";
+        if (isDeleted) {
+          displayBody = `<div class="monitor-msg-deleted">🚫 This message was deleted</div>`;
+        } else if (bodyText) {
+          const escaped = highlight
+            ? escapeHtml(bodyText).replace(
+                new RegExp(`(${escapeRegex(highlight)})`, "gi"),
+                `<mark>$1</mark>`,
+              )
+            : escapeHtml(bodyText);
+          displayBody = `<div class="monitor-msg-body">${escaped}</div>`;
+        }
+
+        const attachHtml = isDeleted ? "" : buildAttachmentHtml(m.attachment);
+        const editedLabel = isEdited
+          ? `<span class="monitor-msg-edited" title="Edited at ${escapeHtml(m.edited_at || "")}">✏️ edited</span>`
+          : "";
+
+        return `<div class="monitor-msg-row ${flagged ? "flagged" : ""} ${isDeleted ? "deleted" : ""}" data-mid="${m.id}">
           <div class="monitor-msg-sender">
             <span class="monitor-sender-name">${escapeHtml(m.full_name || m.username)}</span>
             <span class="monitor-sender-handle">@${escapeHtml(m.username)}</span>
             <span class="monitor-msg-time">${formatDateTime(m.created_at)}</span>
+            ${editedLabel}
             ${flagged ? `<span class="flag-indicator" title="${escapeHtml(m.flag_reason || "")}">🚩 Flagged</span>` : ""}
           </div>
           ${attachHtml}
-          ${displayBody ? `<div class="monitor-msg-body">${displayBody}</div>` : ""}
+          ${displayBody}
           <div class="monitor-msg-actions">
             ${
               flagged

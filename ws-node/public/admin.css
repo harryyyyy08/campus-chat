@@ -189,8 +189,8 @@
   border-collapse: collapse;
 }
 #userTable thead tr {
-  background: var(--bg-sidebar-hover);
-  border-bottom: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
 }
 #userTable th {
   padding: 10px 16px;
@@ -340,8 +340,8 @@
 }
 
 /* ════════════════════════════════════════════
-       STORAGE (super_admin only)
-       ════════════════════════════════════════════ */
+     STORAGE (super_admin only)
+     ════════════════════════════════════════════ */
 #storagePanel {
   display: flex;
   flex-direction: column;
@@ -402,8 +402,8 @@
   border-collapse: collapse;
 }
 #staleTable thead tr {
-  background: var(--bg-sidebar-hover);
-  border-bottom: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
 }
 #staleTable th {
   padding: 10px 14px;
@@ -442,8 +442,8 @@
 }
 
 /* ════════════════════════════════════════════
-       CHAT MONITORING
-       ════════════════════════════════════════════ */
+     CHAT MONITORING
+     ════════════════════════════════════════════ */
 
 /* ── Search + filter bar ── */
 .monitor-search-bar {
@@ -615,7 +615,7 @@
 .monitor-msg-header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-sidebar-hover);
+  background: rgba(255, 255, 255, 0.02);
   flex-shrink: 0;
 }
 
@@ -662,6 +662,30 @@
 .monitor-msg-row.flagged {
   background: rgba(239, 68, 68, 0.06);
   border-left: 3px solid var(--red);
+}
+.monitor-msg-row.deleted {
+  opacity: 0.6;
+}
+
+/* Deleted message placeholder */
+.monitor-msg-deleted {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 5px 10px;
+  background: var(--bg-sidebar-hover);
+  border-radius: 6px;
+  border: 1px dashed var(--border-strong);
+  display: inline-block;
+  margin: 2px 0;
+}
+
+/* Edited label in monitor view */
+.monitor-msg-edited {
+  font-size: 11px;
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 500;
 }
 
 .monitor-msg-sender {
@@ -831,7 +855,7 @@
   color: var(--text-secondary);
   line-height: 1.6;
   padding: 10px 14px;
-  background: var(--bg-input);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-md);
   margin-bottom: 8px;
   word-break: break-word;

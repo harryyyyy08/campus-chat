@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Main API Router & Entry Point
  * 
@@ -28,12 +29,16 @@
  * Flow: Request → Route matching → Controller logic → JSON response
  */
 
+
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/helpers.php";
 require_once __DIR__ . "/jwt.php";
 require_once __DIR__ . "/auth.php";
 
-header("Access-Control-Allow-Origin: http://localhost:3001");
+// Allow requests from any local network host (localhost or LAN IP)
+$origin = $_SERVER["HTTP_ORIGIN"] ?? "";
+$allowed = preg_match('/^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/', $origin);
+if ($allowed) header("Access-Control-Allow-Origin: " . $origin);
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");

@@ -41,8 +41,10 @@
              file & image attachments
    ════════════════════════════════════════════════════════════════════════════════════ */
 
-const API_BASE = "http://localhost/campus-chat/api/index.php";
-const WS_BASE = "http://localhost:3001";
+// Dynamically use the server's IP/hostname — works for both localhost and LAN access
+const _serverHost = window.location.hostname;
+const API_BASE = `http://${_serverHost}/campus-chat/api/index.php`;
+const WS_BASE = `http://${_serverHost}:3001`;
 
 // ════════════════════════════════════════════
 // THEME
@@ -186,24 +188,17 @@ function isImageMime(mime) {
 // Allows <img src="..."> to work without fetch + Blob — no membership issues.
 function protectedImgUrl(url) {
   const absUrl = toAbsoluteUrl(url);
-  return (
-    absUrl +
-    (absUrl.includes("?") ? "&" : "?") +
-    "token=" +
-    encodeURIComponent(token)
-  );
+  return absUrl + (absUrl.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
 }
 
 // Load a protected image by setting src to a ?token= URL directly.
 async function loadProtectedImage(imgEl, url) {
   imgEl.src = protectedImgUrl(url);
   return new Promise((resolve, reject) => {
-    imgEl.onload = () => resolve();
+    imgEl.onload  = () => resolve();
     imgEl.onerror = () => {
       const wrap = imgEl.closest(".attach-image-wrap");
-      if (wrap)
-        wrap.innerHTML =
-          '<div class="attach-img-err">Could not load image</div>';
+      if (wrap) wrap.innerHTML = '<div class="attach-img-err">Could not load image</div>';
       reject(new Error("Image load failed: " + url));
     };
   });
@@ -392,27 +387,22 @@ function connectSocket() {
   });
 
   // ── message_edited ──────────────────────────────────────────
-  socket.on(
-    "message_edited",
-    ({ message_id, conversation_id, body, is_edited, edited_at }) => {
-      const row = document.querySelector(
-        `.msgRow[data-msg-id="${message_id}"]`,
-      );
-      if (!row) return;
-      const bubble = row.querySelector(".bubble");
-      if (bubble) bubble.textContent = body;
-      // Add or update "edited" label
-      let editedLabel = row.querySelector(".msg-edited-label");
-      if (!editedLabel) {
-        editedLabel = document.createElement("span");
-        editedLabel.className = "msg-edited-label";
-        row.querySelector(".meta")?.prepend(editedLabel);
-      }
-      editedLabel.textContent = "edited · ";
-      row.dataset.isEdited = "1";
-      row.dataset.body = body;
-    },
-  );
+  socket.on("message_edited", ({ message_id, conversation_id, body, is_edited, edited_at }) => {
+    const row = document.querySelector(`.msgRow[data-msg-id="${message_id}"]`);
+    if (!row) return;
+    const bubble = row.querySelector(".bubble");
+    if (bubble) bubble.textContent = body;
+    // Add or update "edited" label
+    let editedLabel = row.querySelector(".msg-edited-label");
+    if (!editedLabel) {
+      editedLabel = document.createElement("span");
+      editedLabel.className = "msg-edited-label";
+      row.querySelector(".meta")?.prepend(editedLabel);
+    }
+    editedLabel.textContent = "edited · ";
+    row.dataset.isEdited = "1";
+    row.dataset.body = body;
+  });
 
   // ── message_deleted ──────────────────────────────────────────
   socket.on("message_deleted", ({ message_id, conversation_id }) => {
@@ -746,17 +736,17 @@ function buildConversationItem(conv) {
   }
 
   el.innerHTML = `
-                   <div class="conv-avatar ${isGroup ? "group" : ""}">${isGroup ? "👥" : escapeHtml(initials(title))}${dotHtml}</div>
-                   <div class="conv-info">
-                     <div class="conv-name-row">
-                       <span class="conv-name">${escapeHtml(title)}${groupBadge}</span>
-                       <span class="conv-time">${formatTimeShort(lastTime)}</span>
-                     </div>
-                     <div class="conv-preview">
-                       <span class="conv-preview-text">${statusHtml}${escapeHtml(preview)}</span>
-                       ${badgeHtml}
-                     </div>
-                   </div>`;
+                <div class="conv-avatar ${isGroup ? "group" : ""}">${isGroup ? "👥" : escapeHtml(initials(title))}${dotHtml}</div>
+                <div class="conv-info">
+                  <div class="conv-name-row">
+                    <span class="conv-name">${escapeHtml(title)}${groupBadge}</span>
+                    <span class="conv-time">${formatTimeShort(lastTime)}</span>
+                  </div>
+                  <div class="conv-preview">
+                    <span class="conv-preview-text">${statusHtml}${escapeHtml(preview)}</span>
+                    ${badgeHtml}
+                  </div>
+                </div>`;
 }
 
 function refreshConversationItem(conversationId, latestMsg) {
@@ -809,9 +799,9 @@ function renderOnlineStrip() {
     .map((u) => {
       const name = u.full_name || u.username;
       return `<div class="online-avatar" title="${escapeHtml(name)}" onclick="quickChat('${escapeHtml(u.username)}')">
-                     <div class="online-avatar-img"><div class="avatar-circle">${escapeHtml(initials(name))}</div><span class="status-dot"></span></div>
-                     <div class="online-name">${escapeHtml(name.split(" ")[0])}</div>
-                   </div>`;
+                  <div class="online-avatar-img"><div class="avatar-circle">${escapeHtml(initials(name))}</div><span class="status-dot"></span></div>
+                  <div class="online-name">${escapeHtml(name.split(" ")[0])}</div>
+                </div>`;
     })
     .join("");
 }
@@ -858,6 +848,10 @@ function updateChatHeaderStatus() {
 async function openConversation(id) {
   currentConversation = id;
   unreadCounts[id] = 0;
+  // Mobile: show chat pane, hide sidebar
+  if (window.innerWidth <= 600) {
+    document.getElementById("app").classList.add("chat-open");
+  }
   clearAttachmentPreview();
   refreshConversationItem(id);
   setActiveConversationUI(id);
@@ -952,26 +946,26 @@ function renderMessage(msg) {
     if (isImageMime(att.mime_type)) {
       // Inline image — use ?token= URL directly so <img> can load without fetch
       attachHtml = `
-                       <div class="attach-image-wrap" data-imgurl="${escapeHtml(att.url)}" data-imgname="${escapeHtml(att.original_name)}">
-                         <img class="attach-image" src="" alt="${escapeHtml(att.original_name)}"
-                              data-protected="${escapeHtml(att.url)}" />
-                         <div class="attach-img-loading">
-                           <div class="img-spinner"></div>
-                         </div>
-                         <div class="attach-image-overlay">🔍</div>
-                       </div>`;
+                    <div class="attach-image-wrap" data-imgurl="${escapeHtml(att.url)}" data-imgname="${escapeHtml(att.original_name)}">
+                      <img class="attach-image" src="" alt="${escapeHtml(att.original_name)}"
+                           data-protected="${escapeHtml(att.url)}" />
+                      <div class="attach-img-loading">
+                        <div class="img-spinner"></div>
+                      </div>
+                      <div class="attach-image-overlay">🔍</div>
+                    </div>`;
     } else {
       // Document download — use JS download so auth header can be sent
       const icon = fileIcon(att.mime_type);
       attachHtml = `
-                       <div class="attach-doc" onclick="downloadProtectedFile('${escapeHtml(att.url)}','${escapeHtml(att.original_name)}')" style="cursor:pointer;">
-                         <span class="attach-doc-icon">${icon}</span>
-                         <div class="attach-doc-info">
-                           <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
-                           <div class="attach-doc-size">${formatBytes(att.file_size)}</div>
-                         </div>
-                         <span class="attach-doc-dl">⬇</span>
-                       </div>`;
+                    <div class="attach-doc" onclick="downloadProtectedFile('${escapeHtml(att.url)}','${escapeHtml(att.original_name)}')" style="cursor:pointer;">
+                      <span class="attach-doc-icon">${icon}</span>
+                      <div class="attach-doc-info">
+                        <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
+                        <div class="attach-doc-size">${formatBytes(att.file_size)}</div>
+                      </div>
+                      <span class="attach-doc-dl">⬇</span>
+                    </div>`;
     }
   }
 
@@ -981,13 +975,13 @@ function renderMessage(msg) {
     : "";
 
   row.innerHTML = `
-                   ${avatarHtml}
-                   <div class="msg-body">
-                     ${senderLabel}
-                     ${attachHtml}
-                     ${bodyHtml}
-                     <div class="meta"><span>${formatTimeFull(msg.created_at)}</span>${statusHtml}</div>
-                   </div>`;
+                ${avatarHtml}
+                <div class="msg-body">
+                  ${senderLabel}
+                  ${attachHtml}
+                  ${bodyHtml}
+                  <div class="meta"><span>${formatTimeFull(msg.created_at)}</span>${statusHtml}</div>
+                </div>`;
 
   container.appendChild(row);
 
@@ -1006,9 +1000,7 @@ function renderMessage(msg) {
       }
     };
     imgEl.onerror = () => {
-      if (wrap)
-        wrap.innerHTML =
-          '<div class="attach-img-err">Could not load image</div>';
+      if (wrap) wrap.innerHTML = '<div class="attach-img-err">Could not load image</div>';
     };
     imgEl.src = protectedImgUrl(url);
   });
@@ -1045,9 +1037,7 @@ function applyDeletedStyle(row) {
   const msgBody = row.querySelector(".msg-body");
   if (!msgBody) return;
   // Remove attachment and bubble
-  msgBody
-    .querySelectorAll(".attach-image-wrap, .attach-doc, .bubble")
-    .forEach((el) => el.remove());
+  msgBody.querySelectorAll(".attach-image-wrap, .attach-doc, .bubble").forEach(el => el.remove());
   // Add deleted placeholder if not already there
   if (!row.querySelector(".msg-deleted")) {
     const del = document.createElement("div");
@@ -1114,31 +1104,16 @@ function attachMsgContextMenu(row, msg) {
     e.preventDefault();
     if (row.dataset.deleted === "1") return;
     const createdAt = new Date(msg.created_at.replace(" ", "T")).getTime();
-    const withinWindow = Date.now() - createdAt < EDIT_DELETE_WINDOW_MS;
+    const withinWindow = (Date.now() - createdAt) < EDIT_DELETE_WINDOW_MS;
     showMsgContextMenu(e, msg, row, withinWindow);
   };
   row.addEventListener("contextmenu", trigger);
   // Long press for mobile
   let pressTimer;
-  row.addEventListener(
-    "touchstart",
-    () => {
-      pressTimer = setTimeout(
-        () =>
-          trigger({
-            preventDefault: () => {},
-            clientX: 0,
-            clientY: 0,
-            touches: [{ clientX: 0, clientY: 0 }],
-          }),
-        500,
-      );
-    },
-    { passive: true },
-  );
-  row.addEventListener("touchend", () => clearTimeout(pressTimer), {
-    passive: true,
-  });
+  row.addEventListener("touchstart", () => {
+    pressTimer = setTimeout(() => trigger({ preventDefault: () => {}, clientX: 0, clientY: 0, touches: [{ clientX: 0, clientY: 0 }] }), 500);
+  }, { passive: true });
+  row.addEventListener("touchend", () => clearTimeout(pressTimer), { passive: true });
 }
 
 function showMsgContextMenu(e, msg, row, withinWindow) {
@@ -1151,10 +1126,7 @@ function showMsgContextMenu(e, msg, row, withinWindow) {
   if (withinWindow && msg.body && !msg.is_deleted) {
     const editBtn = document.createElement("button");
     editBtn.textContent = "✏️ Edit";
-    editBtn.onclick = () => {
-      menu.remove();
-      startInlineEdit(msg, row);
-    };
+    editBtn.onclick = () => { menu.remove(); startInlineEdit(msg, row); };
     menu.appendChild(editBtn);
   }
 
@@ -1162,10 +1134,7 @@ function showMsgContextMenu(e, msg, row, withinWindow) {
     const delBtn = document.createElement("button");
     delBtn.textContent = "🗑️ Delete";
     delBtn.className = "danger";
-    delBtn.onclick = () => {
-      menu.remove();
-      confirmDeleteMessage(msg, row);
-    };
+    delBtn.onclick = () => { menu.remove(); confirmDeleteMessage(msg, row); };
     menu.appendChild(delBtn);
   }
 
@@ -1184,16 +1153,11 @@ function showMsgContextMenu(e, msg, row, withinWindow) {
 
   // Adjust if off-screen
   const rect = menu.getBoundingClientRect();
-  if (rect.right > window.innerWidth) menu.style.left = x - rect.width + "px";
-  if (rect.bottom > window.innerHeight) menu.style.top = y - rect.height + "px";
+  if (rect.right > window.innerWidth) menu.style.left = (x - rect.width) + "px";
+  if (rect.bottom > window.innerHeight) menu.style.top = (y - rect.height) + "px";
 
   // Close on outside click
-  const close = (ev) => {
-    if (!menu.contains(ev.target)) {
-      menu.remove();
-      document.removeEventListener("click", close);
-    }
-  };
+  const close = (ev) => { if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener("click", close); } };
   setTimeout(() => document.addEventListener("click", close), 0);
 }
 
@@ -1230,42 +1194,32 @@ function startInlineEdit(msg, row) {
 
   saveBtn.onclick = async () => {
     const newBody = textarea.value.trim();
-    if (!newBody || newBody === originalText) {
-      cancel();
-      return;
-    }
+    if (!newBody || newBody === originalText) { cancel(); return; }
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving…";
 
-    socket.emit(
-      "edit_message",
-      {
-        message_id: msg.id,
-        conversation_id: msg.conversation_id,
-        body: newBody,
-      },
-      (ack) => {
-        if (ack?.ok) {
-          // UI update handled by message_edited socket event
-          wrap.remove();
-          bubble.style.display = "";
-        } else {
-          showToast(ack?.error || "Edit failed.");
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Save";
-        }
-      },
-    );
+    socket.emit("edit_message", {
+      message_id: msg.id,
+      conversation_id: msg.conversation_id,
+      body: newBody,
+    }, (ack) => {
+      if (ack?.ok) {
+        // UI update handled by message_edited socket event
+        wrap.remove();
+        bubble.style.display = "";
+      } else {
+        showToast(ack?.error || "Edit failed.");
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save";
+      }
+    });
   };
 
   cancelBtn.onclick = cancel;
 
   // Ctrl+Enter to save, Escape to cancel
   textarea.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && e.ctrlKey) {
-      e.preventDefault();
-      saveBtn.click();
-    }
+    if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); saveBtn.click(); }
     if (e.key === "Escape") cancel();
   });
 
@@ -1280,17 +1234,21 @@ function startInlineEdit(msg, row) {
 
 function confirmDeleteMessage(msg, row) {
   if (!confirm("Delete this message? This cannot be undone.")) return;
-  socket.emit(
-    "delete_message",
-    {
-      message_id: msg.id,
-      conversation_id: msg.conversation_id,
-    },
-    (ack) => {
-      if (!ack?.ok) showToast(ack?.error || "Delete failed.");
-      // UI update handled by message_deleted socket event
-    },
-  );
+  socket.emit("delete_message", {
+    message_id: msg.id,
+    conversation_id: msg.conversation_id,
+  }, (ack) => {
+    if (!ack?.ok) showToast(ack?.error || "Delete failed.");
+    // UI update handled by message_deleted socket event
+  });
+}
+
+// Mobile: go back to conversation list
+function closeChatMobile() {
+  document.getElementById("app").classList.remove("chat-open");
+  currentConversation = null;
+  document.getElementById("chatContent").classList.add("hidden");
+  document.getElementById("emptyState").style.display = "";
 }
 
 function scrollToBottom() {
@@ -1314,13 +1272,13 @@ function ensureLightbox() {
     lb = document.createElement("div");
     lb.id = "lightbox";
     lb.innerHTML = `
-                     <div id="lightboxBackdrop"></div>
-                     <div id="lightboxContent">
-                       <button id="lightboxClose" onclick="closeLightbox()">✕</button>
-                       <div id="lightboxSpinner"><div class="img-spinner"></div></div>
-                       <img id="lightboxImg" src="" alt="" style="display:none;" />
-                       <div id="lightboxName"></div>
-                     </div>`;
+                  <div id="lightboxBackdrop"></div>
+                  <div id="lightboxContent">
+                    <button id="lightboxClose" onclick="closeLightbox()">✕</button>
+                    <div id="lightboxSpinner"><div class="img-spinner"></div></div>
+                    <img id="lightboxImg" src="" alt="" style="display:none;" />
+                    <div id="lightboxName"></div>
+                  </div>`;
     document.body.appendChild(lb);
     document.getElementById("lightboxBackdrop").onclick = closeLightbox;
   }
@@ -1547,10 +1505,10 @@ function renderGroupInfoModal() {
           ? `<button class="member-remove-btn" onclick="removeMember(${m.id})" title="Remove">✕</button>`
           : "";
       return `<div class="group-member-item">
-                     <div class="gm-avatar">${escapeHtml(initials(m.full_name || m.username))}</div>
-                     <div class="gm-info"><span class="gm-name">${escapeHtml(m.full_name || m.username)}${isMe ? " (you)" : ""}</span>${roleBadge}</div>
-                     ${removeBtn}
-                   </div>`;
+                  <div class="gm-avatar">${escapeHtml(initials(m.full_name || m.username))}</div>
+                  <div class="gm-info"><span class="gm-name">${escapeHtml(m.full_name || m.username)}${isMe ? " (you)" : ""}</span>${roleBadge}</div>
+                  ${removeBtn}
+                </div>`;
     })
     .join("");
 }
