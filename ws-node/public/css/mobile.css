@@ -1,0 +1,227 @@
+/* ════════════════════════════════════════════
+   EDIT / DELETE — Context Menu & Inline Edit
+   ════════════════════════════════════════════ */
+
+/* Context menu popup */
+.msg-context-menu {
+  background: var(--bg-modal);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 150px;
+  overflow: hidden;
+  padding: 4px 0;
+}
+.msg-context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--anim);
+}
+.msg-context-menu button:hover {
+  background: var(--bg-sidebar-hover);
+}
+.msg-context-menu button.danger {
+  color: var(--red);
+}
+.msg-context-menu button.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+.msg-context-noaction {
+  padding: 9px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Deleted message placeholder */
+.msg-deleted {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 6px 12px;
+  background: var(--bg-sidebar-hover);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+  display: inline-block;
+}
+
+/* Edited label in message meta */
+.msg-edited-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-right: 2px;
+}
+
+/* Inline edit textarea */
+.msg-edit-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+  width: 100%;
+  max-width: 400px;
+}
+.msg-edit-input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(26, 108, 245, 0.12);
+}
+.msg-edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.msg-edit-save {
+  padding: 5px 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--anim);
+}
+.msg-edit-save:hover {
+  opacity: 0.88;
+}
+.msg-edit-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.msg-edit-cancel {
+  padding: 5px 14px;
+  background: var(--bg-sidebar-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--anim);
+}
+.msg-edit-cancel:hover {
+  background: var(--bg-active);
+}
+
+/* Direct chat search dropdown — reuses group search styling */
+.search-results-dropdown {
+  background: var(--bg-modal);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+/* ════════════════════════════════════════════
+   PWA / MOBILE LAYOUT
+   Breakpoint: 900px para suportahan ang mas
+   malalaking phone screens
+   ════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  /* Safe area para sa notch/home bar */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Ang #app ay mag-stack ng sidebar at chat nang vertical */
+  #app {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Sidebar = full screen sa mobile */
+  #sidebar {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100% !important;
+    height: 100dvh;
+    z-index: 10;
+    border-right: none;
+    transition: transform 0.25s ease;
+    transform: translateX(0);
+  }
+
+  /* Chat pane = nakatago by default sa mobile */
+  #chat {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100dvh;
+    z-index: 20;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+
+  /* Kapag nag-open ng conversation — chat pane ay slide-in */
+  #app.chat-open #chat {
+    transform: translateX(0);
+  }
+
+  /* Empty state — itago sa mobile kapag walang chat-open */
+  #app:not(.chat-open) #emptyState {
+    display: none !important;
+  }
+
+  /* Sidebar collapse button — itago sa mobile (hindi kailangan) */
+  #sidebarCollapseBtn {
+    display: none;
+  }
+
+  /* Back button sa chat header — ipakita sa mobile */
+  #mobileBackBtn {
+    display: flex !important;
+  }
+
+  /* Input bar — may padding para sa home bar ng phone */
+  #inputBar {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  /* Mas malaking tap targets para sa mobile */
+  .icon-btn {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  /* Prevent text selection (feels more app-like) */
+  .sidebar-title, .conv-name, .tab-btn, .icon-btn, .btn-primary {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Desktop — itago ang mobile back button */
+@media (min-width: 901px) {
+  #mobileBackBtn {
+    display: none !important;
+  }
+}

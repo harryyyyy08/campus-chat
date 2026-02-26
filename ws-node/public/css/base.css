@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════
+   CampusChat — chat.css
+   ═══════════════════════════════════════════ */
+
+/* ── Dark Theme (default) ── */
+:root,
+[data-theme="dark"] {
+  --bg-base: #0f1117;
+  --bg-sidebar: #161b26;
+  --bg-sidebar-hover: #1e2535;
+  --bg-active: #1a2a3f;
+  --bg-chat: #12161f;
+  --bg-bubble-in: #1e2535;
+  --bg-bubble-out: #1a6cf5;
+  --bg-input: #1e2535;
+  --bg-modal: #1b2030;
+
+  --accent: #1a6cf5;
+  --accent-soft: rgba(26, 108, 245, 0.15);
+  --accent-glow: rgba(26, 108, 245, 0.35);
+  --green: #22c55e;
+  --red: #ef4444;
+
+  --text-primary: #f0f2f7;
+  --text-secondary: #8b95a8;
+  --text-muted: #4b5566;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  --toast-bg: #1e2535;
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg-base: #f0f4f9;
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-hover: #f0f4f9;
+  --bg-active: #deeafc;
+  --bg-chat: #f7f9fc;
+  --bg-bubble-in: #ffffff;
+  --bg-bubble-out: #1a6cf5;
+  --bg-input: #f0f4f9;
+  --bg-modal: #ffffff;
+
+  --accent: #1a6cf5;
+  --accent-soft: rgba(26, 108, 245, 0.1);
+  --accent-glow: rgba(26, 108, 245, 0.25);
+  --green: #16a34a;
+  --red: #dc2626;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: rgba(0, 0, 0, 0.07);
+  --border-strong: rgba(0, 0, 0, 0.12);
+
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+  --toast-bg: #1e293b;
+}
+
+:root {
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --sidebar-w: 300px;
+  --anim: 200ms ease;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 99px;
+}

@@ -1,0 +1,101 @@
+/* ════════════════════════════════════════════
+     STORAGE (super_admin only)
+     ════════════════════════════════════════════ */
+#storagePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.storage-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px;
+  min-width: 140px;
+  flex: 1;
+}
+.stat-card.warn {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.06);
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+.stat-card.warn .stat-value {
+  color: #f59e0b;
+}
+
+.storage-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#staleTableWrap {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+#staleTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+#staleTable thead tr {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
+}
+#staleTable th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+#staleTable td {
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+#staleTable tbody tr:last-child td {
+  border-bottom: none;
+}
+#staleTable tbody tr:hover td {
+  background: var(--bg-sidebar-hover);
+}
+
+.storage-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(26, 108, 245, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
+}

@@ -46,7 +46,13 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="chat.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/login.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/chat-area.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/attachments.css" />
+    <link rel="stylesheet" href="css/mobile.css" />
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
@@ -488,16 +494,13 @@
             ✕
           </button>
         </div>
-        <div class="modal-label">Search by name or username</div>
+        <div class="modal-label">Username</div>
         <input
           class="modal-input"
           id="newChatUsername"
           type="text"
-          placeholder="Type a name or @username…"
-          oninput="searchUsersForDirect(this.value)"
-          autocomplete="off"
+          placeholder="Enter username to chat with…"
         />
-        <div id="directSearchResults" class="search-results-dropdown hidden"></div>
         <div class="modal-actions">
           <button class="btn-ghost" onclick="closeModal('newChatModal')">
             Cancel
@@ -594,7 +597,17 @@
     </div>
 
     <div id="toast"></div>
-    <script src="app.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/messages.js"></script>
+    <script src="js/edit-delete.js"></script>
+    <script src="js/lightbox.js"></script>
+    <script src="js/conversations.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/socket.js"></script>
+    <script src="js/direct-chat.js"></script>
+    <script src="js/groups.js"></script>
+    <script src="js/auth.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
