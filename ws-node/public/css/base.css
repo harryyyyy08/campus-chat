@@ -106,3 +106,7 @@ body {
   background: var(--text-muted);
   border-radius: 99px;
 }
+
+
+/* Utility */
+.hidden { display: none !important; }

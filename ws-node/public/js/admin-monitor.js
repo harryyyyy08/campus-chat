@@ -88,7 +88,19 @@ function showToast(msg) {
             el.classList.toggle("active", Number(el.dataset.cid) === cid),
           );
 
-        const pane = document.getElementById("monitorMsgPane");
+        // On mobile — show message modal instead of side pane
+        const isMobile = window.innerWidth <= 900;
+        let pane;
+        if (isMobile) {
+          const modal = document.getElementById("monitorMsgModal");
+          const modalPane = document.getElementById("monitorMsgModalPane");
+          modal.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
+          pane = modalPane;
+        } else {
+          pane = document.getElementById("monitorMsgPane");
+        }
+
         const conv = allConversations.find((c) => c.id === cid);
         const isGroup = conv?.type === "group";
         const title = isGroup
@@ -134,17 +146,18 @@ function showToast(msg) {
         listEl.scrollTop = listEl.scrollHeight;
       }
 
-      // Convert regular uploads URL to admin uploads URL
+      // Keep original uploads URL — /uploads/ endpoint works with admin token too
+      // /admin/uploads/ path gets blocked by browser privacy tools (Brave shields etc)
       function toAdminFileUrl(url) {
         if (!url) return url;
-        // Rewrite /uploads/filename to /admin/uploads/filename
-        return url.replace(/\/uploads\//, "/admin/uploads/");
+        return url; // Use as-is — no rewrite needed
       }
 
       // Fetch a file as blob using admin token (for images in monitor view)
       const adminBlobCache = new Map();
       async function loadAdminImage(imgEl, url) {
-        const absUrl = "http://localhost" + url;
+        // Use dynamic hostname — works for both localhost and LAN IP access
+        const absUrl = window.location.protocol + "//" + window.location.hostname + url;
         if (adminBlobCache.has(absUrl)) {
           imgEl.src = adminBlobCache.get(absUrl);
           return;
@@ -531,3 +544,39 @@ function showToast(msg) {
       function escapeRegex(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
+// ── Mobile monitor modal close ────────────────────────────────────
+function closeMonitorModal() {
+  const modal = document.getElementById("monitorMsgModal");
+  if (modal) modal.classList.add("hidden");
+  document.body.style.overflow = "";
+  currentMonitorCid = null;
+  document.querySelectorAll(".monitor-conv-item").forEach(el => el.classList.remove("active"));
+}
+
+// ── Admin hamburger menu ──────────────────────────────────────────
+function toggleAdminMenu() {
+  const tabs = document.getElementById("adminNavTabs");
+  const overlay = document.getElementById("adminNavOverlay");
+  const btn = document.getElementById("adminHamburger");
+  const isOpen = tabs.classList.contains("mobile-open");
+  if (isOpen) {
+    tabs.classList.remove("mobile-open");
+    overlay.classList.remove("active");
+    btn.classList.remove("open");
+  } else {
+    tabs.classList.add("mobile-open");
+    overlay.classList.add("active");
+    btn.classList.add("open");
+  }
+}
+
+function closeAdminMenu() {
+  document.getElementById("adminNavTabs")?.classList.remove("mobile-open");
+  document.getElementById("adminNavOverlay")?.classList.remove("active");
+  document.getElementById("adminHamburger")?.classList.remove("open");
+}
+
+// Close menu when tab is clicked on mobile
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".admin-tab")) closeAdminMenu();
+});

@@ -50,10 +50,12 @@ async function initApp() {
     myUser.full_name || myUser.username,
   );
 
+  window.myRole = myUser.role || "student";
   connectSocket();
   setupInputListeners();
   await loadUnreadCounts();
   await loadConversations();
+  loadRequestCount();
 }
 
 // ════════════════════════════════════════════

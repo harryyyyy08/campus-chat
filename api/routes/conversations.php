@@ -132,7 +132,7 @@ if ($method === "GET" && $path === "/conversations/unread") {
 // ── GET /conversations ───────────────────────────────────────────
 if ($method === "GET" && $path === "/conversations") {
   $claims = require_auth(); $pdo = db(); $user_id = (int)$claims["sub"];
-  $stmt = $pdo->prepare("SELECT c.id AS conversation_id, c.type, c.name, MAX(m.created_at) AS last_message_time FROM conversations c JOIN conversation_members cm ON cm.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id WHERE cm.user_id = ? GROUP BY c.id, c.type, c.name ORDER BY last_message_time DESC, c.id DESC");
+  $stmt = $pdo->prepare("SELECT c.id AS conversation_id, c.type, c.name, COALESCE(c.is_request, 0) AS is_request, MAX(m.created_at) AS last_message_time FROM conversations c JOIN conversation_members cm ON cm.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id WHERE cm.user_id = ? GROUP BY c.id, c.type, c.name ORDER BY last_message_time DESC, c.id DESC");
   $stmt->execute([$user_id]); $convs = $stmt->fetchAll();
   foreach ($convs as &$c) {
     $cid = (int)$c["conversation_id"]; $c["conversation_id"] = $cid;
@@ -144,6 +144,150 @@ if ($method === "GET" && $path === "/conversations") {
     $lstmt->execute([$cid]); $last = $lstmt->fetch();
     if ($last) { $last["id"] = (int)$last["id"]; $last["sender_id"] = (int)$last["sender_id"]; $last["has_attachment"] = !empty($last["attachment_id"]); }
     $c["last_message"] = $last ?: null;
+    $c["is_request"] = (bool)($c["is_request"] ?? false);
+    // If pending request, fetch request metadata
+    if ($c["is_request"]) {
+      $rq = $pdo->prepare("SELECT id AS request_id, requester_id, recipient_id, status FROM message_requests WHERE conversation_id = ? LIMIT 1");
+      $rq->execute([$cid]); $rdata = $rq->fetch();
+      if ($rdata) {
+        $c["request_id"]    = (int)$rdata["request_id"];
+        $c["requester_id"]  = (int)$rdata["requester_id"];
+        $c["recipient_id"]  = (int)$rdata["recipient_id"];
+        $c["request_status"] = $rdata["status"];
+      }
+    }
   }
   json_response(["conversations" => $convs]);
+}
+
+// ── POST /conversations/request ──────────────────────────────────
+// Send a message request (student-to-student only, no existing conv)
+if ($method === "POST" && $path === "/conversations/request") {
+  $claims = require_auth(); $pdo = db(); $in = json_input();
+  $me_id  = (int)$claims["sub"];
+  $body   = trim((string)($in["body"] ?? ""));
+  $other_username = trim((string)($in["other_username"] ?? ""));
+  if ($other_username === "" || $body === "") json_response(["error" => "other_username and body required"], 400);
+
+  $stmt = $pdo->prepare("SELECT id, role FROM users WHERE id = ?");
+  $stmt->execute([$me_id]); $me = $stmt->fetch();
+  $stmt = $pdo->prepare("SELECT id, role FROM users WHERE username = ? AND status = 'active'");
+  $stmt->execute([$other_username]); $other = $stmt->fetch();
+  if (!$other) json_response(["error" => "User not found"], 404);
+  $other_id = (int)$other["id"];
+  if ($other_id === $me_id) json_response(["error" => "Cannot send request to yourself"], 400);
+
+  // Faculty/admin skip the request system
+  if (in_array($me["role"], ["faculty","admin","super_admin"]) ||
+      in_array($other["role"], ["faculty","admin","super_admin"])) {
+    json_response(["error" => "Use direct chat for faculty/admin conversations"], 400);
+  }
+
+  // Check if direct conversation already exists
+  $stmt = $pdo->prepare("SELECT c.id FROM conversations c
+    JOIN conversation_members cm1 ON cm1.conversation_id = c.id AND cm1.user_id = ?
+    JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id = ?
+    WHERE c.type = 'direct' LIMIT 1");
+  $stmt->execute([$me_id, $other_id]); $existing = $stmt->fetchColumn();
+  if ($existing) json_response(["error" => "Already chatting — use direct message.", "conversation_id" => (int)$existing], 409);
+
+  // Existing pending request?
+  $stmt = $pdo->prepare("SELECT id, status FROM message_requests WHERE requester_id = ? AND recipient_id = ?");
+  $stmt->execute([$me_id, $other_id]); $req = $stmt->fetch();
+  if ($req && $req["status"] === "pending") json_response(["error" => "You already have a pending request to this user"], 409);
+
+  $pdo->beginTransaction();
+  try {
+    $pdo->prepare("INSERT INTO conversations (type, is_request) VALUES ('direct', 1)")->execute();
+    $cid = (int)$pdo->lastInsertId();
+    $ins = $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')");
+    $ins->execute([$cid, $me_id]); $ins->execute([$cid, $other_id]);
+
+    if ($req) {
+      $pdo->prepare("UPDATE message_requests SET conversation_id = ?, status = 'pending', updated_at = NOW() WHERE id = ?")->execute([$cid, $req["id"]]);
+      $req_id = $req["id"];
+    } else {
+      $pdo->prepare("INSERT INTO message_requests (conversation_id, requester_id, recipient_id, status) VALUES (?, ?, ?, 'pending')")->execute([$cid, $me_id, $other_id]);
+      $req_id = (int)$pdo->lastInsertId();
+    }
+
+    $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, body, status) VALUES (?, ?, ?, 'sent')")->execute([$cid, $me_id, $body]);
+    $pdo->commit();
+    json_response(["request_id" => $req_id, "conversation_id" => $cid, "sent" => true], 201);
+  } catch (Exception $e) { $pdo->rollBack(); json_response(["error" => $e->getMessage()], 500); }
+}
+
+// ── GET /conversations/requests ──────────────────────────────────
+if ($method === "GET" && $path === "/conversations/requests") {
+  $claims = require_auth(); $pdo = db(); $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("
+    SELECT mr.id AS request_id, mr.conversation_id, mr.status, mr.created_at,
+           u.id AS requester_id, u.username, u.full_name,
+           (SELECT body FROM messages WHERE conversation_id = mr.conversation_id ORDER BY id DESC LIMIT 1) AS preview_message
+    FROM message_requests mr
+    JOIN users u ON u.id = mr.requester_id
+    WHERE mr.recipient_id = ? AND mr.status = 'pending'
+    ORDER BY mr.created_at DESC");
+  $stmt->execute([$user_id]);
+  $requests = $stmt->fetchAll();
+  foreach ($requests as &$r) {
+    $r["request_id"] = (int)$r["request_id"];
+    $r["conversation_id"] = (int)$r["conversation_id"];
+    $r["requester_id"] = (int)$r["requester_id"];
+  }
+  json_response(["requests" => $requests]);
+}
+
+// ── POST /conversations/requests/{id}/accept ─────────────────────
+if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/accept$#', $path, $m)) {
+  $claims = require_auth(); $pdo = db();
+  $req_id = (int)$m[1]; $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT * FROM message_requests WHERE id = ? AND recipient_id = ? AND status = 'pending'");
+  $stmt->execute([$req_id, $user_id]); $req = $stmt->fetch();
+  if (!$req) json_response(["error" => "Request not found"], 404);
+  $pdo->beginTransaction();
+  try {
+    $pdo->prepare("UPDATE conversations SET is_request = 0 WHERE id = ?")->execute([$req["conversation_id"]]);
+    $pdo->prepare("UPDATE message_requests SET status = 'accepted', updated_at = NOW() WHERE id = ?")->execute([$req_id]);
+    $pdo->commit();
+    json_response(["accepted" => true, "conversation_id" => (int)$req["conversation_id"], "requester_id" => (int)$req["requester_id"]]);
+  } catch (Exception $e) { $pdo->rollBack(); json_response(["error" => $e->getMessage()], 500); }
+}
+
+// ── POST /conversations/requests/{id}/decline ────────────────────
+if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/decline$#', $path, $m)) {
+  $claims = require_auth(); $pdo = db();
+  $req_id = (int)$m[1]; $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT * FROM message_requests WHERE id = ? AND recipient_id = ? AND status = 'pending'");
+  $stmt->execute([$req_id, $user_id]); $req = $stmt->fetch();
+  if (!$req) json_response(["error" => "Request not found"], 404);
+  $pdo->beginTransaction();
+  try {
+    $pdo->prepare("UPDATE message_requests SET status = 'declined', updated_at = NOW() WHERE id = ?")->execute([$req_id]);
+    $pdo->prepare("DELETE FROM conversation_members WHERE conversation_id = ?")->execute([$req["conversation_id"]]);
+    $pdo->prepare("DELETE FROM messages WHERE conversation_id = ?")->execute([$req["conversation_id"]]);
+    $pdo->prepare("DELETE FROM conversations WHERE id = ?")->execute([$req["conversation_id"]]);
+    $pdo->commit();
+    json_response(["declined" => true]);
+  } catch (Exception $e) { $pdo->rollBack(); json_response(["error" => $e->getMessage()], 500); }
+}
+
+// ── GET /conversations/requests/count ────────────────────────────
+if ($method === "GET" && $path === "/conversations/requests/count") {
+  $claims = require_auth(); $pdo = db(); $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT COUNT(*) FROM message_requests WHERE recipient_id = ? AND status = 'pending'");
+  $stmt->execute([$user_id]);
+  json_response(["count" => (int)$stmt->fetchColumn()]);
+}
+
+// ── GET /conversations/is-request ────────────────────────────────
+// Lightweight check used by Node.js server before marking delivered
+if ($method === "GET" && $path === "/conversations/is-request") {
+  require_auth(); $pdo = db();
+  $cid = (int)($_GET["id"] ?? 0);
+  if (!$cid) json_response(["is_request" => false]);
+  $stmt = $pdo->prepare("SELECT COALESCE(is_request, 0) AS is_request FROM conversations WHERE id = ?");
+  $stmt->execute([$cid]);
+  $row = $stmt->fetch();
+  json_response(["is_request" => $row ? (bool)$row["is_request"] : false]);
 }

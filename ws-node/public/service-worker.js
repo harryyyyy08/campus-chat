@@ -4,8 +4,6 @@ const CACHE_NAME = "campuschat-v1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
-  "/chat.css",
-  "/app.js",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -14,7 +12,10 @@ const STATIC_ASSETS = [
 // ── Install: cache static assets ─────────────────────────────────
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      // Use individual adds so one 404 doesn't break the whole cache
+      Promise.allSettled(STATIC_ASSETS.map((url) => cache.add(url)))
+    )
   );
   self.skipWaiting();
 });

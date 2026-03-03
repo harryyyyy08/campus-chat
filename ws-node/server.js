@@ -1,35 +1,3 @@
-/**
- * WebSocket Real-Time Communication Server
- * 
- * Purpose: Enables real-time messaging, typing indicators, and online presence
- * Type: Node.js Express + Socket.IO Server
- * 
- * Features:
- * - JWT-authenticated WebSocket connections
- * - Real-time message broadcasting to conversation members
- * - Typing indicators (shows "User is typing...")
- * - Online presence tracking with user list
- * - Message read receipt updates
- * - Conversation joining/leaving
- * 
- * Events Handled:
- * - connect - Authenticate user and load their conversations
- * - disconnect - Remove user from online list
- * - send_message - Broadcast message to conversation members
- * - typing_start/typing_stop - Notify members of typing status
- * - join_conversation - Subscribe user to conversation events
- * - leave_conversation - Unsubscribe user from conversation
- * - mark_read - Update message read status and broadcast
- * 
- * Configuration:
- * - PORT: 3001 (WebSocket server)
- * - JWT_SECRET: Must match api/config.php for token verification
- * - PHP_API_BASE: Backend API URL for fetching conversation members
- * 
- * Architecture: Maintains in-memory maps of online users and conversation subscriptions
- * Deployment: Run as separate Node.js process alongside PHP Apache server
- */
-
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -172,7 +140,9 @@ io.on("connection", (socket) => {
           })
         : [];
 
-      if (others.length > 0) {
+      // Only mark delivered if conversation is NOT a pending request
+      // PHP already tells us this in data.is_pending_request
+      if (others.length > 0 && !data.is_pending_request) {
         io.to(`user:${userId}`).emit("message_status", {
           message_id: msg.id,
           conversation_id,
@@ -187,55 +157,93 @@ io.on("connection", (socket) => {
   });
 
   // ── edit_message ──────────────────────────────────────────────
-  socket.on(
-    "edit_message",
-    async ({ message_id, conversation_id, body }, ack) => {
-      const mid = Number(message_id);
-      const cid = Number(conversation_id);
-      if (!mid || !cid || !body?.trim()) {
-        if (ack)
-          ack({
-            ok: false,
-            error: "message_id, conversation_id, and body required",
-          });
+  socket.on("edit_message", async ({ message_id, conversation_id, body }, ack) => {
+    const mid = Number(message_id);
+    const cid = Number(conversation_id);
+    if (!mid || !cid || !body?.trim()) {
+      if (ack) ack({ ok: false, error: "message_id, conversation_id, and body required" });
+      return;
+    }
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ body: body.trim() }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (ack) ack({ ok: false, error: data?.error || "Edit failed" });
         return;
       }
-      try {
-        const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ body: body.trim() }),
-        });
-        const data = await resp.json();
-        if (!resp.ok) {
-          if (ack) ack({ ok: false, error: data?.error || "Edit failed" });
-          return;
-        }
-        // Broadcast edit to all members of the conversation
-        io.to(`conv:${cid}`).emit("message_edited", {
-          message_id: mid,
-          conversation_id: cid,
-          body: data.body,
-          is_edited: true,
-          edited_at: data.edited_at,
-        });
-        if (ack) ack({ ok: true });
-      } catch (err) {
-        if (ack) ack({ ok: false, error: err.message });
-      }
-    },
-  );
+      // Broadcast edit to all members of the conversation
+      io.to(`conv:${cid}`).emit("message_edited", {
+        message_id: mid,
+        conversation_id: cid,
+        body: data.body,
+        is_edited: true,
+        edited_at: data.edited_at,
+      });
+      if (ack) ack({ ok: true });
+    } catch (err) {
+      if (ack) ack({ ok: false, error: err.message });
+    }
+  });
+
+  // ── react_message ────────────────────────────────────────────
+  socket.on("react_message", async ({ message_id, conversation_id, emoji }, ack) => {
+    const mid = Number(message_id);
+    const cid = Number(conversation_id);
+    if (!mid || !cid || !emoji) {
+      if (ack) ack({ ok: false, error: "message_id, conversation_id, emoji required" });
+      return;
+    }
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/messages/${mid}/react`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ emoji }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "React failed" }); return; }
+      io.to(`conv:${cid}`).emit("message_reacted", {
+        message_id: mid,
+        conversation_id: cid,
+        reactions: data.reactions,
+        my_reactions: data.my_reactions,
+        reactor_id: userId,
+      });
+      if (ack) ack({ ok: true });
+    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
+  });
+
+  // ── hide_message (delete for me) ──────────────────────────────
+  socket.on("hide_message", async ({ message_id, conversation_id }, ack) => {
+    const mid = Number(message_id);
+    const cid = Number(conversation_id);
+    if (!mid || !cid) { if (ack) ack({ ok: false, error: "message_id and conversation_id required" }); return; }
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ for_me: true }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Hide failed" }); return; }
+      // Only emit to THIS user's socket — not to everyone
+      io.to(`user:${userId}`).emit("message_hidden", { message_id: mid, conversation_id: cid });
+      if (ack) ack({ ok: true });
+    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
+  });
 
   // ── delete_message ────────────────────────────────────────────
   socket.on("delete_message", async ({ message_id, conversation_id }, ack) => {
     const mid = Number(message_id);
     const cid = Number(conversation_id);
     if (!mid || !cid) {
-      if (ack)
-        ack({ ok: false, error: "message_id and conversation_id required" });
+      if (ack) ack({ ok: false, error: "message_id and conversation_id required" });
       return;
     }
     try {
@@ -328,6 +336,48 @@ io.on("connection", (socket) => {
     if (!cid) return;
     socket.leave(`conv:${cid}`);
     io.to(`conv:${cid}`).emit("group_updated", { conversation_id: cid });
+  });
+
+  // ── message_request_sent ─────────────────────────────────────
+  // Notify recipient that someone sent them a request
+  socket.on("message_request_sent", async ({ conversation_id, request_id }) => {
+    const cid = Number(conversation_id);
+    if (!cid) return;
+    // Join sender to the pending conversation room
+    socket.join(`conv:${cid}`);
+    // Get recipient info from PHP to notify them
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/conversations/requests/count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Fetch recipient user id from the conversation
+      const convResp = await fetch(`${PHP_API_BASE}/conversations/requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // We notify the recipient directly using PHP data
+      // Find which user is the recipient from conversation members
+      const membResp = await fetch(`${PHP_API_BASE}/conversations/${cid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => null);
+    } catch {}
+    // Simple approach: emit to the conversation room — recipient will be in it
+    io.to(`conv:${cid}`).emit("new_message_request", {
+      request_id,
+      from_name: socket.user.username,
+      conversation_id: cid,
+    });
+  });
+
+  // ── request_accepted ──────────────────────────────────────────
+  // Recipient accepted — notify sender
+  socket.on("request_accepted", ({ conversation_id, requester_id }) => {
+    const cid = Number(conversation_id);
+    const rid = Number(requester_id);
+    if (!cid || !rid) return;
+    // Add both users to the conversation room
+    joinUserToRoom(rid, `conv:${cid}`);
+    // Notify sender their request was accepted
+    io.to(`user:${rid}`).emit("request_accepted", { conversation_id: cid });
   });
 
   // ── disconnect ────────────────────────────────────────────────

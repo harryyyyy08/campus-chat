@@ -26,9 +26,11 @@
   outline: none;
   transition: border-color var(--anim);
 }
+
 .monitor-search-bar .admin-search-wrap input:focus {
   border-color: var(--accent);
 }
+
 .monitor-search-bar .admin-search-wrap input::placeholder {
   color: var(--text-muted);
 }
@@ -50,10 +52,12 @@
   cursor: pointer;
   transition: all var(--anim);
 }
+
 .filter-btn:hover {
   color: var(--text-primary);
   border-color: var(--accent);
 }
+
 .filter-btn.active {
   background: var(--accent-soft);
   color: var(--accent);
@@ -86,12 +90,15 @@
   cursor: pointer;
   transition: background var(--anim);
 }
+
 .monitor-conv-item:last-child {
   border-bottom: none;
 }
+
 .monitor-conv-item:hover {
   background: var(--bg-sidebar-hover);
 }
+
 .monitor-conv-item.active {
   background: var(--accent-soft);
   border-left: 3px solid var(--accent);
@@ -101,10 +108,12 @@
   font-size: 22px;
   flex-shrink: 0;
 }
+
 .monitor-conv-info {
   flex: 1;
   min-width: 0;
 }
+
 .monitor-conv-title {
   font-size: 13px;
   font-weight: 600;
@@ -117,6 +126,7 @@
   gap: 5px;
   flex-wrap: wrap;
 }
+
 .monitor-conv-meta {
   font-size: 11px;
   color: var(--text-muted);
@@ -143,6 +153,7 @@
   border: 1px solid var(--border);
   flex-shrink: 0;
 }
+
 .conv-type-badge.group {
   background: var(--accent-soft);
   color: var(--accent);
@@ -181,6 +192,7 @@
   font-weight: 700;
   color: var(--text-primary);
 }
+
 .monitor-msg-meta {
   display: flex;
   flex-wrap: wrap;
@@ -210,16 +222,20 @@
   border-bottom: 1px solid var(--border);
   transition: background var(--anim);
 }
+
 .monitor-msg-row:last-child {
   border-bottom: none;
 }
+
 .monitor-msg-row:hover {
   background: var(--bg-sidebar-hover);
 }
+
 .monitor-msg-row.flagged {
   background: rgba(239, 68, 68, 0.06);
   border-left: 3px solid var(--red);
 }
+
 .monitor-msg-row.deleted {
   opacity: 0.6;
 }
@@ -258,17 +274,20 @@
   font-weight: 700;
   color: var(--text-primary);
 }
+
 .monitor-sender-handle {
   font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
+
 .monitor-msg-time {
   font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-mono);
   margin-left: auto;
 }
+
 .flag-indicator {
   font-size: 11px;
   color: var(--red);
@@ -281,6 +300,7 @@
   line-height: 1.5;
   word-break: break-word;
 }
+
 .monitor-msg-body mark {
   background: rgba(245, 158, 11, 0.3);
   color: var(--text-primary);
@@ -304,26 +324,32 @@
   cursor: pointer;
   transition: all var(--anim);
 }
+
 .monitor-btn.flag {
   background: rgba(239, 68, 68, 0.12);
   color: var(--red);
 }
+
 .monitor-btn.flag:hover {
   background: var(--red);
   color: #fff;
 }
+
 .monitor-btn.unflag {
   background: rgba(34, 197, 94, 0.12);
   color: #22c55e;
 }
+
 .monitor-btn.unflag:hover {
   background: #22c55e;
   color: #fff;
 }
+
 .monitor-btn.view {
   background: var(--accent-soft);
   color: var(--accent);
 }
+
 .monitor-btn.view:hover {
   background: var(--accent);
   color: #fff;
@@ -355,9 +381,11 @@
   margin-bottom: 8px;
   transition: border-color var(--anim);
 }
+
 .search-msg-row:hover {
   border-color: var(--accent);
 }
+
 .search-msg-row.flagged {
   border-color: var(--red);
   background: rgba(239, 68, 68, 0.04);
@@ -370,6 +398,7 @@
   margin-bottom: 6px;
   flex-wrap: wrap;
 }
+
 .search-msg-body {
   font-size: 13px;
   color: var(--text-secondary);
@@ -377,6 +406,7 @@
   word-break: break-word;
   margin-bottom: 8px;
 }
+
 .search-msg-body mark {
   background: rgba(245, 158, 11, 0.3);
   color: var(--text-primary);
@@ -394,6 +424,7 @@
   margin-bottom: 10px;
   transition: border-color var(--anim);
 }
+
 .flagged-msg-card:hover {
   border-color: var(--red);
 }
@@ -424,6 +455,7 @@
   margin-bottom: 6px;
   font-style: italic;
 }
+
 .flag-meta {
   font-size: 11px;
   color: var(--text-muted);
@@ -467,10 +499,12 @@
     background var(--anim),
     border-color var(--anim);
 }
+
 .monitor-attach-doc:hover {
   background: var(--bg-active);
   border-color: var(--accent);
 }
+
 .monitor-attach-doc .attach-doc-name {
   font-size: 12px;
   font-weight: 600;
@@ -479,6 +513,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .monitor-attach-doc .attach-doc-size {
   font-size: 10px;
   color: var(--text-muted);

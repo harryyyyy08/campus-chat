@@ -42,6 +42,9 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/login.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/admin-layout.css" />
     <link rel="stylesheet" href="css/admin-storage.css" />
     <link rel="stylesheet" href="css/admin-monitor.css" />
@@ -125,11 +128,14 @@
     <div id="adminApp" class="hidden">
       <div id="adminNav">
         <div class="admin-nav-logo">
+          <button class="admin-hamburger" id="adminHamburger" onclick="toggleAdminMenu()" aria-label="Menu">
+            <span></span><span></span><span></span>
+          </button>
           <span id="adminRoleIcon">🛡️</span>
           <span>CampusChat Admin</span>
           <span id="adminRoleBadge" class="admin-role-badge"></span>
         </div>
-        <div class="admin-nav-tabs">
+        <div class="admin-nav-tabs" id="adminNavTabs">
           <button
             class="admin-tab active"
             data-tab="pending"
@@ -493,9 +499,21 @@
 
     <div id="toast"></div>
 
-        <script src="js/admin-auth.js"></script>
+    <!-- Mobile nav drawer overlay -->
+    <div id="adminNavOverlay" class="admin-nav-overlay" onclick="closeAdminMenu()"></div>
+
+    <!-- Mobile message pane modal -->
+    <div id="monitorMsgModal" class="monitor-msg-modal hidden">
+      <div class="monitor-msg-modal-inner">
+        <div class="monitor-msg-modal-header">
+          <button class="monitor-msg-back" onclick="closeMonitorModal()">← Back</button>
+        </div>
+        <div id="monitorMsgModalPane" class="monitor-msg-modal-pane"></div>
+      </div>
+    </div>
     <script src="js/admin-users.js"></script>
     <script src="js/admin-storage.js"></script>
     <script src="js/admin-monitor.js"></script>
+    <script src="js/admin-auth.js"></script>
   </body>
 </html>

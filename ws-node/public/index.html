@@ -226,6 +226,15 @@
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </button>
+              <button
+                class="icon-btn"
+                title="Message Requests"
+                onclick="openRequestsInbox()"
+                style="position:relative"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span id="requestBadge" class="request-nav-badge hidden">0</span>
+              </button>
             </div>
           </div>
           <div class="search-wrap">
@@ -490,24 +499,45 @@
       <div class="modal-box">
         <div class="modal-title">
           New Direct Chat
-          <button class="modal-close" onclick="closeModal('newChatModal')">
-            ✕
-          </button>
+          <button class="modal-close" onclick="closeModal('newChatModal')">×</button>
         </div>
-        <div class="modal-label">Username</div>
-        <input
-          class="modal-input"
-          id="newChatUsername"
-          type="text"
-          placeholder="Enter username to chat with…"
-        />
+        <div class="modal-label">Find User</div>
+        <div class="member-search-wrap">
+          <input
+            id="newChatUsername"
+            class="modal-input"
+            type="text"
+            placeholder="Search by name or username…"
+            oninput="searchUsersForDirect(this.value)"
+            autocomplete="off"
+          />
+          <div id="directSearchResults" class="user-search-dropdown hidden"></div>
+        </div>
+        <div id="newChatRequestRow" class="hidden">
+          <div class="request-to-label">
+            Sending request to: <span id="newChatSelectedUser" data-username="" data-role="" class="request-to-name"></span>
+          </div>
+          <div class="modal-label" style="margin-top:10px">Your message</div>
+          <textarea id="newChatFirstMsg" class="modal-input" rows="3" placeholder="Write a message to introduce yourself…" style="resize:none;height:80px"></textarea>
+          <div class="request-hint">They need to accept before you can chat.</div>
+        </div>
+        <div id="newChatNormalRow"></div>
         <div class="modal-actions">
-          <button class="btn-ghost" onclick="closeModal('newChatModal')">
-            Cancel
-          </button>
-          <button class="btn-modal-primary" onclick="startChat()">
-            Start Chat
-          </button>
+          <button class="btn-ghost" onclick="closeModal('newChatModal')">Cancel</button>
+          <button class="btn-modal-primary" onclick="startChat()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="requestsModal">
+      <div class="modal-box" style="width:440px;max-width:95vw">
+        <div class="modal-title">
+          Message Requests
+          <button class="modal-close" onclick="closeModal('requestsModal')">×</button>
+        </div>
+        <div id="requestsList"></div>
+        <div class="modal-actions" style="margin-top:8px">
+          <button class="btn-ghost" onclick="closeModal('requestsModal')">Close</button>
         </div>
       </div>
     </div>

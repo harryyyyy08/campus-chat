@@ -102,6 +102,8 @@ function renderMessage(msg) {
   // Store body for edit reference
   row.dataset.body = msg.body || "";
   row.dataset.conversationId = msg.conversation_id;
+  row.dataset.deleted = msg.is_deleted ? "1" : "0";
+  row.dataset.myReactions = JSON.stringify(msg.my_reactions || []);
 
   // Handle deleted messages
   if (msg.is_deleted) {
@@ -120,8 +122,13 @@ function renderMessage(msg) {
     row.dataset.isEdited = "1";
   }
 
-  // Attach context menu to own messages only
-  if (isMe) attachMsgContextMenu(row, msg);
+  // Render reactions if any
+  if (msg.reactions && msg.reactions.length > 0) {
+    renderReactions(row, msg.reactions, msg.my_reactions || []);
+  }
+
+  // Attach context menu to ALL messages (react, delete-for-me, edit/delete for own)
+  attachMsgContextMenu(row, msg);
 
   scrollToBottom();
 }

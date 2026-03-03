@@ -10,7 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="chat.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/login.css" />
+    <link rel="stylesheet" href="css/components.css" />
   </head>
   <body>
     <div id="registerWrap">
@@ -194,7 +196,7 @@
     </style>
 
     <script>
-      const API_BASE = `http://${window.location.hostname}/campus-chat/api/index.php`;
+      const API_BASE = "http://localhost/campus-chat/api/index.php";
 
       async function submitRegistration() {
         const full_name = document.getElementById("reg_full_name").value.trim();
