@@ -75,6 +75,10 @@ function renderMessage(msg) {
                   ${attachHtml}
                   ${bodyHtml}
                   <div class="meta"><span>${formatTimeFull(msg.created_at)}</span>${statusHtml}</div>
+                </div>
+                <div class="msg-hover-actions">
+                  <button class="msg-hover-btn" title="React" onclick="event.stopPropagation()">😊</button>
+                  <button class="msg-hover-btn" title="More actions" onclick="event.stopPropagation()">⋯</button>
                 </div>`;
 
   container.appendChild(row);

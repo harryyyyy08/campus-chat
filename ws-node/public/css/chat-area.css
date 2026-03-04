@@ -360,3 +360,64 @@
   color: var(--text-primary);
   background: var(--bg-input);
 }
+
+/* ════════════════════════════════════════════
+   MESSAGE HOVER ACTION BUTTONS (desktop)
+   ════════════════════════════════════════════ */
+
+.msg-hover-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+/* Show on row hover — desktop only */
+@media (hover: hover) {
+  .msgRow:hover .msg-hover-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Position: right side for "them", left side for "me" */
+.msgRow.me .msg-hover-actions {
+  order: -1; /* appears to the left of the bubble */
+}
+.msgRow.them .msg-hover-actions {
+  order: 2; /* appears to the right of the bubble */
+}
+
+.msg-hover-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-modal);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--anim), transform 80ms;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  line-height: 1;
+  padding: 0;
+}
+
+.msg-hover-btn:hover {
+  background: var(--bg-active);
+  transform: scale(1.1);
+}
+
+/* Hide hover buttons on mobile — long press handles it */
+@media (max-width: 900px) {
+  .msg-hover-actions {
+    display: none;
+  }
+}
