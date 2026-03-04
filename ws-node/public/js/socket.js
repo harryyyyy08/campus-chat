@@ -153,7 +153,14 @@ function connectSocket() {
   });
 
   socket.on("connect_error", (err) => {
-    showToast("Connection error: " + (err?.message || err));
+    const msg = err?.message || String(err);
+    if (msg.toLowerCase().includes("jwt expired") ||
+        msg.toLowerCase().includes("unauthorized") ||
+        msg.toLowerCase().includes("token expired")) {
+      handleTokenExpired();
+    } else {
+      showToast("Connection error: " + msg);
+    }
     console.error(err);
   });
 }
