@@ -26,6 +26,42 @@ function attachMsgContextMenu(row, msg) {
     showMsgContextMenu(e, freshMsg, row);
   };
   row.addEventListener("contextmenu", trigger);
+
+  // ── Hover action buttons (desktop) ──────────────────────────
+  // Wire up after a tick so the DOM is ready
+  setTimeout(() => {
+    const btns = row.querySelectorAll(".msg-hover-btn");
+    if (btns.length >= 2) {
+      const reactBtn = btns[0];
+      const moreBtn  = btns[1];
+      reactBtn.addEventListener("click", (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const freshMsg = {
+          id: Number(row.dataset.msgId),
+          sender_id: Number(row.dataset.msgSenderId),
+          conversation_id: Number(row.dataset.msgConvId),
+          body: row.dataset.msgBody,
+          created_at: row.dataset.msgCreatedAt,
+        };
+        openEmojiPicker(freshMsg, row);
+      });
+      moreBtn.addEventListener("click", (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const freshMsg = {
+          id: Number(row.dataset.msgId),
+          sender_id: Number(row.dataset.msgSenderId),
+          conversation_id: Number(row.dataset.msgConvId),
+          body: row.dataset.msgBody,
+          created_at: row.dataset.msgCreatedAt,
+        };
+        showMsgContextMenu(
+          { preventDefault: () => {}, clientX: e.clientX, clientY: e.clientY },
+          freshMsg, row
+        );
+      });
+    }
+  }, 0);
+
   // Long press for mobile
   let pressTimer;
   row.addEventListener("touchstart", (e) => {
