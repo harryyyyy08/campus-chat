@@ -28,9 +28,10 @@ async function login() {
     myUserId = data.user.id;
     myUser = data.user;
 
-    // Save session to localStorage so page refresh doesn't log out
     localStorage.setItem("cc_token", token);
     localStorage.setItem("cc_user", JSON.stringify(data.user));
+    // Save login time so we can detect expiry client-side
+    localStorage.setItem("cc_login_at", Date.now().toString());
 
     initApp();
   } catch (err) {
@@ -39,7 +40,69 @@ async function login() {
   }
 }
 
-// Shared post-login setup (used by login() and session restore)
+// ════════════════════════════════════════════
+// LOGOUT / SESSION EXPIRED
+// ════════════════════════════════════════════
+
+function logout() {
+  clearInterval(window._tokenCheckInterval);
+  localStorage.removeItem("cc_token");
+  localStorage.removeItem("cc_user");
+  localStorage.removeItem("cc_login_at");
+  if (socket) { socket.disconnect(); socket = null; }
+  token = null; myUserId = null; myUser = null;
+  document.getElementById("app").classList.remove("visible");
+  document.getElementById("login").style.display = "flex";
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
+  document.getElementById("loginError").textContent = "";
+}
+
+function handleTokenExpired() {
+  clearInterval(window._tokenCheckInterval);
+  localStorage.removeItem("cc_token");
+  localStorage.removeItem("cc_user");
+  localStorage.removeItem("cc_login_at");
+  if (socket) { socket.disconnect(); socket = null; }
+  token = null; myUserId = null; myUser = null;
+  document.getElementById("app").classList.remove("visible");
+  document.getElementById("login").style.display = "flex";
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
+  document.getElementById("loginError").textContent = "Your session has expired. Please log in again.";
+}
+
+// Check if API response is a 401 — call this on every fetch
+function checkAuthError(res) {
+  if (res.status === 401) {
+    handleTokenExpired();
+    return true;
+  }
+  return false;
+}
+
+// Periodically check if token is still valid (every 5 minutes)
+function startTokenWatcher(ttlSeconds = 86400) {
+  clearInterval(window._tokenCheckInterval);
+  const loginAt = parseInt(localStorage.getItem("cc_login_at") || "0");
+  if (!loginAt) return;
+
+  window._tokenCheckInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/conversations/unread`, {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (res.status === 401) {
+        handleTokenExpired();
+      }
+    } catch {}
+  }, 5 * 60 * 1000); // check every 5 minutes
+}
+
+// ════════════════════════════════════════════
+// SHARED POST-LOGIN SETUP
+// ════════════════════════════════════════════
+
 async function initApp() {
   document.getElementById("loadingScreen").style.display = "none";
   document.getElementById("login").style.display = "none";
@@ -56,6 +119,7 @@ async function initApp() {
   await loadUnreadCounts();
   await loadConversations();
   loadRequestCount();
+  startTokenWatcher();
 }
 
 // ════════════════════════════════════════════
@@ -66,7 +130,6 @@ async function initApp() {
   const savedUserStr = localStorage.getItem("cc_user");
 
   if (!savedToken || !savedUserStr) {
-    // No saved session — show login
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("login").style.display = "flex";
     return;
@@ -83,11 +146,27 @@ async function initApp() {
     return;
   }
 
-  // Restore session immediately — no network call
-  // If token expired, the first API call will fail and we handle it there
   token = savedToken;
   myUserId = savedUser.id;
   myUser = savedUser;
+
+  // Verify token is still valid before restoring session
+  try {
+    const res = await fetch(`${API_BASE}/conversations/unread`, {
+      headers: { Authorization: "Bearer " + token },
+    });
+    if (res.status === 401) {
+      localStorage.removeItem("cc_token");
+      localStorage.removeItem("cc_user");
+      localStorage.removeItem("cc_login_at");
+      document.getElementById("loadingScreen").style.display = "none";
+      document.getElementById("login").style.display = "flex";
+      document.getElementById("loginError").textContent = "Your session has expired. Please log in again.";
+      return;
+    }
+  } catch {
+    // Network error — still try to restore (offline scenario)
+  }
 
   await initApp();
 })();

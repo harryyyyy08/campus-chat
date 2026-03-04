@@ -26,7 +26,7 @@ return [
   'jwt' => [
     'secret'      => 'CHANGE_ME_use_a_long_random_string_here_at_least_32_chars',  // Token signing key
     'issuer'      => 'campus-chat',                                                 // JWT issuer identifier
-    'ttl_seconds' => 86400,                                                         // Token expiry: 24 hours
+    'ttl_seconds' => 60 * 60 * 24 * 7,                                    // Token expiry: 1 week
   ],
   'ws' => [
     'url' => 'http://YOUR_SERVER_IP:3001',  // WebSocket server URL (update to actual IP)
