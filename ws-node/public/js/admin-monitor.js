@@ -203,42 +203,28 @@ function showToast(msg) {
       function buildAttachmentHtml(att) {
         if (!att) return "";
         const adminUrl = toAdminFileUrl(att.url);
-        const isImage = [
-          "image/jpeg",
-          "image/png",
-          "image/gif",
-          "image/webp",
-        ].includes(att.mime_type);
+        const isImage = ["image/jpeg","image/png","image/gif","image/webp"].includes(att.mime_type);
+        const isVideo = att.is_video || att.mime_type?.startsWith("video/");
         if (isImage) {
           const uid = "adminimg_" + Math.random().toString(36).slice(2);
-          // Load image after render using setTimeout
-          setTimeout(() => {
-            const el = document.getElementById(uid);
-            if (el) loadAdminImage(el, adminUrl);
-          }, 50);
+          setTimeout(() => { const el = document.getElementById(uid); if (el) loadAdminImage(el, adminUrl); }, 50);
           return `<div class="monitor-attach-image-wrap">
-            <img id="${uid}" src="" alt="${escapeHtml(att.original_name)}"
-                 class="monitor-attach-image" />
+            <img id="${uid}" src="" alt="${escapeHtml(att.original_name)}" class="monitor-attach-image" />
           </div>`;
         }
-        // Document
-        const icons = {
-          "application/pdf": "📄",
-          "application/msword": "📝",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            "📝",
-          "application/vnd.ms-excel": "📊",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-            "📊",
-          "application/vnd.ms-powerpoint": "📑",
-          "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-            "📑",
-        };
+        if (isVideo) {
+          return `<div class="monitor-attach-doc" onclick="downloadAdminFile('${escapeHtml(adminUrl)}','${escapeHtml(att.original_name)}')">
+            <span>🎬</span>
+            <div>
+              <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
+              <div class="attach-doc-size">${att.file_size < 1048576 ? (att.file_size/1024).toFixed(1)+" KB" : (att.file_size/1048576).toFixed(1)+" MB"}</div>
+            </div>
+            <span>⬇</span>
+          </div>`;
+        }
+        const icons = {"application/pdf":"📄","application/msword":"📝","application/vnd.openxmlformats-officedocument.wordprocessingml.document":"📝","application/vnd.ms-excel":"📊","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":"📊","application/vnd.ms-powerpoint":"📑","application/vnd.openxmlformats-officedocument.presentationml.presentation":"📑"};
         const icon = icons[att.mime_type] || "📎";
-        const size =
-          att.file_size < 1048576
-            ? (att.file_size / 1024).toFixed(1) + " KB"
-            : (att.file_size / 1048576).toFixed(1) + " MB";
+        const size = att.file_size < 1048576 ? (att.file_size/1024).toFixed(1)+" KB" : (att.file_size/1048576).toFixed(1)+" MB";
         return `<div class="monitor-attach-doc" onclick="downloadAdminFile('${escapeHtml(adminUrl)}','${escapeHtml(att.original_name)}')">
           <span>${icon}</span>
           <div>
@@ -247,6 +233,15 @@ function showToast(msg) {
           </div>
           <span>⬇</span>
         </div>`;
+      }
+
+      // Multi-attachment wrapper — handles attachments[] array or single attachment
+      function buildAttachmentsHtml(msg) {
+        const list = Array.isArray(msg.attachments) && msg.attachments.length
+          ? msg.attachments
+          : msg.attachment ? [msg.attachment] : [];
+        if (!list.length) return "";
+        return list.map(att => buildAttachmentHtml(att)).join("");
       }
 
       function buildMonitorMsgHtml(m, highlight = "") {
@@ -268,7 +263,7 @@ function showToast(msg) {
           displayBody = `<div class="monitor-msg-body">${escaped}</div>`;
         }
 
-        const attachHtml = isDeleted ? "" : buildAttachmentHtml(m.attachment);
+        const attachHtml = isDeleted ? "" : buildAttachmentsHtml(m);
         const editedLabel = isEdited
           ? `<span class="monitor-msg-edited" title="Edited at ${escapeHtml(m.edited_at || "")}">✏️ edited</span>`
           : "";

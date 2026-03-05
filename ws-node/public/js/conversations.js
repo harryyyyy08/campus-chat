@@ -4,28 +4,33 @@
 
 function sendMessage() {
   const input = document.getElementById("messageInput");
-  const text = input.value.trim();
+  const text  = input.value.trim();
+  const atts  = (typeof pendingAttachments !== "undefined" ? pendingAttachments : null) || [];
 
-  if (!text && !pendingAttachment) return;
-  if (!currentConversation) {
-    showToast("Select a conversation first.");
-    return;
-  }
+  if (!text && !atts.length) return;
+  if (!currentConversation) { showToast("Select a conversation first."); return; }
+
+  // Wait for any still-uploading items (no attachment_id yet)
+  const uploading = atts.filter(a => !a.attachment_id);
+  if (uploading.length) { showToast("Please wait — files are still uploading."); return; }
 
   const payload = { conversation_id: currentConversation, body: text };
-  if (pendingAttachment)
-    payload.attachment_id = pendingAttachment.attachment_id;
+  if (atts.length === 1) {
+    payload.attachment_id  = atts[0].attachment_id;   // legacy single
+    payload.attachment_ids = [atts[0].attachment_id];
+  } else if (atts.length > 1) {
+    payload.attachment_ids = atts.map(a => a.attachment_id);
+    payload.attachment_id  = payload.attachment_ids[0];
+  }
 
+  console.log("[sendMessage] payload:", JSON.stringify(payload));
   socket.emit("send_message", payload);
 
   input.value = "";
   input.style.height = "auto";
   clearAttachmentPreview();
   clearTimeout(typingTimer);
-  socket.emit("typing", {
-    conversation_id: currentConversation,
-    is_typing: false,
-  });
+  socket.emit("typing", { conversation_id: currentConversation, is_typing: false });
 }
 
 // ════════════════════════════════════════════
@@ -290,7 +295,9 @@ async function openConversation(id) {
   }
   document.getElementById("groupInfoBtn").classList.toggle("hidden", !isGroup);
 
-  document.getElementById("messages").innerHTML = "";
+  // Fully wipe messages DOM — prevents stale messages from previous session/user
+  const messagesEl = document.getElementById("messages");
+  messagesEl.innerHTML = "";
 
   try {
     const res = await fetch(
@@ -302,6 +309,8 @@ async function openConversation(id) {
       showToast(data.error || "Failed to load messages.");
       return;
     }
+    // Safety check: only render if we're still viewing the same conversation
+    if (currentConversation !== id) return;
     (data.messages || []).forEach(renderMessage);
     scrollToBottom();
     socket.emit("mark_seen", { conversation_id: id });

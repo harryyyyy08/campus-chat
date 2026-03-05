@@ -48,7 +48,7 @@ if ($method === "POST" && $path === "/upload") {
   $upload_err = $file["error"];
 
   if ($upload_err !== UPLOAD_ERR_OK) json_response(["error" => "Upload error code: " . $upload_err], 400);
-  if ($file_size > UPLOAD_MAX_BYTES)  json_response(["error" => "File exceeds 25 MB limit"], 400);
+  if ($file_size > UPLOAD_MAX_BYTES)  json_response(["error" => "File exceeds size limit"], 400);
   if ($file_size === 0)               json_response(["error" => "Empty file"], 400);
 
   $finfo     = new finfo(FILEINFO_MIME_TYPE);
@@ -70,8 +70,9 @@ if ($method === "POST" && $path === "/upload") {
     if (!move_uploaded_file($tmp_path, $dest)) json_response(["error" => "Failed to save file"], 500);
   }
 
-  $pdo->prepare("INSERT INTO attachments (conversation_id, uploader_id, original_name, stored_name, file_hash, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      ->execute([$conversation_id, $uploader_id, $orig_name, $stored_name, $file_hash, $mime_type, $file_size]);
+  $is_video = (int)(strpos($mime_type, 'video/') === 0);
+  $pdo->prepare("INSERT INTO attachments (conversation_id, uploader_id, original_name, stored_name, file_hash, mime_type, file_size, is_video) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      ->execute([$conversation_id, $uploader_id, $orig_name, $stored_name, $file_hash, $mime_type, $file_size, $is_video]);
 
   $attachment_id = (int)$pdo->lastInsertId();
 
@@ -81,6 +82,7 @@ if ($method === "POST" && $path === "/upload") {
     "stored_name"   => $stored_name,
     "mime_type"     => $mime_type,
     "file_size"     => $file_size,
+    "is_video"      => (bool)$is_video,
     "url"           => "/campus-chat/api/index.php/uploads/" . $stored_name,
   ], 201);
 }

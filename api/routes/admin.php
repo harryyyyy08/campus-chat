@@ -127,11 +127,40 @@ if ($method === "GET" && $path === "/admin/conversations/messages") {
     $r["is_flagged"] = $r["flag_count"] > 0;
     $r["is_edited"]  = (bool)$r["is_edited"];
     $r["is_deleted"] = (bool)$r["is_deleted"];
-    $r["attachment"] = null;
+    $r["attachment"]  = null;
+    $r["attachments"] = [];
     if ($r["is_deleted"]) {
       $r["body"] = null; $r["attachment_id"] = null;
     } elseif ($r["attachment_id"]) {
-      $r["attachment"] = ["original_name" => $r["original_name"], "mime_type" => $r["mime_type"], "file_size" => (int)$r["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $r["stored_name"]];
+      // Build single attachment (legacy)
+      $r["attachment"] = [
+        "id"            => (int)$r["attachment_id"],
+        "original_name" => $r["original_name"],
+        "mime_type"     => $r["mime_type"],
+        "file_size"     => (int)$r["file_size"],
+        "is_video"      => str_starts_with((string)$r["mime_type"], "video/"),
+        "url"           => "/campus-chat/api/index.php/uploads/" . $r["stored_name"],
+      ];
+      // Fetch all attachments from message_attachments table
+      try {
+        $ma = $pdo->prepare("SELECT a.id, a.original_name, a.stored_name, a.mime_type, a.file_size, COALESCE(a.is_video,0) AS is_video FROM message_attachments ma JOIN attachments a ON a.id = ma.attachment_id WHERE ma.message_id = ? ORDER BY ma.sort_order ASC");
+        $ma->execute([(int)$r["id"]]);
+        $multi = $ma->fetchAll();
+        if ($multi) {
+          $r["attachments"] = array_map(fn($a) => [
+            "id"            => (int)$a["id"],
+            "original_name" => $a["original_name"],
+            "mime_type"     => $a["mime_type"],
+            "file_size"     => (int)$a["file_size"],
+            "is_video"      => (bool)$a["is_video"],
+            "url"           => "/campus-chat/api/index.php/uploads/" . $a["stored_name"],
+          ], $multi);
+        } else {
+          $r["attachments"] = [$r["attachment"]];
+        }
+      } catch (PDOException $e) {
+        $r["attachments"] = [$r["attachment"]];
+      }
     }
     unset($r["original_name"], $r["mime_type"], $r["file_size"], $r["stored_name"]);
   }

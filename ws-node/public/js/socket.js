@@ -7,6 +7,8 @@ function connectSocket() {
   socket.on("connect", () => socket.emit("who_is_online"));
 
   socket.on("new_message", (msg) => {
+    // DEBUG: log attachments received
+    console.log("[new_message] attachments:", msg.attachments?.length, msg.attachments, "attachment:", msg.attachment);
     if (msg.conversation_id === currentConversation) {
       renderMessage(msg);
       socket.emit("mark_seen", { conversation_id: msg.conversation_id });

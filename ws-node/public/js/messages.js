@@ -33,34 +33,58 @@ function renderMessage(msg) {
       : "";
   const statusHtml = isMe ? statusIcon(msg.status || "sent") : "";
 
-  // Build attachment HTML
+  // Build attachment HTML — supports multiple attachments + video
   let attachHtml = "";
-  if (msg.attachment) {
-    const att = msg.attachment;
-    if (isImageMime(att.mime_type)) {
-      // Inline image — use ?token= URL directly so <img> can load without fetch
-      attachHtml = `
-                    <div class="attach-image-wrap" data-imgurl="${escapeHtml(att.url)}" data-imgname="${escapeHtml(att.original_name)}">
-                      <img class="attach-image" src="" alt="${escapeHtml(att.original_name)}"
-                           data-protected="${escapeHtml(att.url)}" />
-                      <div class="attach-img-loading">
-                        <div class="img-spinner"></div>
-                      </div>
-                      <div class="attach-image-overlay">🔍</div>
-                    </div>`;
-    } else {
-      // Document download — use JS download so auth header can be sent
-      const icon = fileIcon(att.mime_type);
-      attachHtml = `
-                    <div class="attach-doc" onclick="downloadProtectedFile('${escapeHtml(att.url)}','${escapeHtml(att.original_name)}')" style="cursor:pointer;">
-                      <span class="attach-doc-icon">${icon}</span>
-                      <div class="attach-doc-info">
-                        <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
-                        <div class="attach-doc-size">${formatBytes(att.file_size)}</div>
-                      </div>
-                      <span class="attach-doc-dl">⬇</span>
-                    </div>`;
+  const attachList = msg.attachments?.length ? msg.attachments
+                   : msg.attachment          ? [msg.attachment]
+                   : [];
+
+  if (attachList.length > 0) {
+    const images  = attachList.filter(a => isImageMime(a.mime_type));
+    const videos  = attachList.filter(a => a.is_video || a.mime_type?.startsWith("video/"));
+    const docs    = attachList.filter(a => !isImageMime(a.mime_type) && !a.is_video && !a.mime_type?.startsWith("video/"));
+
+    // Image grid
+    if (images.length > 0) {
+      const gridClass = images.length === 1 ? "attach-grid single"
+                      : images.length === 2 ? "attach-grid two"
+                      : images.length === 3 ? "attach-grid three"
+                      : "attach-grid four";
+      const imgItems = images.map(att => `
+        <div class="attach-image-wrap" data-imgurl="${escapeHtml(att.url)}" data-imgname="${escapeHtml(att.original_name)}">
+          <img class="attach-image" src="" alt="${escapeHtml(att.original_name)}" data-protected="${escapeHtml(att.url)}" />
+          <div class="attach-img-loading"><div class="img-spinner"></div></div>
+          <div class="attach-image-overlay">🔍</div>
+        </div>`).join("");
+      attachHtml += `<div class="${gridClass}">${imgItems}</div>`;
     }
+
+    // Video player
+    videos.forEach(att => {
+      attachHtml += `
+        <div class="attach-video-wrap">
+          <video class="attach-video" controls preload="metadata"
+                 data-src="${escapeHtml(att.url)}"
+                 data-protected="${escapeHtml(att.url)}">
+            Your browser does not support video.
+          </video>
+          <div class="attach-video-name">${escapeHtml(att.original_name)} · ${formatBytes(att.file_size)}</div>
+        </div>`;
+    });
+
+    // Docs
+    docs.forEach(att => {
+      const icon = fileIcon(att.mime_type);
+      attachHtml += `
+        <div class="attach-doc" onclick="downloadProtectedFile('${escapeHtml(att.url)}','${escapeHtml(att.original_name)}')" style="cursor:pointer;">
+          <span class="attach-doc-icon">${icon}</span>
+          <div class="attach-doc-info">
+            <div class="attach-doc-name">${escapeHtml(att.original_name)}</div>
+            <div class="attach-doc-size">${formatBytes(att.file_size)}</div>
+          </div>
+          <span class="attach-doc-dl">⬇</span>
+        </div>`;
+    });
   }
 
   // Body text (may be empty if attachment-only)
@@ -83,24 +107,30 @@ function renderMessage(msg) {
 
   container.appendChild(row);
 
-  // After DOM insertion, set ?token= src on protected images
+  // After DOM insertion, set auth token src on protected images
   row.querySelectorAll("img[data-protected]").forEach((imgEl) => {
-    const url = imgEl.dataset.protected;
-    const wrap = imgEl.closest(".attach-image-wrap");
+    const url     = imgEl.dataset.protected;
+    const wrap    = imgEl.closest(".attach-image-wrap");
     const imgName = wrap?.dataset.imgname || "";
     const spinner = wrap?.querySelector(".attach-img-loading");
-
     imgEl.onload = () => {
       if (spinner) spinner.style.display = "none";
-      if (wrap) {
-        wrap.style.cursor = "zoom-in";
-        wrap.onclick = () => openLightboxBlob(url, imgName);
-      }
+      if (wrap) { wrap.style.cursor = "zoom-in"; wrap.onclick = () => openLightboxBlob(url, imgName); }
     };
     imgEl.onerror = () => {
       if (wrap) wrap.innerHTML = '<div class="attach-img-err">Could not load image</div>';
     };
     imgEl.src = protectedImgUrl(url);
+  });
+
+  // Set video src via blob URL so auth header is sent
+  row.querySelectorAll("video[data-protected]").forEach((videoEl) => {
+    const url = videoEl.dataset.protected;
+    fetch(toAbsoluteUrl(url), { headers: { Authorization: "Bearer " + token } })
+      .then(r => r.blob())
+      .then(blob => { videoEl.src = URL.createObjectURL(blob); })
+      .catch(() => { videoEl.closest(".attach-video-wrap")?.insertAdjacentHTML("beforeend",
+        '<div class="attach-img-err">Could not load video</div>'); });
   });
 
   // Store body for edit reference

@@ -64,7 +64,8 @@ let unreadCounts = {};
 let selectedMembers = [];
 
 // Pending attachment (uploaded but not yet sent)
-let pendingAttachment = null;
+let pendingAttachment  = null;
+let pendingAttachments = [];
 
 // ════════════════════════════════════════════
 // UI HELPERS

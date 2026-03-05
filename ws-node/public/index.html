@@ -395,25 +395,10 @@
           <div id="messages"></div>
           <div id="typingLine"></div>
 
-          <!-- Attachment preview bar (shown when file is selected) -->
+          <!-- Attachment preview bar (multi-file) -->
           <div id="attachmentPreviewBar" class="hidden">
-            <img id="attachPreviewThumb" src="" alt="" style="display: none" />
-            <div class="attach-preview-info">
-              <div id="attachPreviewName" class="attach-preview-name">
-                filename.ext
-              </div>
-              <div id="attachPreviewSize" class="attach-preview-size">0 KB</div>
-            </div>
-            <div id="attachUploadSpinner" class="hidden">
-              <div class="upload-spinner"></div>
-            </div>
-            <button
-              class="attach-preview-remove"
-              onclick="clearAttachmentPreview()"
-              title="Remove"
-            >
-              ✕
-            </button>
+            <div id="attachPreviewList" class="attach-preview-list"></div>
+            <button class="attach-preview-clear" onclick="clearAttachmentPreview()" title="Clear all">✕ Clear all</button>
           </div>
 
           <div id="inputBar">
@@ -445,7 +430,8 @@
               type="file"
               id="fileInput"
               style="display: none"
-              accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+              multiple
+              accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
             />
             <div class="input-row">
               <textarea

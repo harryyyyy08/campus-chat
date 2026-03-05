@@ -53,9 +53,10 @@ $path   = preg_replace('#^/index\.php#',      '', $path);
 if ($path === '') $path = '/';
 
 define('UPLOAD_DIR',       __DIR__ . '/../uploads/');
-define('UPLOAD_MAX_BYTES', 25 * 1024 * 1024);
+define('UPLOAD_MAX_BYTES', 100 * 1024 * 1024); // 100MB para sa videos
 define('ALLOWED_MIME', [
   'image/jpeg','image/png','image/gif','image/webp',
+  'video/mp4','video/webm','video/quicktime','video/x-msvideo',
   'application/pdf','application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',

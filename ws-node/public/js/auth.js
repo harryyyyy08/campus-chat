@@ -50,12 +50,26 @@ function logout() {
   localStorage.removeItem("cc_user");
   localStorage.removeItem("cc_login_at");
   if (socket) { socket.disconnect(); socket = null; }
+  // Reset all global state so next login starts clean
   token = null; myUserId = null; myUser = null;
+  currentConversation = null;
+  conversationsCache = [];
+  pendingAttachments = [];
+  pendingAttachment  = null;
+  onlineSet = new Set();
+  unreadCounts = {};
+  // Wipe UI
+  document.getElementById("messages").innerHTML = "";
+  document.getElementById("conversationList").innerHTML = "";
+  const content = document.getElementById("chatContent");
+  if (content) content.classList.add("hidden");
+  document.getElementById("emptyState").style.display = "";
   document.getElementById("app").classList.remove("visible");
   document.getElementById("login").style.display = "flex";
   document.getElementById("username").value = "";
   document.getElementById("password").value = "";
   document.getElementById("loginError").textContent = "";
+  clearAttachmentPreview();
 }
 
 function handleTokenExpired() {

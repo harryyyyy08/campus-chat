@@ -12,7 +12,19 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-app.use(express.static("public"));
+// Serve static files from the campus-chat web root
+// so localhost:3001 also works (not just localhost/campus-chat)
+const path = require("path");
+const STATIC_DIR = path.join(__dirname, "..", "campus-chat");
+app.use(express.static(STATIC_DIR));
+app.use(express.static(path.join(__dirname, "public")));
+// Fallback: serve index.html for SPA routing
+app.get("/", (_req, res) => {
+  const idx = path.join(STATIC_DIR, "index.html");
+  res.sendFile(idx, (err) => {
+    if (err) res.status(404).json({ error: "index.html not found" });
+  });
+});
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 const onlineUsers = new Set();
@@ -95,10 +107,11 @@ io.on("connection", (socket) => {
     try {
       const conversation_id = Number(payload?.conversation_id);
       const body = String(payload?.body || "").trim();
-      const client_msg_id = payload?.client_msg_id || null;
-      const attachment_id = payload?.attachment_id || null;
+      const client_msg_id   = payload?.client_msg_id || null;
+      const attachment_id   = payload?.attachment_id  || null;
+      const attachment_ids  = Array.isArray(payload?.attachment_ids) ? payload.attachment_ids : (attachment_id ? [attachment_id] : []);
 
-      if (!conversation_id || (!body && !attachment_id)) {
+      if (!conversation_id || (!body && !attachment_id && !attachment_ids.length)) {
         if (ack) ack({ ok: false, error: "conversation_id and body required" });
         return;
       }
@@ -109,9 +122,10 @@ io.on("connection", (socket) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ conversation_id, body, attachment_id }),
+        body: JSON.stringify({ conversation_id, body, attachment_id, attachment_ids }),
       });
       const data = await resp.json();
+      console.log("[server] PHP response keys:", Object.keys(data), "attachments:", data.attachments);
       if (!resp.ok) {
         if (ack) ack({ ok: false, error: data?.error || "PHP API error" });
         return;
@@ -122,7 +136,8 @@ io.on("connection", (socket) => {
         conversation_id: data.conversation_id,
         sender_id: data.sender_id,
         body: data.body,
-        attachment: data.attachment || null,
+        attachment:  data.attachment  || null,
+        attachments: data.attachments || (data.attachment ? [data.attachment] : []),
         status: "sent",
         created_at: data.created_at,
         client_msg_id,

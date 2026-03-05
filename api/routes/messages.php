@@ -4,36 +4,80 @@ if ($method === "POST" && $path === "/messages") {
   $claims = require_auth(); $pdo = db(); $in = json_input();
   $conversation_id = (int)($in["conversation_id"] ?? 0);
   $body            = trim((string)($in["body"] ?? ""));
-  $attachment_id   = isset($in["attachment_id"]) ? (int)$in["attachment_id"] : null;
-  if ($conversation_id <= 0 || ($body === "" && !$attachment_id)) json_response(["error" => "conversation_id and body (or attachment) required"], 400);
-  $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
-  $stmt->execute([$conversation_id, (int)$claims["sub"]]);
-  if (!$stmt->fetchColumn()) json_response(["error" => "Not a member of this conversation"], 403);
-  if ($attachment_id) {
-    $stmt = $pdo->prepare("SELECT 1 FROM attachments WHERE id = ? AND conversation_id = ? AND uploader_id = ? AND message_id IS NULL");
-    $stmt->execute([$attachment_id, $conversation_id, (int)$claims["sub"]]);
-    if (!$stmt->fetchColumn()) json_response(["error" => "Invalid attachment"], 400);
+  $user_id         = (int)$claims["sub"];
+
+  // Support both single attachment_id (legacy) and attachment_ids[] array
+  $attachment_ids = [];
+  if (!empty($in["attachment_ids"]) && is_array($in["attachment_ids"])) {
+    $attachment_ids = array_map("intval", array_slice($in["attachment_ids"], 0, 5)); // max 5
+  } elseif (!empty($in["attachment_id"])) {
+    $attachment_ids = [(int)$in["attachment_id"]];
   }
+
+  if ($conversation_id <= 0 || ($body === "" && empty($attachment_ids)))
+    json_response(["error" => "conversation_id and body (or attachment) required"], 400);
+
+  $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
+  $stmt->execute([$conversation_id, $user_id]);
+  if (!$stmt->fetchColumn()) json_response(["error" => "Not a member of this conversation"], 403);
+
+  // Validate all attachments
+  foreach ($attachment_ids as $att_id) {
+    $stmt = $pdo->prepare("SELECT 1 FROM attachments WHERE id = ? AND conversation_id = ? AND uploader_id = ? AND message_id IS NULL");
+    $stmt->execute([$att_id, $conversation_id, $user_id]);
+    if (!$stmt->fetchColumn()) json_response(["error" => "Invalid attachment: $att_id"], 400);
+  }
+
+  // Use first attachment_id in legacy column for backward compat
+  $primary_att = !empty($attachment_ids) ? $attachment_ids[0] : null;
   $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, body, attachment_id, status) VALUES (?, ?, ?, ?, 'sent')")
-      ->execute([$conversation_id, (int)$claims["sub"], $body, $attachment_id]);
+      ->execute([$conversation_id, $user_id, $body, $primary_att]);
   $message_id = (int)$pdo->lastInsertId();
-  if ($attachment_id) $pdo->prepare("UPDATE attachments SET message_id = ? WHERE id = ?")->execute([$message_id, $attachment_id]);
-  $stmt = $pdo->prepare("SELECT id, conversation_id, sender_id, body, attachment_id, status, created_at FROM messages WHERE id = ?");
+
+  // Link all attachments via message_attachments table + update message_id
+  foreach ($attachment_ids as $sort => $att_id) {
+    $pdo->prepare("UPDATE attachments SET message_id = ? WHERE id = ?")->execute([$message_id, $att_id]);
+    try {
+      $pdo->prepare("INSERT INTO message_attachments (message_id, attachment_id, sort_order) VALUES (?, ?, ?)")
+          ->execute([$message_id, $att_id, $sort]);
+    } catch (PDOException $e) { /* table may not exist yet — graceful fallback */ }
+  }
+
+  // Build attachments array for response
+  $attachments_out = [];
+  foreach ($attachment_ids as $att_id) {
+    $stmt = $pdo->prepare("SELECT original_name, stored_name, mime_type, file_size, COALESCE(is_video,0) AS is_video FROM attachments WHERE id = ?");
+    $stmt->execute([$att_id]); $att = $stmt->fetch();
+    if ($att) $attachments_out[] = [
+      "id"            => $att_id,
+      "original_name" => $att["original_name"],
+      "mime_type"     => $att["mime_type"],
+      "file_size"     => (int)$att["file_size"],
+      "is_video"      => (bool)$att["is_video"],
+      "url"           => "/campus-chat/api/index.php/uploads/" . $att["stored_name"],
+    ];
+  }
+
+  $stmt = $pdo->prepare("SELECT id, conversation_id, sender_id, body, status, created_at FROM messages WHERE id = ?");
   $stmt->execute([$message_id]); $row = $stmt->fetch();
   $row["id"] = (int)$row["id"]; $row["conversation_id"] = (int)$row["conversation_id"]; $row["sender_id"] = (int)$row["sender_id"];
-  $row["attachment"] = null;
-  if ($attachment_id) {
-    $stmt = $pdo->prepare("SELECT original_name, stored_name, mime_type, file_size FROM attachments WHERE id = ?");
-    $stmt->execute([$attachment_id]); $att = $stmt->fetch();
-    if ($att) $row["attachment"] = ["id" => $attachment_id, "original_name" => $att["original_name"], "mime_type" => $att["mime_type"], "file_size" => (int)$att["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $att["stored_name"]];
-  }
+
   // Check if conversation is a pending request
   $rqCheck = $pdo->prepare("SELECT COALESCE(is_request, 0) AS is_request FROM conversations WHERE id = ?");
-  $rqCheck->execute([$conversation_id]);
-  $rqRow = $rqCheck->fetch();
+  $rqCheck->execute([$conversation_id]); $rqRow = $rqCheck->fetch();
   $is_pending_request = $rqRow ? (bool)$rqRow["is_request"] : false;
 
-  json_response(["message_id" => $row["id"], "conversation_id" => $row["conversation_id"], "sender_id" => $row["sender_id"], "body" => $row["body"], "attachment" => $row["attachment"], "status" => $row["status"], "created_at" => $row["created_at"], "is_pending_request" => $is_pending_request], 201);
+  json_response([
+    "message_id"         => $row["id"],
+    "conversation_id"    => $row["conversation_id"],
+    "sender_id"          => $row["sender_id"],
+    "body"               => $row["body"],
+    "attachment"         => $attachments_out[0] ?? null,   // legacy single
+    "attachments"        => $attachments_out,              // new multi
+    "status"             => $row["status"],
+    "created_at"         => $row["created_at"],
+    "is_pending_request" => $is_pending_request,
+  ], 201);
 }
 
 // ── GET /messages ────────────────────────────────────────────────
@@ -83,10 +127,40 @@ if ($method === "GET" && $path === "/messages") {
     $r["is_edited"]  = (bool)$r["is_edited"];
     $r["is_deleted"] = (bool)$r["is_deleted"];
     $r["attachment"]  = null;
+    $r["attachments"] = [];
     if ($r["is_deleted"]) {
       $r["body"] = null; $r["attachment_id"] = null;
     } elseif ($r["attachment_id"]) {
-      $r["attachment"] = ["id" => (int)$r["attachment_id"], "original_name" => $r["original_name"], "mime_type" => $r["mime_type"], "file_size" => (int)$r["file_size"], "url" => "/campus-chat/api/index.php/uploads/" . $r["stored_name"]];
+      // Legacy single attachment
+      $r["attachment"] = [
+        "id"            => (int)$r["attachment_id"],
+        "original_name" => $r["original_name"],
+        "mime_type"     => $r["mime_type"],
+        "file_size"     => (int)$r["file_size"],
+        "is_video"      => str_starts_with((string)$r["mime_type"], "video/"),
+        "url"           => "/campus-chat/api/index.php/uploads/" . $r["stored_name"],
+      ];
+      // Try to fetch all attachments from message_attachments table
+      try {
+        $ma = $pdo->prepare("SELECT a.id, a.original_name, a.stored_name, a.mime_type, a.file_size, COALESCE(a.is_video,0) AS is_video FROM message_attachments ma JOIN attachments a ON a.id = ma.attachment_id WHERE ma.message_id = ? ORDER BY ma.sort_order ASC");
+        $ma->execute([(int)$r["id"]]);
+        $multi = $ma->fetchAll();
+        if ($multi) {
+          $r["attachments"] = array_map(fn($a) => [
+            "id"            => (int)$a["id"],
+            "original_name" => $a["original_name"],
+            "mime_type"     => $a["mime_type"],
+            "file_size"     => (int)$a["file_size"],
+            "is_video"      => (bool)$a["is_video"],
+            "url"           => "/campus-chat/api/index.php/uploads/" . $a["stored_name"],
+          ], $multi);
+        } else {
+          // Fallback: use single attachment
+          $r["attachments"] = [$r["attachment"]];
+        }
+      } catch (PDOException $e) {
+        $r["attachments"] = [$r["attachment"]];
+      }
     }
     // Fetch reactions — safe fallback if table not yet created
     try {

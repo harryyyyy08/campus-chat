@@ -1,76 +1,60 @@
-const CACHE_NAME = "campuschat-v1";
+const CACHE_NAME = "campuschat-v3";
 
-// Static assets to cache on install
-const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-];
+// ── Install: skip waiting immediately ────────────────────────────
+self.addEventListener("install", () => self.skipWaiting());
 
-// ── Install: cache static assets ─────────────────────────────────
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      // Use individual adds so one 404 doesn't break the whole cache
-      Promise.allSettled(STATIC_ASSETS.map((url) => cache.add(url)))
-    )
-  );
-  self.skipWaiting();
-});
-
-// ── Activate: clean up old caches ────────────────────────────────
+// ── Activate: clear ALL old caches ───────────────────────────────
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
+      Promise.all(keys.map((key) => caches.delete(key)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// ── Fetch: network-first for API, cache-first for static assets ──
+// ── Fetch: network-first for EVERYTHING ──────────────────────────
+// No caching of JS/CSS — always fetch fresh from server
+// Only cache uploaded images/files for performance
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Always go to network for API calls and socket connections
+  // Bypass SW entirely for API, socket, and uploads
   if (
     url.pathname.includes("/campus-chat/api") ||
-    url.pathname.includes("/socket.io")
+    url.pathname.includes("/socket.io") ||
+    url.pathname.includes("/uploads/")
   ) {
-    event.respondWith(fetch(event.request));
-    return;
+    return; // Let browser handle natively
   }
 
-  // Network-first for HTML (always get latest version)
-  if (event.request.mode === "navigate") {
+  // Network-first for ALL JS, CSS, HTML — never serve stale
+  if (
+    event.request.destination === "script" ||
+    event.request.destination === "style" ||
+    event.request.mode === "navigate"
+  ) {
     event.respondWith(
-      fetch(event.request)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return res;
-        })
-        .catch(() => caches.match("/index.html"))
+      fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // Cache-first for static assets (CSS, JS, icons)
-  event.respondWith(
-    caches.match(event.request).then(
-      (cached) => cached || fetch(event.request).then((res) => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return res;
-      })
-    )
-  );
+  // Cache-first only for icons/images (safe to cache)
+  if (event.request.destination === "image") {
+    event.respondWith(
+      caches.match(event.request).then(
+        (cached) => cached || fetch(event.request).then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+          }
+          return res;
+        })
+      )
+    );
+    return;
+  }
+
+  // Default: network-first
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });
