@@ -35,10 +35,7 @@
   pointer-events: none;
 }
 
-/* Sidebar toggle button (in sidebar header) */
-#sidebarCollapseBtn {
-  /* inherits .icon-btn styles */
-}
+/* Sidebar toggle button (in sidebar header) - inherits .icon-btn styles */
 
 /* Floating button to re-open sidebar */
 .sidebar-open-fab {
