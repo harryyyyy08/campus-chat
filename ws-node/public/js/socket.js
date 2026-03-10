@@ -101,18 +101,22 @@ function connectSocket() {
 
   // ── message_reacted ─────────────────────────────────────────
   socket.on("message_reacted", ({ message_id, reactions, my_reactions, reactor_id }) => {
+    console.log("[message_reacted] reactions:", JSON.stringify(reactions), "my_reactions:", my_reactions, "reactor_id:", reactor_id, "myUserId:", myUserId);
     const row = document.querySelector(`.msgRow[data-msg-id="${message_id}"]`);
     if (!row) return;
-    // my_reactions from server = the REACTOR's reactions
-    // Only update my_reactions if current user is the one who reacted
+
     let finalMyReactions;
     if (reactor_id === myUserId) {
+      // I was the one who reacted — use server's response
       finalMyReactions = my_reactions || [];
     } else {
-      // Keep existing my_reactions for this user
+      // Someone else reacted — keep MY existing reactions from dataset
       try { finalMyReactions = JSON.parse(row.dataset.myReactions || "[]"); }
       catch { finalMyReactions = []; }
     }
+
+    // ✅ Always update the dataset BEFORE rendering
+    row.dataset.myReactions = JSON.stringify(finalMyReactions);
     renderReactions(row, reactions, finalMyReactions);
   });
 

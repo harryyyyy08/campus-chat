@@ -231,12 +231,16 @@ io.on("connection", (socket) => {
         body: JSON.stringify({ emoji }),
       });
       const data = await resp.json();
+      console.log("[server] react data:", JSON.stringify(data)); // debug
       if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "React failed" }); return; }
+
+      // Broadcast reactions to ALL members — each client keeps their own my_reactions
+      // We send reactor_id so each client can decide whose my_reactions to use
       io.to(`conv:${cid}`).emit("message_reacted", {
         message_id: mid,
         conversation_id: cid,
-        reactions: data.reactions,
-        my_reactions: data.my_reactions,
+        reactions: data.reactions,        // all reactions for this message
+        my_reactions: data.my_reactions,  // only the reactor's my_reactions
         reactor_id: userId,
       });
       if (ack) ack({ ok: true });

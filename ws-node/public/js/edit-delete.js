@@ -253,6 +253,7 @@ const EMOJI_LIST = [
 ];
 
 function openEmojiPicker(msg, row) {
+  console.log("[openEmojiPicker] called for msg:", msg.id);
   document.querySelector(".emoji-picker-popup")?.remove();
 
   const picker = document.createElement("div");
@@ -321,25 +322,26 @@ function openEmojiPicker(msg, row) {
 async function sendReaction(msg, row, emoji) {
   console.log("[react] msg_id:", msg.id, "conv_id:", msg.conversation_id, "emoji:", emoji);
 
-  // Remove any existing reaction from this user on this message first
   const myReactions = (() => {
     try { return JSON.parse(row.dataset.myReactions || "[]"); } catch { return []; }
   })();
 
-  // If clicking same emoji = toggle off, different emoji = remove old then add new
-  const removePromises = myReactions
-    .filter(existing => existing !== emoji)
-    .map(existing => new Promise(resolve => {
+  // Remove any existing different reactions first (one at a time, await each)
+  for (const existing of myReactions) {
+    if (existing === emoji) continue; // same emoji = will be toggled below
+    await new Promise(resolve => {
       socket.emit("react_message", {
         message_id: msg.id,
         conversation_id: msg.conversation_id,
         emoji: existing,
-      }, resolve);
-    }));
+      }, (ack) => {
+        console.log("[react] removed old:", existing, ack);
+        resolve();
+      });
+    });
+  }
 
-  if (removePromises.length > 0) await Promise.all(removePromises);
-
-  // Now add the new reaction (or toggle off if same emoji clicked)
+  // Now send the new emoji (toggle on, or toggle off if same)
   socket.emit("react_message", {
     message_id: msg.id,
     conversation_id: msg.conversation_id,
@@ -356,7 +358,6 @@ function renderReactions(row, reactions, myReactions) {
   if (!bar) {
     bar = document.createElement("div");
     bar.className = "msg-reactions";
-    // Insert BEFORE meta (timestamp) — right below the bubble
     const meta = row.querySelector(".meta");
     if (meta) meta.before(bar);
     else {
@@ -368,14 +369,16 @@ function renderReactions(row, reactions, myReactions) {
   bar.innerHTML = "";
   reactions.forEach(({ emoji, count }) => {
     const pill = document.createElement("span");
-    const isMine = myReactions?.includes(emoji);
+    const isMine = Array.isArray(myReactions) && myReactions.includes(emoji);
     pill.className = "reaction-pill" + (isMine ? " my-reaction" : "");
     pill.textContent = `${emoji} ${count}`;
     pill.title = `${count} reaction${count > 1 ? "s" : ""}`;
     bar.appendChild(pill);
   });
-  // Store for emoji picker toggle state
-  row.dataset.myReactions = JSON.stringify(myReactions || []);
+  // ✅ Only update myReactions if it's actually provided (not undefined)
+  if (myReactions !== undefined) {
+    row.dataset.myReactions = JSON.stringify(myReactions);
+  }
 }
 
 // ── Mobile back / scroll helpers ─────────────────────────────────
