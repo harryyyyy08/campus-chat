@@ -52,6 +52,7 @@
     <link rel="stylesheet" href="css/chat-area.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/attachments.css" />
+  <link rel="stylesheet" href="css/voice.css" />
     <link rel="stylesheet" href="css/mobile.css" />
     <script src="/socket.io/socket.io.js"></script>
   </head>
@@ -395,6 +396,14 @@
           <div id="messages"></div>
           <div id="typingLine"></div>
 
+          <!-- Voice recording bar (shown while recording) -->
+          <div id="voiceRecordingBar" class="hidden">
+            <div class="voice-rec-dot"></div>
+            <span id="voiceRecordingTimer">00:00</span>
+            <canvas id="voiceWaveformCanvas" width="200" height="32"></canvas>
+            <button class="voice-rec-cancel" onclick="cancelRecording()" title="Cancel">✕</button>
+          </div>
+
           <!-- Attachment preview bar (multi-file) -->
           <div id="attachmentPreviewBar" class="hidden">
             <div id="attachPreviewList" class="attach-preview-list"></div>
@@ -404,6 +413,19 @@
           <div id="inputBar">
             <div class="input-tools">
               <button class="tool-btn" title="Emoji">😊</button>
+              <button
+                id="voiceMicBtn"
+                class="tool-btn"
+                title="Record voice message"
+                onclick="toggleVoiceRecording()"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </button>
               <button
                 class="tool-btn"
                 title="Attach file"
@@ -623,6 +645,7 @@
     <script src="js/socket.js"></script>
     <script src="js/direct-chat.js"></script>
     <script src="js/groups.js"></script>
+    <script src="js/voice.js"></script>
     <script src="js/auth.js"></script>
     <script>
       if ("serviceWorker" in navigator) {

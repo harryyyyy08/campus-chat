@@ -131,13 +131,22 @@ io.on("connection", (socket) => {
         return;
       }
 
+      // Normalize attachments — PHP may return attachments as array or null
+      const phpAttachments = Array.isArray(data.attachments) ? data.attachments : [];
+      const phpAttachment  = data.attachment || (phpAttachments[0] ?? null);
+      // Carry over duration from client payload (voice messages)
+      const clientAtts = Array.isArray(payload?.attachment_ids) ? payload.attachment_ids : [];
+      const allAttachments = (phpAttachments.length > 0 ? phpAttachments
+                           : phpAttachment ? [phpAttachment] : [])
+                           .map((a, i) => ({ ...a, duration: payload?.attachments_meta?.[i]?.duration || 0 }));
+
       const msg = {
         id: data.message_id,
         conversation_id: data.conversation_id,
         sender_id: data.sender_id,
         body: data.body,
-        attachment:  data.attachment  || null,
-        attachments: data.attachments || (data.attachment ? [data.attachment] : []),
+        attachment:  phpAttachment,
+        attachments: allAttachments,
         status: "sent",
         created_at: data.created_at,
         client_msg_id,

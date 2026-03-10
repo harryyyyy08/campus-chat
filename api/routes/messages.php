@@ -21,9 +21,9 @@ if ($method === "POST" && $path === "/messages") {
   $stmt->execute([$conversation_id, $user_id]);
   if (!$stmt->fetchColumn()) json_response(["error" => "Not a member of this conversation"], 403);
 
-  // Validate all attachments
+  // Validate all attachments — allow already-linked ones (parallel upload race condition)
   foreach ($attachment_ids as $att_id) {
-    $stmt = $pdo->prepare("SELECT 1 FROM attachments WHERE id = ? AND conversation_id = ? AND uploader_id = ? AND message_id IS NULL");
+    $stmt = $pdo->prepare("SELECT 1 FROM attachments WHERE id = ? AND conversation_id = ? AND uploader_id = ?");
     $stmt->execute([$att_id, $conversation_id, $user_id]);
     if (!$stmt->fetchColumn()) json_response(["error" => "Invalid attachment: $att_id"], 400);
   }
@@ -54,6 +54,7 @@ if ($method === "POST" && $path === "/messages") {
       "mime_type"     => $att["mime_type"],
       "file_size"     => (int)$att["file_size"],
       "is_video"      => (bool)$att["is_video"],
+      "is_voice"      => (bool)($att["is_voice"] ?? str_starts_with((string)$att["mime_type"], "audio/")),
       "url"           => "/campus-chat/api/index.php/uploads/" . $att["stored_name"],
     ];
   }
@@ -138,6 +139,7 @@ if ($method === "GET" && $path === "/messages") {
         "mime_type"     => $r["mime_type"],
         "file_size"     => (int)$r["file_size"],
         "is_video"      => str_starts_with((string)$r["mime_type"], "video/"),
+        "is_voice"      => str_starts_with((string)$r["mime_type"], "audio/"),
         "url"           => "/campus-chat/api/index.php/uploads/" . $r["stored_name"],
       ];
       // Try to fetch all attachments from message_attachments table
@@ -152,6 +154,7 @@ if ($method === "GET" && $path === "/messages") {
             "mime_type"     => $a["mime_type"],
             "file_size"     => (int)$a["file_size"],
             "is_video"      => (bool)$a["is_video"],
+            "is_voice"      => (bool)($a["is_voice"] ?? str_starts_with((string)$a["mime_type"], "audio/")),
             "url"           => "/campus-chat/api/index.php/uploads/" . $a["stored_name"],
           ], $multi);
         } else {

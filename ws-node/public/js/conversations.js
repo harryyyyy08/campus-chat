@@ -16,21 +16,26 @@ function sendMessage() {
 
   const payload = { conversation_id: currentConversation, body: text };
   if (atts.length === 1) {
-    payload.attachment_id  = atts[0].attachment_id;   // legacy single
+    payload.attachment_id  = atts[0].attachment_id;
     payload.attachment_ids = [atts[0].attachment_id];
   } else if (atts.length > 1) {
     payload.attachment_ids = atts.map(a => a.attachment_id);
     payload.attachment_id  = payload.attachment_ids[0];
   }
+  // Pass metadata (duration for voice) so server can relay to recipients
+  if (atts.length > 0) {
+    payload.attachments_meta = atts.map(a => ({ duration: a.duration || 0 }));
+  }
 
-  console.log("[sendMessage] payload:", JSON.stringify(payload));
-  socket.emit("send_message", payload);
-
+  // Clear state BEFORE emitting — prevents double-send on fast clicks
   input.value = "";
   input.style.height = "auto";
   clearAttachmentPreview();
   clearTimeout(typingTimer);
   socket.emit("typing", { conversation_id: currentConversation, is_typing: false });
+
+  console.log("[sendMessage] payload:", JSON.stringify(payload));
+  socket.emit("send_message", payload);
 }
 
 // ════════════════════════════════════════════

@@ -57,6 +57,7 @@ define('UPLOAD_MAX_BYTES', 100 * 1024 * 1024); // 100MB para sa videos
 define('ALLOWED_MIME', [
   'image/jpeg','image/png','image/gif','image/webp',
   'video/mp4','video/webm','video/quicktime','video/x-msvideo',
+  'audio/webm','audio/ogg','audio/mp4','audio/mpeg',
   'application/pdf','application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',

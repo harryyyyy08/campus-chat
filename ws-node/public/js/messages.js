@@ -40,9 +40,29 @@ function renderMessage(msg) {
                    : [];
 
   if (attachList.length > 0) {
-    const images  = attachList.filter(a => isImageMime(a.mime_type));
-    const videos  = attachList.filter(a => a.is_video || a.mime_type?.startsWith("video/"));
-    const docs    = attachList.filter(a => !isImageMime(a.mime_type) && !a.is_video && !a.mime_type?.startsWith("video/"));
+    const isAudio = (a) => a.is_voice || a.mime_type?.startsWith("audio/");
+    const voices  = attachList.filter(a => isAudio(a));
+    const images  = attachList.filter(a => !isAudio(a) && isImageMime(a.mime_type));
+    const videos  = attachList.filter(a => !isAudio(a) && (a.is_video || a.mime_type?.startsWith("video/")));
+    const docs    = attachList.filter(a => !isAudio(a) && !isImageMime(a.mime_type) && !a.is_video && !a.mime_type?.startsWith("video/"));
+
+    // Voice message players — Messenger style
+    voices.forEach(att => {
+      // Generate 30 waveform bars (decorative static bars)
+      const bars = Array.from({length: 30}, (_, i) => {
+        const h = 20 + Math.abs(Math.sin(i * 0.8 + att.id * 0.3) * 55) | 0;
+        return `<span class="voice-bar" style="height:${h}%"></span>`;
+      }).join("");
+      const dur = att.duration || 0;
+      attachHtml += `
+        <div class="voice-player" data-att-id="${att.id}" data-audio-src="${escapeHtml(att.url)}" data-duration="${dur}">
+          <button class="voice-play-btn" title="Play"></button>
+          <div class="voice-player-body">
+            <div class="voice-wave-wrap">${bars}</div>
+            <span class="voice-time">${formatAudioTime ? formatAudioTime(dur) : "0:00"}</span>
+          </div>
+        </div>`;
+    });
 
     // Image grid
     if (images.length > 0) {
@@ -123,8 +143,13 @@ function renderMessage(msg) {
     imgEl.src = protectedImgUrl(url);
   });
 
-  // Set video src via blob URL so auth header is sent
+  // Init voice players in this message row
+  if (typeof initVoicePlayers === "function") initVoicePlayers();
+
+  // Set video src via blob URL so auth header is sent (skip audio — handled by voice.js)
   row.querySelectorAll("video[data-protected]").forEach((videoEl) => {
+    const mime = videoEl.dataset.mime || "";
+    if (mime.startsWith("audio/")) return; // skip — voice player handles these
     const url = videoEl.dataset.protected;
     fetch(toAbsoluteUrl(url), { headers: { Authorization: "Bearer " + token } })
       .then(r => r.blob())
@@ -172,7 +197,7 @@ function applyDeletedStyle(row) {
   const msgBody = row.querySelector(".msg-body");
   if (!msgBody) return;
   // Remove attachment and bubble
-  msgBody.querySelectorAll(".attach-image-wrap, .attach-doc, .bubble").forEach(el => el.remove());
+  msgBody.querySelectorAll(".attach-image-wrap, .attach-grid, .attach-doc, .attach-video-wrap, .voice-player, .bubble").forEach(el => el.remove());
   // Add deleted placeholder if not already there
   if (!row.querySelector(".msg-deleted")) {
     const del = document.createElement("div");
@@ -185,6 +210,12 @@ function applyDeletedStyle(row) {
   // Remove context menu trigger
   row.oncontextmenu = null;
   row.dataset.deleted = "1";
+}
+
+function formatAudioTime(secs) {
+  if (!secs || isNaN(secs) || !isFinite(secs)) return "0:00";
+  const s = Math.floor(secs);
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 }
 
 function fileIcon(mime) {

@@ -51,8 +51,18 @@ if ($method === "POST" && $path === "/upload") {
   if ($file_size > UPLOAD_MAX_BYTES)  json_response(["error" => "File exceeds size limit"], 400);
   if ($file_size === 0)               json_response(["error" => "Empty file"], 400);
 
-  $finfo     = new finfo(FILEINFO_MIME_TYPE);
-  $mime_type = $finfo->file($tmp_path);
+  $finfo          = new finfo(FILEINFO_MIME_TYPE);
+  $detected_mime  = $finfo->file($tmp_path);
+  $client_mime    = trim($_FILES["file"]["type"] ?? "");
+
+  // For .webm files, finfo always returns video/webm even for audio-only recordings.
+  // Trust client MIME type when it's audio/* AND the detected type is video/webm.
+  if (str_starts_with($client_mime, 'audio/') && $detected_mime === 'video/webm') {
+    $mime_type = $client_mime;
+  } else {
+    $mime_type = $detected_mime;
+  }
+
   if (!in_array($mime_type, ALLOWED_MIME)) json_response(["error" => "File type not allowed: " . $mime_type], 400);
 
   $file_hash = hash_file('sha256', $tmp_path);
@@ -71,8 +81,9 @@ if ($method === "POST" && $path === "/upload") {
   }
 
   $is_video = (int)(strpos($mime_type, 'video/') === 0);
-  $pdo->prepare("INSERT INTO attachments (conversation_id, uploader_id, original_name, stored_name, file_hash, mime_type, file_size, is_video) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-      ->execute([$conversation_id, $uploader_id, $orig_name, $stored_name, $file_hash, $mime_type, $file_size, $is_video]);
+  $is_voice = (int)(strpos($mime_type, 'audio/') === 0);
+  $pdo->prepare("INSERT INTO attachments (conversation_id, uploader_id, original_name, stored_name, file_hash, mime_type, file_size, is_video, is_voice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      ->execute([$conversation_id, $uploader_id, $orig_name, $stored_name, $file_hash, $mime_type, $file_size, $is_video, $is_voice]);
 
   $attachment_id = (int)$pdo->lastInsertId();
 
@@ -83,6 +94,7 @@ if ($method === "POST" && $path === "/upload") {
     "mime_type"     => $mime_type,
     "file_size"     => $file_size,
     "is_video"      => (bool)$is_video,
+    "is_voice"      => (bool)$is_voice,
     "url"           => "/campus-chat/api/index.php/uploads/" . $stored_name,
   ], 201);
 }
