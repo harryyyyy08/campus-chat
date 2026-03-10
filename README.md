@@ -1,25 +1,35 @@
-# Campus Chat
+# CampusChat Documentation
 
-## Language Composition Breakdown
-- **JavaScript:** 45.2%
-- **CSS:** 21.8%
-- **PHP:** 20.1%
-- **HTML:** 12.9%
-
-## Project Documentation
-
-This project provides a platform for seamless communication and user interaction. It leverages modern web technologies to enhance user experience.  
-The application is built with JavaScript, CSS, PHP, and HTML, ensuring compatibility and responsiveness across various devices.
-
-### Features
+## Features
 - Real-time messaging
 - User authentication
-- Customizable user profiles
+- Group chat support
+- File sharing
 
-### Getting Started
-1. Clone the repository: `git clone https://github.com/harryyyyy08/campus-chat.git`
-2. Install dependencies: `npm install`
-3. Start the server: `npm start`
+## Tech Stack
+- Frontend: React
+- Backend: Node.js, Express
+- Database: MongoDB
 
-### Contributing
-Contributions are welcome! Please submit a pull request for any improvements or bug fixes.
+## Installation Steps
+1. Clone the repository: `git clone https://github.com/harryyyyy08/campus-chat`
+2. Navigate to the project directory: `cd campus-chat`
+3. Install dependencies: `npm install`
+4. Run the application: `npm start`
+
+## User Roles
+- **Admin**: Manages users and reviews chats.
+- **User**: Can chat and send files.
+- **Guest**: Can view chats but cannot send messages.
+
+## API Overview
+- **GET /api/messages**: Retrieve messages.
+- **POST /api/messages**: Send a new message.
+- **GET /api/users**: Retrieve user details.
+
+## Roadmap
+- Add more user roles
+- Implement voice chat feature
+- Enhance security features
+
+---
