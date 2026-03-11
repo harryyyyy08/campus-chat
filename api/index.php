@@ -81,6 +81,7 @@ require_once __DIR__ . "/routes/conversations.php";
 require_once __DIR__ . "/routes/messages.php";
 require_once __DIR__ . "/routes/uploads.php";
 require_once __DIR__ . "/routes/admin.php";
+require_once __DIR__ . "/routes/announcements.php";
 
 // ── 404 Fallback ──────────────────────────────────────────────────
 json_response(["error" => "Not found", "path" => $path], 404);
