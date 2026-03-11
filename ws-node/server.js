@@ -497,6 +497,23 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () =>
-  console.log(`✅  CampusChat WS server → http://localhost:${PORT}`),
-);
+// ── Auto-delete messages older than 3 days ────────────────────
+async function deleteOldMessages() {
+  try {
+    const resp = await fetch(`${PHP_API_BASE}/messages/cleanup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Cleanup-Secret": "campus-chat-cleanup-2026" },
+    });
+    const data = await resp.json();
+    console.log(`[cleanup] Deleted ${data.deleted ?? 0} old messages.`);
+  } catch (err) {
+    console.error("[cleanup] Error:", err.message);
+  }
+}
+
+server.listen(PORT, () => {
+  console.log(`✅  CampusChat WS server → http://localhost:${PORT}`);
+  // Run once on startup, then every 24 hours
+  deleteOldMessages();
+  setInterval(deleteOldMessages, 24 * 60 * 60 * 1000);
+});

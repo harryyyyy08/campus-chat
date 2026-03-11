@@ -101,7 +101,8 @@ if ($method === "GET" && $path === "/messages") {
       FROM messages m
       LEFT JOIN attachments a ON a.id = m.attachment_id
       LEFT JOIN message_hidden mh ON mh.message_id = m.id AND mh.user_id = ?
-      WHERE m.conversation_id = ? AND mh.id IS NULL
+      WHERE m.conversation_id = ?
+        AND m.created_at >= NOW() - INTERVAL 3 DAY
       ORDER BY m.created_at DESC, m.id DESC LIMIT ?");
     $stmt->bindValue(1, $user_id, PDO::PARAM_INT);
     $stmt->bindValue(2, $conversation_id, PDO::PARAM_INT);
@@ -116,7 +117,8 @@ if ($method === "GET" && $path === "/messages") {
       FROM messages m
       LEFT JOIN attachments a ON a.id = m.attachment_id
       WHERE m.conversation_id = ?
-      ORDER BY m.created_at DESC, m.id DESC LIMIT ?");
+        AND m.created_at >= NOW() - INTERVAL 3 DAY
+      ORDER BY m.created_at DESC");
     $stmt->bindValue(1, $conversation_id, PDO::PARAM_INT);
     $stmt->bindValue(2, $limit, PDO::PARAM_INT);
     $stmt->execute();
@@ -305,4 +307,47 @@ if ($method === "POST" && preg_match('#^/messages/(\d+)/react$#', $path, $m)) {
     "reactions"    => array_map(fn($r) => ["emoji" => $r["emoji"], "count" => (int)$r["count"]], $reactions),
     "my_reactions" => $my_reactions,
   ]);
+}
+
+// ── POST /messages/cleanup ────────────────────────────────────
+if ($method === "POST" && $path === "/messages/cleanup") {
+  $secret = $_SERVER["HTTP_X_CLEANUP_SECRET"] ?? "";
+  if ($secret !== "campus-chat-cleanup-2026")
+    json_response(["error" => "Forbidden"], 403);
+
+  $pdo = db();
+
+  // Hard delete messages older than 1 MONTH (including related records)
+  $pdo->prepare("
+    DELETE mr FROM message_reactions mr
+    JOIN messages m ON m.id = mr.message_id
+    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+  ")->execute();
+
+  $pdo->prepare("
+    DELETE mrd FROM message_reads mrd
+    JOIN messages m ON m.id = mrd.message_id
+    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+  ")->execute();
+
+  $pdo->prepare("
+    DELETE mh FROM message_hidden mh
+    JOIN messages m ON m.id = mh.message_id
+    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+  ")->execute();
+
+  $pdo->prepare("
+    DELETE a FROM attachments a
+    JOIN messages m ON m.id = a.message_id
+    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+  ")->execute();
+
+  $stmt = $pdo->prepare("
+    DELETE FROM messages
+    WHERE created_at < NOW() - INTERVAL 1 MONTH
+  ");
+  $stmt->execute();
+  $deleted = $stmt->rowCount();
+
+  json_response(["ok" => true, "deleted" => $deleted]);
 }
