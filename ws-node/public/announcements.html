@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Announcements — CampusChat</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/announcements.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Sidebar Nav ── -->
+  <nav class="ann-nav">
+    <div class="ann-nav-logo">📢</div>
+    <a href="index.html" class="ann-nav-btn" title="Chat">💬</a>
+    <a href="announcements.html" class="ann-nav-btn active" title="Announcements">📋</a>
+  </nav>
+
+  <!-- ── Main Layout ── -->
+  <div class="ann-layout">
+
+    <!-- Left: List Panel -->
+    <aside class="ann-sidebar">
+      <div class="ann-sidebar-header">
+        <h2>Announcements</h2>
+        <button class="ann-compose-btn" id="composeBtn" title="New Announcement">＋</button>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="ann-tabs">
+        <button class="ann-tab active" data-filter="all">All</button>
+        <button class="ann-tab" data-filter="unread">Unread</button>
+        <button class="ann-tab" data-filter="mine">Mine</button>
+        <!-- Admin only -->
+        <button class="ann-tab admin-only hidden" data-filter="pending">
+          Pending <span class="ann-pending-badge" id="pendingBadge"></span>
+        </button>
+      </div>
+
+      <div class="ann-list" id="annList">
+        <div class="ann-loading">Loading…</div>
+      </div>
+    </aside>
+
+    <!-- Right: Detail Panel -->
+    <main class="ann-detail" id="annDetail">
+      <div class="ann-empty-state" id="annEmptyState">
+        <span class="ann-empty-icon">📋</span>
+        <p>Select an announcement to read</p>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- ── Compose Modal ── -->
+<div class="ann-modal-overlay hidden" id="composeModal">
+  <div class="ann-modal">
+    <div class="ann-modal-header">
+      <h3 id="modalTitle">New Announcement</h3>
+      <button class="ann-modal-close" id="closeModal">✕</button>
+    </div>
+    <div class="ann-modal-body">
+      <input type="hidden" id="editingId" value="" />
+
+      <label>Title</label>
+      <input type="text" id="annTitle" placeholder="Announcement title…" maxlength="255" />
+
+      <label>Body</label>
+      <textarea id="annBody" rows="5" placeholder="Write your announcement…"></textarea>
+
+      <div class="ann-form-row">
+        <div>
+          <label>Priority</label>
+          <select id="annPriority">
+            <option value="low">🟢 Low</option>
+            <option value="normal" selected>🔵 Normal</option>
+            <option value="high">🟠 High</option>
+            <option value="urgent">🔴 Urgent</option>
+          </select>
+        </div>
+        <div>
+          <label>Send to</label>
+          <select id="annTarget">
+            <option value="all">All Users</option>
+            <option value="department">My Department</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ann-dept-row hidden" id="deptRow">
+        <label>Department</label>
+        <input type="text" id="annDept" placeholder="e.g. Computer Science" />
+      </div>
+
+      <div class="ann-pending-notice hidden" id="pendingNotice">
+        ℹ️ Your announcement will be reviewed by an admin before publishing.
+      </div>
+    </div>
+    <div class="ann-modal-footer">
+      <button class="ann-btn-cancel" id="cancelModal">Cancel</button>
+      <button class="ann-btn-submit" id="submitAnn">Post Announcement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="ann-toast hidden" id="annToast"></div>
+
+<!-- ── Real-time popup notification ── -->
+<div class="ann-popup hidden" id="annPopup">
+  <div class="ann-popup-inner">
+    <span class="ann-popup-icon">📢</span>
+    <div class="ann-popup-text">
+      <strong id="annPopupTitle"></strong>
+      <span id="annPopupAuthor"></span>
+    </div>
+    <button class="ann-popup-close" id="annPopupClose">✕</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/announcements.js"></script>
+</body>
+</html>

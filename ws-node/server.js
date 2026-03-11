@@ -51,6 +51,88 @@ function joinUserToRoom(userId, roomName) {
 
 // ── Connection ────────────────────────────────────────────────────
 io.on("connection", (socket) => {
+  // ════════════════════════════════════════════
+// ADD THESE SOCKET EVENTS TO server.js
+// Inside the io.on("connection", ...) block
+// ════════════════════════════════════════════
+
+  // ── post_announcement ─────────────────────────────────────────
+  // Called after PHP creates/approves an announcement
+  // Broadcasts to all relevant users in real-time
+  socket.on("post_announcement", async ({ announcement }) => {
+    if (!announcement) return;
+
+    // Broadcast to all connected users
+    // Client will filter visibility (target_type + department)
+    io.emit("new_announcement", { announcement });
+  });
+
+  // ── approve_announcement ──────────────────────────────────────
+  socket.on("approve_announcement", async ({ announcement_id }, ack) => {
+    const aid = Number(announcement_id);
+    if (!aid) { if (ack) ack({ ok: false, error: "announcement_id required" }); return; }
+
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/announcements/${aid}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json();
+      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Approve failed" }); return; }
+
+      // Broadcast approved announcement to all users
+      io.emit("new_announcement", { announcement: data.announcement });
+      // Notify original poster
+      io.to(`user:${data.announcement.author_id}`).emit("announcement_status", {
+        announcement_id: aid,
+        status: "approved",
+      });
+      if (ack) ack({ ok: true });
+    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
+  });
+
+  // ── reject_announcement ───────────────────────────────────────
+  socket.on("reject_announcement", async ({ announcement_id, author_id }, ack) => {
+    const aid = Number(announcement_id);
+    if (!aid) { if (ack) ack({ ok: false, error: "announcement_id required" }); return; }
+
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/announcements/${aid}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json();
+      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Reject failed" }); return; }
+
+      // Notify the author their announcement was rejected
+      if (author_id) {
+        io.to(`user:${Number(author_id)}`).emit("announcement_status", {
+          announcement_id: aid,
+          status: "rejected",
+        });
+      }
+      if (ack) ack({ ok: true });
+    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
+  });
+
+  // ── delete_announcement ───────────────────────────────────────
+  socket.on("delete_announcement", async ({ announcement_id }, ack) => {
+    const aid = Number(announcement_id);
+    if (!aid) { if (ack) ack({ ok: false, error: "announcement_id required" }); return; }
+
+    try {
+      const resp = await fetch(`${PHP_API_BASE}/announcements/${aid}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json();
+      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Delete failed" }); return; }
+
+      // Broadcast deletion to all users
+      io.emit("announcement_deleted", { announcement_id: aid });
+      if (ack) ack({ ok: true });
+    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
+  });
   const userId = socket.user.id;
   const token = socket.handshake.auth?.token;
 

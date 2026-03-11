@@ -1,0 +1,427 @@
+// ════════════════════════════════════════════
+// ANNOUNCEMENTS — announcements.js
+// ════════════════════════════════════════════
+
+// ✅ BAGO
+const token  = localStorage.getItem("cc_token");
+const _ccUser = JSON.parse(localStorage.getItem("cc_user") || "{}");
+const myUserId = Number(_ccUser.id);
+const myRole   = _ccUser.role || "student";
+const myDept   = _ccUser.department || "";
+
+if (!token) { window.location.href = "index.html"; }
+
+// ✅ BAGO — same pattern as config.js
+const _host = window.location.hostname;
+const API   = `http://${_host}/campus-chat/api/index.php`;
+const WS    = `http://${_host}:3001`;
+
+let socket;
+let announcements = [];
+let activeId      = null;
+let currentFilter = "all";
+
+// ── Init ─────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  setupUI();
+  loadAnnouncements();
+  connectSocket();
+});
+
+// ── UI Setup ─────────────────────────────────
+function setupUI() {
+  // Show admin-only tabs
+  if (["admin", "super_admin"].includes(myRole)) {
+    document.querySelectorAll(".admin-only").forEach(el => el.classList.remove("hidden"));
+  }
+
+  // Filter tabs
+  document.querySelectorAll(".ann-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".ann-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentFilter = tab.dataset.filter;
+      renderList();
+    });
+  });
+
+  // Compose button
+  document.getElementById("composeBtn").addEventListener("click", () => openModal());
+  document.getElementById("closeModal").addEventListener("click", closeModal);
+  document.getElementById("cancelModal").addEventListener("click", closeModal);
+  document.getElementById("submitAnn").addEventListener("click", submitAnnouncement);
+
+  // Target type → show/hide department field
+  document.getElementById("annTarget").addEventListener("change", (e) => {
+    const deptRow     = document.getElementById("deptRow");
+    const pendingNote = document.getElementById("pendingNotice");
+    deptRow.classList.toggle("hidden", e.target.value !== "department");
+    // Show pending notice for students
+    pendingNote.classList.toggle("hidden", myRole !== "student");
+  });
+
+  // Show pending notice on open if student
+  if (myRole === "student") {
+    document.getElementById("pendingNotice").classList.remove("hidden");
+  }
+
+  // Popup close
+  document.getElementById("annPopupClose").addEventListener("click", () => {
+    document.getElementById("annPopup").classList.add("hidden");
+  });
+}
+
+// ── Load Announcements ────────────────────────
+async function loadAnnouncements() {
+  try {
+    const res  = await fetch(`${API}/announcements`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Load failed");
+    announcements = data.announcements || [];
+    renderList();
+    updatePendingBadge();
+  } catch (err) {
+    document.getElementById("annList").innerHTML =
+      `<div class="ann-no-items">Failed to load: ${err.message}</div>`;
+  }
+}
+
+// ── Render List ───────────────────────────────
+function renderList() {
+  const list = document.getElementById("annList");
+  let filtered = announcements;
+
+  if (currentFilter === "unread")  filtered = filtered.filter(a => !a.is_read && a.status === "approved");
+  if (currentFilter === "mine")    filtered = filtered.filter(a => a.author_id === myUserId);
+  if (currentFilter === "pending") filtered = filtered.filter(a => a.status === "pending");
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="ann-no-items">No announcements here.</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => {
+    const isUnread = !a.is_read && a.status === "approved";
+    const isAdmin  = ["admin","super_admin"].includes(myRole);
+    const showStatus = a.author_id === myUserId || isAdmin;
+    return `
+      <div class="ann-item ${isUnread ? "unread" : ""} ${activeId === a.id ? "active" : ""}"
+           data-id="${a.id}" onclick="selectAnnouncement(${a.id})">
+        <div class="ann-item-header">
+          <span class="ann-priority-dot ${a.priority}"></span>
+          <span class="ann-item-title">${escAnn(a.title)}</span>
+          ${showStatus && a.status !== "approved"
+            ? `<span class="ann-status-badge ${a.status}">${a.status}</span>` : ""}
+        </div>
+        <div class="ann-item-preview">${escAnn(a.body.slice(0, 60))}${a.body.length > 60 ? "…" : ""}</div>
+        <div class="ann-item-meta">
+          <span class="ann-item-author">${escAnn(a.author_name)}</span>
+          <span class="ann-item-time">${formatAnnTime(a.created_at)}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+// ── Select / Show Detail ──────────────────────
+function selectAnnouncement(id) {
+  activeId = id;
+  const a = announcements.find(x => x.id === id);
+  if (!a) return;
+
+  // Mark as read
+  if (!a.is_read && a.status === "approved") {
+    a.is_read = true;
+    fetch(`${API}/announcements/${id}/read`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }
+
+  renderList();
+  renderDetail(a);
+}
+
+function renderDetail(a) {
+  const detail   = document.getElementById("annDetail");
+  const isMe     = a.author_id === myUserId;
+  const isAdmin  = ["admin","super_admin"].includes(myRole);
+  const canEdit  = isMe || isAdmin;
+  const canApprove = isAdmin && a.status === "pending";
+
+  const targetLabel = a.target_type === "all"
+    ? "📢 All Users"
+    : `🏫 ${escAnn(a.department || "Department")}`;
+
+  detail.innerHTML = `
+    <div class="ann-detail-header">
+      <div class="ann-detail-priority ${a.priority}">
+        ${{ low:"🟢 Low", normal:"🔵 Normal", high:"🟠 High", urgent:"🔴 Urgent" }[a.priority]}
+      </div>
+      <div class="ann-detail-title">${escAnn(a.title)}</div>
+      <div class="ann-detail-info">
+        <span>By <strong>${escAnn(a.author_name)}</strong></span>
+        <span class="sep">·</span>
+        <span>${formatAnnTimeFull(a.created_at)}</span>
+        <span class="sep">·</span>
+        <span class="ann-detail-target">${targetLabel}</span>
+        ${a.status !== "approved"
+          ? `<span class="ann-status-badge ${a.status}">${a.status}</span>` : ""}
+      </div>
+    </div>
+    <hr class="ann-detail-divider" />
+    <div class="ann-detail-body">${escAnn(a.body)}</div>
+    <div class="ann-detail-actions">
+      ${canEdit    ? `<button class="ann-btn ann-btn-edit"   onclick="openModal(${a.id})">✏️ Edit</button>` : ""}
+      ${canEdit    ? `<button class="ann-btn ann-btn-delete" onclick="deleteAnn(${a.id})">🗑️ Delete</button>` : ""}
+      ${canApprove ? `<button class="ann-btn ann-btn-approve" onclick="approveAnn(${a.id})">✅ Approve</button>` : ""}
+      ${canApprove ? `<button class="ann-btn ann-btn-reject"  onclick="rejectAnn(${a.id})">❌ Reject</button>` : ""}
+    </div>`;
+}
+
+// ── Modal ─────────────────────────────────────
+function openModal(editId = null) {
+  const modal = document.getElementById("composeModal");
+  document.getElementById("modalTitle").textContent = editId ? "Edit Announcement" : "New Announcement";
+  document.getElementById("editingId").value = editId || "";
+
+  if (editId) {
+    const a = announcements.find(x => x.id === editId);
+    if (a) {
+      document.getElementById("annTitle").value    = a.title;
+      document.getElementById("annBody").value     = a.body;
+      document.getElementById("annPriority").value = a.priority;
+      document.getElementById("annTarget").value   = a.target_type;
+      document.getElementById("annDept").value     = a.department || "";
+      document.getElementById("deptRow").classList.toggle("hidden", a.target_type !== "department");
+    }
+  } else {
+    document.getElementById("annTitle").value    = "";
+    document.getElementById("annBody").value     = "";
+    document.getElementById("annPriority").value = "normal";
+    document.getElementById("annTarget").value   = "all";
+    document.getElementById("annDept").value     = myDept;
+    document.getElementById("deptRow").classList.add("hidden");
+  }
+
+  document.getElementById("pendingNotice").classList.toggle("hidden", myRole !== "student");
+  modal.classList.remove("hidden");
+  document.getElementById("annTitle").focus();
+}
+
+function closeModal() {
+  document.getElementById("composeModal").classList.add("hidden");
+}
+
+async function submitAnnouncement() {
+  const editId   = document.getElementById("editingId").value;
+  const title    = document.getElementById("annTitle").value.trim();
+  const body     = document.getElementById("annBody").value.trim();
+  const priority = document.getElementById("annPriority").value;
+  const target   = document.getElementById("annTarget").value;
+  const dept     = document.getElementById("annDept").value.trim();
+
+  if (!title || !body) { showToast("Title and body are required."); return; }
+  if (target === "department" && !dept) { showToast("Please enter a department."); return; }
+
+  const btn = document.getElementById("submitAnn");
+  btn.disabled = true; btn.textContent = "Posting…";
+
+  const payload = { title, body, priority, target_type: target, department: dept || null };
+  const url     = editId ? `${API}/announcements/${editId}` : `${API}/announcements`;
+  const method  = editId ? "PATCH" : "POST";
+
+  try {
+    const res  = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed");
+
+    closeModal();
+
+    if (!editId && data.announcement) {
+      if (data.auto_approved) {
+        // Broadcast via socket so other users see it immediately
+        socket?.emit("post_announcement", { announcement: data.announcement });
+        announcements.unshift(data.announcement);
+      } else {
+        // Pending — only add to my list
+        announcements.unshift(data.announcement);
+        showToast("✅ Submitted for admin approval.");
+      }
+    } else if (editId) {
+      await loadAnnouncements();
+      showToast("Announcement updated.");
+    }
+
+    renderList();
+    updatePendingBadge();
+    if (!editId && data.announcement) selectAnnouncement(data.announcement.id);
+  } catch (err) {
+    showToast("Error: " + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Post Announcement";
+  }
+}
+
+// ── Approve / Reject ──────────────────────────
+function approveAnn(id) {
+  socket?.emit("approve_announcement", { announcement_id: id }, (ack) => {
+    if (ack?.ok) {
+      showToast("✅ Announcement approved and published.");
+      loadAnnouncements().then(() => {
+        if (activeId === id) {
+          const a = announcements.find(x => x.id === id);
+          if (a) renderDetail(a);
+        }
+      });
+    } else {
+      showToast("Error: " + (ack?.error || "Failed"));
+    }
+  });
+}
+
+function rejectAnn(id) {
+  if (!confirm("Reject this announcement?")) return;
+  const a = announcements.find(x => x.id === id);
+  socket?.emit("reject_announcement", { announcement_id: id, author_id: a?.author_id }, (ack) => {
+    if (ack?.ok) {
+      showToast("Announcement rejected.");
+      loadAnnouncements().then(renderList);
+    } else {
+      showToast("Error: " + (ack?.error || "Failed"));
+    }
+  });
+}
+
+// ── Delete ────────────────────────────────────
+function deleteAnn(id) {
+  if (!confirm("Delete this announcement?")) return;
+  socket?.emit("delete_announcement", { announcement_id: id }, (ack) => {
+    if (ack?.ok) {
+      announcements = announcements.filter(a => a.id !== id);
+      if (activeId === id) {
+        activeId = null;
+        document.getElementById("annDetail").innerHTML = `
+          <div class="ann-empty-state" id="annEmptyState">
+            <span class="ann-empty-icon">📋</span>
+            <p>Select an announcement to read</p>
+          </div>`;
+      }
+      renderList();
+      showToast("Announcement deleted.");
+    } else {
+      showToast("Error: " + (ack?.error || "Failed"));
+    }
+  });
+}
+
+// ── Socket ────────────────────────────────────
+function connectSocket() {
+  // Load socket.io from Node server
+  const script = document.createElement("script");
+  script.src = `${WS}/socket.io/socket.io.js`;
+  script.onload = () => {
+    socket = io(WS, { auth: { token } });
+
+    socket.on("new_announcement", ({ announcement }) => {
+      if (!announcement) return;
+
+      // Check if this announcement is visible to me
+      const isForMe = announcement.target_type === "all"
+        || (announcement.target_type === "department" && announcement.department === myDept);
+      const isAdmin = ["admin","super_admin"].includes(myRole);
+
+      if (!isForMe && !isAdmin) return;
+
+      // Add or update in list
+      const idx = announcements.findIndex(a => a.id === announcement.id);
+      if (idx >= 0) announcements[idx] = { ...announcements[idx], ...announcement };
+      else announcements.unshift(announcement);
+
+      renderList();
+      updatePendingBadge();
+
+      // Show popup notification
+      showPopup(announcement);
+    });
+
+    socket.on("announcement_deleted", ({ announcement_id }) => {
+      announcements = announcements.filter(a => a.id !== announcement_id);
+      if (activeId === announcement_id) {
+        activeId = null;
+        document.getElementById("annDetail").innerHTML = `
+          <div class="ann-empty-state">
+            <span class="ann-empty-icon">📋</span>
+            <p>This announcement was deleted.</p>
+          </div>`;
+      }
+      renderList();
+    });
+
+    socket.on("announcement_status", ({ announcement_id, status }) => {
+      const a = announcements.find(x => x.id === announcement_id);
+      if (a) a.status = status;
+      renderList();
+      if (status === "approved") showToast("✅ Your announcement was approved!");
+      if (status === "rejected") showToast("❌ Your announcement was rejected.");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.warn("Socket error:", err.message);
+    });
+  };
+  document.head.appendChild(script);
+}
+
+// ── Popup Notification ────────────────────────
+function showPopup(a) {
+  const popup = document.getElementById("annPopup");
+  document.getElementById("annPopupTitle").textContent  = a.title;
+  document.getElementById("annPopupAuthor").textContent = `By ${a.author_name}`;
+  popup.classList.remove("hidden");
+  // Auto-hide after 6 seconds
+  clearTimeout(window._popupTimer);
+  window._popupTimer = setTimeout(() => popup.classList.add("hidden"), 6000);
+}
+
+// ── Pending Badge ─────────────────────────────
+function updatePendingBadge() {
+  const badge   = document.getElementById("pendingBadge");
+  const pending = announcements.filter(a => a.status === "pending").length;
+  if (badge) badge.textContent = pending > 0 ? pending : "";
+}
+
+// ── Helpers ───────────────────────────────────
+function escAnn(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function formatAnnTime(dateStr) {
+  const d = new Date(dateStr.replace(" ", "T"));
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60)     return "just now";
+  if (diff < 3600)   return Math.floor(diff/60) + "m ago";
+  if (diff < 86400)  return Math.floor(diff/3600) + "h ago";
+  return d.toLocaleDateString();
+}
+
+function formatAnnTimeFull(dateStr) {
+  const d = new Date(dateStr.replace(" ", "T"));
+  return d.toLocaleString();
+}
+
+function showToast(msg) {
+  const toast = document.getElementById("annToast");
+  toast.textContent = msg;
+  toast.classList.remove("hidden");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => toast.classList.add("hidden"), 3000);
+}

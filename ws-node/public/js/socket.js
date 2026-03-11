@@ -129,6 +129,17 @@ function connectSocket() {
     setTimeout(() => row.remove(), 260);
   });
 
+  socket.on("new_announcement", ({ announcement }) => {
+    showToast("📢 New: " + announcement.title);
+    // Update badge
+    const badge = document.getElementById("annNavBadge");
+    if (badge) {
+      const count = (parseInt(badge.textContent) || 0) + 1;
+      badge.textContent = count;
+      badge.classList.remove("hidden");
+    }
+  });
+
   // ── message_request_sent (recipient gets notified) ──────────
   socket.on("new_message_request", ({ request_id, from_name }) => {
     loadRequestCount();
