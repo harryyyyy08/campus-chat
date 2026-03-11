@@ -48,7 +48,6 @@ function renderMessage(msg) {
 
     // Voice message players — Messenger style
     voices.forEach(att => {
-      // Generate 30 waveform bars (decorative static bars)
       const bars = Array.from({length: 30}, (_, i) => {
         const h = 20 + Math.abs(Math.sin(i * 0.8 + att.id * 0.3) * 55) | 0;
         return `<span class="voice-bar" style="height:${h}%"></span>`;
@@ -112,6 +111,22 @@ function renderMessage(msg) {
     ? `<div class="bubble">${escapeHtml(msg.body)}</div>`
     : "";
 
+  // ── Date separator — insert BEFORE the message row ──
+  const msgDate = new Date((msg.created_at || "").replace(" ", "T"));
+  const msgDateStr = msgDate.toDateString();
+  // ✅ BAGO
+  const allSeparators = container.querySelectorAll(".date-separator");
+  const lastSeparator = allSeparators[allSeparators.length - 1];
+  const lastSepDate = lastSeparator?.dataset.date;
+
+  if (lastSepDate !== msgDateStr) {
+    const sep = document.createElement("div");
+    sep.className = "date-separator";
+    sep.dataset.date = msgDateStr;
+    sep.textContent = formatDateSeparator(msgDate);
+    container.appendChild(sep);
+  }
+
   row.innerHTML = `
                 ${avatarHtml}
                 <div class="msg-body">
@@ -149,7 +164,7 @@ function renderMessage(msg) {
   // Set video src via blob URL so auth header is sent (skip audio — handled by voice.js)
   row.querySelectorAll("video[data-protected]").forEach((videoEl) => {
     const mime = videoEl.dataset.mime || "";
-    if (mime.startsWith("audio/")) return; // skip — voice player handles these
+    if (mime.startsWith("audio/")) return;
     const url = videoEl.dataset.protected;
     fetch(toAbsoluteUrl(url), { headers: { Authorization: "Bearer " + token } })
       .then(r => r.blob())
@@ -192,13 +207,42 @@ function renderMessage(msg) {
   scrollToBottom();
 }
 
+// ── Date separator label ─────────────────────────────────────────
+function formatDateSeparator(date) {
+  const today     = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isToday     = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (isToday)     return "Today";
+  if (isYesterday) return "Yesterday";
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+// ── Timestamp format for message bubbles ─────────────────────────
+function formatTimeFull(dateStr) {
+  const d = new Date((dateStr || "").replace(" ", "T"));
+  const today     = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isToday     = d.toDateString() === today.toDateString();
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  if (isToday)     return time;
+  if (isYesterday) return `Yesterday ${time}`;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + time;
+}
+
 // Apply visual style for deleted message
 function applyDeletedStyle(row) {
   const msgBody = row.querySelector(".msg-body");
   if (!msgBody) return;
-  // Remove attachment and bubble
   msgBody.querySelectorAll(".attach-image-wrap, .attach-grid, .attach-doc, .attach-video-wrap, .voice-player, .bubble").forEach(el => el.remove());
-  // Add deleted placeholder if not already there
   if (!row.querySelector(".msg-deleted")) {
     const del = document.createElement("div");
     del.className = "msg-deleted";
@@ -207,7 +251,6 @@ function applyDeletedStyle(row) {
     if (meta) msgBody.insertBefore(del, meta);
     else msgBody.appendChild(del);
   }
-  // Remove context menu trigger
   row.oncontextmenu = null;
   row.dataset.deleted = "1";
 }
