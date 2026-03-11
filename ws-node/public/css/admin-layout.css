@@ -179,10 +179,9 @@
 
 /* ── User table ── */
 #userTableWrap {
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  padding: 16px;
+  overflow-y: auto;
+  height: calc(100vh - 120px);
 }
 #userTable {
   width: 100%;
