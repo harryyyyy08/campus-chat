@@ -85,6 +85,15 @@
           loadFlaggedMessages();
         } else if (isFlagged) loadFlaggedMessages();
         else renderUsers();
+        // Sa loob ng switchAdminTab function, idagdag:
+        if (tab === "announcements") {
+          document.getElementById("announcementsPanel").classList.remove("hidden");
+          document.getElementById("adminToolbar").classList.add("hidden");
+          document.getElementById("userTableWrap").classList.add("hidden");
+          loadAdminAnnouncements();
+        } else {
+          document.getElementById("announcementsPanel").classList.add("hidden");
+        }
       }
 
       // ── Load users ────────────────────────────────────────

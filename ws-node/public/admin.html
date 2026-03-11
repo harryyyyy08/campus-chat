@@ -177,6 +177,15 @@
             🚩 Flagged
           </button>
           <button
+            class="admin-tab"
+            id="announcementsTabBtn"
+            data-tab="announcements"
+            onclick="switchAdminTab(this, 'announcements')"
+          >
+            📢 Announcements
+            <span id="annPendingCount" class="admin-badge hidden">0</span>
+          </button>
+          <button
             class="admin-tab hidden"
             id="storageTabBtn"
             data-tab="storage"
@@ -494,6 +503,23 @@
             </button>
           </div>
         </div>
+        <!-- Announcements panel -->
+        <div id="announcementsPanel" class="hidden">
+          <div class="storage-toolbar">
+            <div class="admin-search-wrap">
+              <select id="annFilterStatus" onchange="loadAdminAnnouncements()" style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-strong);border-radius:8px;padding:7px 12px;font-size:13px;">
+                <option value="pending">Pending Approval</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="">All</option>
+              </select>
+            </div>
+            <button class="btn-modal-primary" onclick="loadAdminAnnouncements()" style="padding:8px 16px;font-size:13px;">Refresh</button>
+          </div>
+          <div id="annAdminList">
+            <div class="table-empty" style="padding:48px">Click Refresh to load announcements.</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -515,5 +541,6 @@
     <script src="js/admin-storage.js"></script>
     <script src="js/admin-monitor.js"></script>
     <script src="js/admin-auth.js"></script>
+    <script src="js/admin-announcements.js"></script>
   </body>
 </html>

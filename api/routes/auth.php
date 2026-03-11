@@ -34,9 +34,14 @@ if ($method === "POST" && $path === "/login") {
   if ($user["status"] === "disabled") json_response(["error" => "Your account has been disabled"], 403);
 
   $now = time();
+  // ✅ BAGO — may role na
   $token = jwt_sign([
-    "iss" => $cfg["jwt"]["issuer"], "sub" => (int)$user["id"],
-    "username" => $user["username"], "iat" => $now, "exp" => $now + $cfg["jwt"]["ttl_seconds"]
+      "iss"      => $cfg["jwt"]["issuer"],
+      "sub"      => (int)$user["id"],
+      "username" => $user["username"],
+      "role"     => $user["role"],        // ← IDAGDAG ITO
+      "iat"      => $now,
+      "exp"      => $now + $cfg["jwt"]["ttl_seconds"]
   ], $cfg["jwt"]["secret"]);
 
   json_response([

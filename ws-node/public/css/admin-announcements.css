@@ -1,0 +1,85 @@
+/* ════════════════════════════════════════════
+   ADMIN ANNOUNCEMENTS STYLES
+   Add to admin-layout.css or as separate file
+   ════════════════════════════════════════════ */
+
+.ann-admin-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+
+.ann-admin-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.ann-admin-priority {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ann-priority-low    { background: rgba(62,207,142,0.15); color: #3ecf8e; }
+.ann-priority-normal { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+.ann-priority-high   { background: rgba(247,169,79,0.15); color: #f7a94f; }
+.ann-priority-urgent { background: rgba(247,95,95,0.15);  color: #f75f5f; }
+
+.ann-admin-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.ann-status-pending  { background: rgba(247,169,79,0.15); color: #f7a94f; }
+.ann-status-approved { background: rgba(62,207,142,0.15); color: #3ecf8e; }
+.ann-status-rejected { background: rgba(247,95,95,0.15);  color: #f75f5f; }
+
+.ann-admin-target {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-base);
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.ann-admin-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.ann-admin-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.ann-admin-body {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
+
+.ann-admin-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.ann-admin-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
