@@ -104,6 +104,54 @@
     box-shadow var(--anim);
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 42px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle:hover {
+  color: var(--text-primary);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.password-toggle svg {
+  display: block;
+}
+
+.password-toggle .icon-off {
+  display: none;
+}
+
+.password-toggle.is-visible .icon-on {
+  display: none;
+}
+
+.password-toggle.is-visible .icon-off {
+  display: block;
+}
+
 .field-group input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);

@@ -112,12 +112,52 @@
         </div>
         <div class="field-group">
           <label for="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Enter your password"
-            autocomplete="current-password"
-          />
+          <div class="password-field">
+            <input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show password"
+              data-target="password"
+            >
+              <svg
+                class="icon-on"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg
+                class="icon-off"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"></path>
+                <path d="M1 1l22 22"></path>
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"></path>
+                <path d="M23 12s-1.67 3.11-4.59 5.59"></path>
+              </svg>
+            </button>
+          </div>
         </div>
         <button class="btn-primary" onclick="login()">Sign In</button>
         <p id="loginError"></p>
@@ -652,6 +692,26 @@
     <script src="js/groups.js"></script>
     <script src="js/voice.js"></script>
     <script src="js/auth.js"></script>
+    <script>
+      function setupPasswordToggles() {
+        document.querySelectorAll(".password-toggle").forEach((btn) => {
+          const targetId = btn.getAttribute("data-target");
+          const input = document.getElementById(targetId);
+          if (!input) return;
+          btn.addEventListener("click", () => {
+            const willShow = input.type === "password";
+            input.type = willShow ? "text" : "password";
+            btn.classList.toggle("is-visible", willShow);
+            btn.setAttribute(
+              "aria-label",
+              willShow ? "Hide password" : "Show password"
+            );
+          });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", setupPasswordToggles);
+    </script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
