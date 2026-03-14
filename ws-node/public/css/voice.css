@@ -8,7 +8,7 @@
   transition: color var(--anim), background var(--anim), transform var(--anim);
   flex-shrink: 0;
 }
-#voiceMicBtn:hover    { color: var(--accent); background: var(--bg-active); }
+#voiceMicBtn:hover    { color: var(--accent); background: var(--accent-soft); }
 #voiceMicBtn.recording {
   color: #fff; background: #ef4444;
   animation: mic-pulse 1.2s ease-in-out infinite;

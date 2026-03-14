@@ -63,7 +63,7 @@ function renderSelectedMembers() {
     ? selectedMembers
         .map(
           (m) =>
-            `<span class="member-chip">${escapeHtml(m.full_name || m.username)}<button onclick="removeMemberFromGroup(${m.id})">✕</button></span>`,
+            `<span class="member-chip">${escapeHtml(m.full_name || m.username)}<button onclick="removeMemberFromGroup(${m.id})" aria-label="Remove"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>`,
         )
         .join("")
     : `<span class="muted-hint">No members selected yet</span>`;
@@ -137,7 +137,7 @@ function renderGroupInfoModal() {
         m.role === "admin" ? `<span class="role-badge admin">Admin</span>` : "";
       const removeBtn =
         isAdmin && !isMe
-          ? `<button class="member-remove-btn" onclick="removeMember(${m.id})" title="Remove">✕</button>`
+          ? `<button class="member-remove-btn" onclick="removeMember(${m.id})" title="Remove" aria-label="Remove member"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
           : "";
       return `<div class="group-member-item">
                   <div class="gm-avatar">${escapeHtml(initials(m.full_name || m.username))}</div>

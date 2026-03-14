@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Announcements — CampusChat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/announcements.css" />
 </head>
@@ -13,9 +16,25 @@
 
   <!-- ── Sidebar Nav ── -->
   <nav class="ann-nav">
-    <div class="ann-nav-logo">📢</div>
-    <a href="index.html" class="ann-nav-btn" title="Chat">💬</a>
-    <a href="announcements.html" class="ann-nav-btn active" title="Announcements">📋</a>
+    <div class="ann-nav-logo" title="Announcements">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+    </div>
+    <a href="index.html" class="ann-nav-btn" title="Chat">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </a>
+    <a href="announcements.html" class="ann-nav-btn active" title="Announcements">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+        <line x1="9" y1="12" x2="15" y2="12"/>
+        <line x1="9" y1="16" x2="13" y2="16"/>
+      </svg>
+    </a>
   </nav>
 
   <!-- ── Main Layout ── -->
@@ -25,7 +44,12 @@
     <aside class="ann-sidebar">
       <div class="ann-sidebar-header">
         <h2>Announcements</h2>
-        <button class="ann-compose-btn" id="composeBtn" title="New Announcement">＋</button>
+        <button class="ann-compose-btn" id="composeBtn" title="New Announcement">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Filter tabs -->
@@ -47,8 +71,16 @@
     <!-- Right: Detail Panel -->
     <main class="ann-detail" id="annDetail">
       <div class="ann-empty-state" id="annEmptyState">
-        <span class="ann-empty-icon">📋</span>
-        <p>Select an announcement to read</p>
+        <span class="ann-empty-icon">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            <line x1="9" y1="12" x2="15" y2="12"/>
+            <line x1="9" y1="16" x2="13" y2="16"/>
+          </svg>
+        </span>
+        <p class="ann-empty-title">No announcement selected</p>
+        <p class="ann-empty-sub">Pick one from the list to read it here</p>
       </div>
     </main>
 
@@ -58,8 +90,13 @@
 <div class="ann-auto-overlay hidden" id="annAutoOverlay" aria-hidden="true">
   <div class="ann-auto-card" role="dialog" aria-modal="true" aria-labelledby="annAutoTitle" aria-describedby="annAutoBody">
     <div class="ann-auto-header">
-      <div class="ann-auto-pill">Announcement</div>
-      <button class="ann-auto-close" id="annAutoClose" aria-label="Close">✕</button>
+      <div class="ann-auto-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Announcement
+      </div>
+      <button class="ann-auto-close" id="annAutoClose" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
     <div class="ann-auto-title" id="annAutoTitle"></div>
     <div class="ann-auto-meta" id="annAutoMeta"></div>
@@ -75,7 +112,9 @@
   <div class="ann-modal">
     <div class="ann-modal-header">
       <h3 id="modalTitle">New Announcement</h3>
-      <button class="ann-modal-close" id="closeModal">✕</button>
+      <button class="ann-modal-close" id="closeModal" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
     <div class="ann-modal-body">
       <input type="hidden" id="editingId" value="" />
@@ -90,10 +129,10 @@
         <div>
           <label>Priority</label>
           <select id="annPriority">
-            <option value="low">🟢 Low</option>
-            <option value="normal" selected>🔵 Normal</option>
-            <option value="high">🟠 High</option>
-            <option value="urgent">🔴 Urgent</option>
+            <option value="low">Low</option>
+            <option value="normal" selected>Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
           </select>
         </div>
         <div>
@@ -111,7 +150,8 @@
       </div>
 
       <div class="ann-pending-notice hidden" id="pendingNotice">
-        ℹ️ Your announcement will be reviewed by an admin before publishing.
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Your announcement will be reviewed by an admin before publishing.
       </div>
     </div>
     <div class="ann-modal-footer">
@@ -127,12 +167,16 @@
 <!-- ── Real-time popup notification ── -->
 <div class="ann-popup hidden" id="annPopup">
   <div class="ann-popup-inner">
-    <span class="ann-popup-icon">📢</span>
+    <span class="ann-popup-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </span>
     <div class="ann-popup-text">
       <strong id="annPopupTitle"></strong>
       <span id="annPopupAuthor"></span>
     </div>
-    <button class="ann-popup-close" id="annPopupClose">✕</button>
+    <button class="ann-popup-close" id="annPopupClose" aria-label="Close">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>
 </div>
 

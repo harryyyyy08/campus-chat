@@ -1,81 +1,94 @@
 /* ═══════════════════════════════════════════
-   CampusChat — chat.css
+   CampusChat — Design System
    ═══════════════════════════════════════════ */
 
-/* ── Dark Theme (default) ── */
+/* ── Light Theme (default) ── */
 :root,
+[data-theme="light"] {
+  --bg-base:          #F0F4F8;
+  --bg-sidebar:       #FFFFFF;
+  --bg-sidebar-hover: #F7F9FC;
+  --bg-active:        #EFF6FF;
+  --bg-chat:          #F8FAFC;
+  --bg-bubble-in:     #FFFFFF;
+  --bg-bubble-out:    #2563EB;
+  --bg-input:         #F1F5F9;
+  --bg-modal:         #FFFFFF;
+
+  --accent:       #2563EB;
+  --accent-hover: #1D4ED8;
+  --accent-soft:  rgba(37, 99, 235, 0.08);
+  --accent-glow:  rgba(37, 99, 235, 0.22);
+  --green:        #10B981;
+  --green-soft:   rgba(16, 185, 129, 0.12);
+  --red:          #EF4444;
+  --red-soft:     rgba(239, 68, 68, 0.08);
+  --amber:        #F59E0B;
+
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #94A3B8;
+  --border:         #E2E8F0;
+  --border-strong:  #CBD5E1;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.09), 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  --toast-bg: #1E293B;
+}
+
+/* ── Dark Theme ── */
 [data-theme="dark"] {
-  --bg-base: #0f1117;
-  --bg-sidebar: #161b26;
-  --bg-sidebar-hover: #1e2535;
-  --bg-active: #1a2a3f;
-  --bg-chat: #12161f;
-  --bg-bubble-in: #1e2535;
-  --bg-bubble-out: #1a6cf5;
-  --bg-input: #1e2535;
-  --bg-modal: #1b2030;
+  --bg-base:          #0F1117;
+  --bg-sidebar:       #161B26;
+  --bg-sidebar-hover: #1E2535;
+  --bg-active:        #1A2A3F;
+  --bg-chat:          #12161F;
+  --bg-bubble-in:     #1E2535;
+  --bg-bubble-out:    #2563EB;
+  --bg-input:         #1E2535;
+  --bg-modal:         #1B2030;
 
-  --accent: #1a6cf5;
-  --accent-soft: rgba(26, 108, 245, 0.15);
-  --accent-glow: rgba(26, 108, 245, 0.35);
-  --green: #22c55e;
-  --red: #ef4444;
+  --accent:       #3B82F6;
+  --accent-hover: #2563EB;
+  --accent-soft:  rgba(59, 130, 246, 0.15);
+  --accent-glow:  rgba(59, 130, 246, 0.35);
+  --green:        #22C55E;
+  --green-soft:   rgba(34, 197, 94, 0.12);
+  --red:          #EF4444;
+  --red-soft:     rgba(239, 68, 68, 0.12);
+  --amber:        #F59E0B;
 
-  --text-primary: #f0f2f7;
-  --text-secondary: #8b95a8;
-  --text-muted: #4b5566;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.1);
+  --text-primary:   #F0F2F7;
+  --text-secondary: #8B95A8;
+  --text-muted:     #4B5566;
+  --border:         rgba(255, 255, 255, 0.06);
+  --border-strong:  rgba(255, 255, 255, 0.1);
 
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
 
-  --toast-bg: #1e2535;
+  --toast-bg: #1E2535;
 }
 
-/* ── Light Theme ── */
-[data-theme="light"] {
-  --bg-base: #f0f4f9;
-  --bg-sidebar: #ffffff;
-  --bg-sidebar-hover: #f0f4f9;
-  --bg-active: #deeafc;
-  --bg-chat: #f7f9fc;
-  --bg-bubble-in: #ffffff;
-  --bg-bubble-out: #1a6cf5;
-  --bg-input: #f0f4f9;
-  --bg-modal: #ffffff;
-
-  --accent: #1a6cf5;
-  --accent-soft: rgba(26, 108, 245, 0.1);
-  --accent-glow: rgba(26, 108, 245, 0.25);
-  --green: #16a34a;
-  --red: #dc2626;
-
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --border: rgba(0, 0, 0, 0.07);
-  --border-strong: rgba(0, 0, 0, 0.12);
-
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-
-  --toast-bg: #1e293b;
-}
-
+/* ── Shared Variables ── */
 :root {
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
 
-  --font-body: "Plus Jakarta Sans", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-body: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
   --sidebar-w: 300px;
-  --anim: 200ms ease;
+  --anim:      180ms ease;
 }
 
+/* ── Reset ── */
 *,
 *::before,
 *::after {
@@ -93,20 +106,27 @@ body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
+  background: var(--border-strong);
   border-radius: 99px;
 }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
+/* ── Keyframes ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
-/* Utility */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Utility ── */
 .hidden { display: none !important; }

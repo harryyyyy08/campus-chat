@@ -38,7 +38,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/base.css" />
@@ -51,44 +51,20 @@
   </head>
   <body>
     <!-- Loading screen shown while checking saved session -->
-    <div
-      id="adminLoadingScreen"
-      style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        background: var(--bg-base);
-        flex-direction: column;
-        gap: 16px;
-      "
-    >
-      <div
-        style="
-          width: 36px;
-          height: 36px;
-          border: 3px solid var(--border-strong);
-          border-top-color: var(--accent);
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-        "
-      ></div>
-      <div
-        style="
-          font-size: 13px;
-          color: var(--text-muted);
-          font-family: var(--font-mono);
-        "
-      >
-        Checking session…
-      </div>
+    <div id="adminLoadingScreen" style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg-base);flex-direction:column;gap:14px;">
+      <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+      <div style="font-size:13px;color:var(--text-muted);font-weight:500;letter-spacing:0.3px;">Checking session…</div>
     </div>
 
     <!-- Admin Login -->
     <div id="adminLogin" class="hidden">
       <div class="login-card">
         <div class="login-logo">
-          <div class="login-logo-icon">🛡️</div>
+          <div class="login-logo-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
           <div>
             <div class="login-logo-text">Campus<span>Chat</span></div>
             <div class="login-subtitle">ADMIN PANEL</div>

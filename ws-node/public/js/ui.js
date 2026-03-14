@@ -18,13 +18,13 @@ function applyTheme(theme) {
 }
 
 function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  const current = document.documentElement.getAttribute("data-theme") || "light";
   applyTheme(current === "dark" ? "light" : "dark");
 }
 
 // Load saved theme on startup
 (function () {
-  const saved = localStorage.getItem("cc_theme") || "dark";
+  const saved = localStorage.getItem("cc_theme") || "light";
   applyTheme(saved);
 })();
 

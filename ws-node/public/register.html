@@ -19,7 +19,11 @@
       <!-- Registration Form -->
       <div id="registerForm" class="login-card" style="width: 420px">
         <div class="login-logo">
-          <div class="login-logo-icon">💬</div>
+          <div class="login-logo-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
           <div>
             <div class="login-logo-text">Campus<span>Chat</span></div>
             <div class="login-subtitle">CREATE ACCOUNT</div>
@@ -231,11 +235,8 @@
         min-height: 100vh;
         padding: 32px 16px;
         background:
-          radial-gradient(
-            ellipse 80% 60% at 50% -10%,
-            rgba(26, 108, 245, 0.18) 0%,
-            transparent 70%
-          ),
+          radial-gradient(ellipse 100% 80% at 15% -10%, rgba(37, 99, 235, 0.14) 0%, transparent 55%),
+          radial-gradient(ellipse 70% 60% at 85% 110%, rgba(99, 102, 241, 0.10) 0%, transparent 55%),
           var(--bg-base);
       }
       .field-hint {
@@ -251,7 +252,7 @@
       .field-select {
         width: 100%;
         background: var(--bg-input);
-        border: 1px solid var(--border-strong);
+        border: 1.5px solid var(--border);
         border-radius: var(--radius-md);
         padding: 11px 14px;
         color: var(--text-primary);

@@ -19,7 +19,7 @@
       }
       // Load saved theme on startup — shared with chat.css via localStorage key
       (function () {
-        applyTheme(localStorage.getItem("cc_theme") || "dark");
+        applyTheme(localStorage.getItem("cc_theme") || "light");
       })();
 
       const API_BASE = `http://${window.location.hostname}/campus-chat/api/index.php`;

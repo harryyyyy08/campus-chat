@@ -55,6 +55,93 @@ function setupInputListeners() {
 }
 
 // ════════════════════════════════════════════
+// INPUT EMOJI PICKER
+// ════════════════════════════════════════════
+
+function openInputEmojiPicker(btn) {
+  // Close any existing picker
+  document.querySelector(".emoji-picker-popup")?.remove();
+
+  const picker = document.createElement("div");
+  picker.className = "emoji-picker-popup";
+
+  // Search input
+  const search = document.createElement("input");
+  search.className = "emoji-picker-search";
+  search.placeholder = "Search emoji…";
+  search.type = "text";
+  picker.appendChild(search);
+
+  const grid = document.createElement("div");
+  grid.className = "emoji-picker-grid";
+
+  const renderEmojis = (list) => {
+    grid.innerHTML = "";
+    list.forEach(em => {
+      const emojiBtn = document.createElement("button");
+      emojiBtn.className = "emoji-btn";
+      emojiBtn.type = "button";
+      emojiBtn.textContent = em;
+      emojiBtn.onclick = (e) => {
+        e.stopPropagation();
+        insertEmojiIntoInput(em);
+        picker.remove();
+      };
+      grid.appendChild(emojiBtn);
+    });
+  };
+
+  renderEmojis(EMOJI_LIST);
+  picker.appendChild(grid);
+
+  search.addEventListener("input", () => {
+    const q = search.value.trim().toLowerCase();
+    renderEmojis(q ? EMOJI_LIST.filter(e => e.includes(q)) : EMOJI_LIST);
+  });
+
+  // Position above the button
+  picker.style.cssText = "position:fixed;z-index:9999;";
+  document.body.appendChild(picker);
+
+  requestAnimationFrame(() => {
+    const btnRect    = btn.getBoundingClientRect();
+    const pickerRect = picker.getBoundingClientRect();
+    let top  = btnRect.top - pickerRect.height - 8;
+    let left = btnRect.left;
+    if (top  < 8) top  = btnRect.bottom + 8;
+    if (left + pickerRect.width > window.innerWidth - 8) left = window.innerWidth - pickerRect.width - 8;
+    if (left < 8) left = 8;
+    picker.style.top  = top  + "px";
+    picker.style.left = left + "px";
+    search.focus();
+  });
+
+  // Close on outside click
+  const close = (ev) => { if (!picker.contains(ev.target) && ev.target !== btn) { picker.remove(); cleanup(); } };
+  const cleanup = () => document.removeEventListener("mousedown", close);
+  setTimeout(() => document.addEventListener("mousedown", close), 0);
+}
+
+function insertEmojiIntoInput(emoji) {
+  const textarea = document.getElementById("messageInput");
+  if (!textarea) return;
+
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end   = textarea.selectionEnd   ?? textarea.value.length;
+
+  textarea.value =
+    textarea.value.slice(0, start) + emoji + textarea.value.slice(end);
+
+  // Move cursor to right after the inserted emoji
+  const newPos = start + emoji.length;
+  textarea.setSelectionRange(newPos, newPos);
+
+  // Trigger resize and typing indicator
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  textarea.focus();
+}
+
+// ════════════════════════════════════════════
 // FILE ATTACHMENT — MULTI-FILE
 // ════════════════════════════════════════════
 
@@ -183,7 +270,7 @@ function addAttachmentPreviewItem(data, file, itemId) {
       <div class="attach-preview-thumb">
         <img src="" alt="${escapeHtml(file.name)}" />
       </div>
-      <button class="attach-preview-item-remove" onclick="removeAttachmentById('${id}')">✕</button>`;
+      <button class="attach-preview-item-remove" onclick="removeAttachmentById('${id}')" aria-label="Remove"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
     reader.onload = (e) => {
       const img = item.querySelector("img");
       if (img) img.src = e.target.result;
@@ -193,13 +280,13 @@ function addAttachmentPreviewItem(data, file, itemId) {
     item.innerHTML = `
       <div class="attach-preview-thumb video">🎬</div>
       <div class="attach-preview-item-name">${escapeHtml(file.name)}</div>
-      <button class="attach-preview-item-remove" onclick="removeAttachmentById('${id}')">✕</button>`;
+      <button class="attach-preview-item-remove" onclick="removeAttachmentById('${id}')" aria-label="Remove"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
   } else {
     const icon = filePreviewIcon(file.type);
     item.innerHTML = `
       <div class="attach-preview-thumb doc">${icon}</div>
       <div class="attach-preview-item-name">${escapeHtml(file.name)}</div>
-      <button class="attach-preview-item-remove" onclick="removeAttachmentById('${id}')">✕</button>`;
+      <button class="attach-preview-item-remove" onclick="removeAttachmentById('${id}')" aria-label="Remove"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
   }
 
   document.getElementById("attachPreviewList").appendChild(item);
@@ -226,7 +313,7 @@ function updateAttachmentPreviewItem(itemId, data) {
     // Add remove button
     const removeBtn = document.createElement("button");
     removeBtn.className = "attach-preview-item-remove";
-    removeBtn.textContent = "✕";
+    removeBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     removeBtn.onclick = () => removeAttachmentById(itemId);
     item.appendChild(removeBtn);
     // Remove filename label if it was added in loading
