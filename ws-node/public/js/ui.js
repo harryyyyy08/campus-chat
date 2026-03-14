@@ -79,6 +79,83 @@ function showToast(msg, duration = 3000) {
   t._timer = setTimeout(() => t.classList.remove("show"), duration);
 }
 
+async function showAutoAnnouncementModal() {
+  const overlay = document.getElementById("annAutoOverlay");
+  if (!overlay) return;
+
+  if (!overlay.dataset.bound) {
+    const closeBtn = document.getElementById("annAutoClose");
+    const okBtn = document.getElementById("annAutoOk");
+    if (closeBtn) closeBtn.addEventListener("click", closeAutoAnnouncementModal);
+    if (okBtn) okBtn.addEventListener("click", closeAutoAnnouncementModal);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeAutoAnnouncementModal();
+    });
+    overlay.dataset.bound = "1";
+  }
+
+  const savedToken = localStorage.getItem("cc_token");
+  const savedUserStr = localStorage.getItem("cc_user");
+  if (!savedToken || !savedUserStr) return;
+
+  let savedUser;
+  try {
+    savedUser = JSON.parse(savedUserStr);
+  } catch {
+    return;
+  }
+  const sessionKey = `cc_ann_auto_shown_${savedUser.id || "anon"}`;
+  if (sessionStorage.getItem(sessionKey)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/announcements`, {
+      headers: { Authorization: `Bearer ${savedToken}` },
+    });
+    const data = await res.json();
+    if (!res.ok) return;
+    const list = data.announcements || [];
+    const role = savedUser.role || "student";
+    const dept = savedUser.department || "";
+    const isAdmin = ["admin", "super_admin"].includes(role);
+    const visible = list.filter((a) => {
+      if (a.status !== "approved") return false;
+      if (a.is_read) return false;
+      if (a.target_type === "all") return true;
+      if (a.target_type === "department" && a.department === dept) return true;
+      return isAdmin;
+    });
+    if (!visible.length) return;
+    const latest = visible.reduce((acc, curr) => {
+      const aTime = new Date((acc.created_at || "").replace(" ", "T")).getTime();
+      const cTime = new Date((curr.created_at || "").replace(" ", "T")).getTime();
+      return (cTime || 0) > (aTime || 0) ? curr : acc;
+    }, visible[0]);
+
+    const titleEl = document.getElementById("annAutoTitle");
+    const metaEl = document.getElementById("annAutoMeta");
+    const bodyEl = document.getElementById("annAutoBody");
+    if (!titleEl || !metaEl || !bodyEl) return;
+
+    const rawDate = (latest.created_at || "").replace(" ", "T");
+    const date = new Date(rawDate);
+    const metaTime = isNaN(date.getTime()) ? latest.created_at : date.toLocaleString();
+    titleEl.textContent = latest.title || "Announcement";
+    metaEl.textContent = `By ${latest.author_name || "Campus Admin"} · ${metaTime || ""}`;
+    bodyEl.textContent = latest.body || "";
+
+    overlay.classList.remove("hidden");
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    sessionStorage.setItem(sessionKey, "1");
+  } catch {}
+}
+
+function closeAutoAnnouncementModal() {
+  const overlay = document.getElementById("annAutoOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.classList.add("hidden"), 200);
+}
+
 function openModal(id) {
   document.getElementById(id).classList.add("open");
 }

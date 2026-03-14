@@ -69,6 +69,17 @@ function setupUI() {
   document.getElementById("annPopupClose").addEventListener("click", () => {
     document.getElementById("annPopup").classList.add("hidden");
   });
+
+  const autoOverlay = document.getElementById("annAutoOverlay");
+  const autoClose = document.getElementById("annAutoClose");
+  const autoOk = document.getElementById("annAutoOk");
+  if (autoOverlay && autoClose && autoOk) {
+    autoClose.addEventListener("click", closeAutoAnnouncement);
+    autoOk.addEventListener("click", closeAutoAnnouncement);
+    autoOverlay.addEventListener("click", (e) => {
+      if (e.target === autoOverlay) closeAutoAnnouncement();
+    });
+  }
 }
 
 // ── Load Announcements ────────────────────────
@@ -82,6 +93,7 @@ async function loadAnnouncements() {
     announcements = data.announcements || [];
     renderList();
     updatePendingBadge();
+    showAutoAnnouncement();
   } catch (err) {
     document.getElementById("annList").innerHTML =
       `<div class="ann-no-items">Failed to load: ${err.message}</div>`;
@@ -387,6 +399,47 @@ function showPopup(a) {
   // Auto-hide after 6 seconds
   clearTimeout(window._popupTimer);
   window._popupTimer = setTimeout(() => popup.classList.add("hidden"), 6000);
+}
+
+function showAutoAnnouncement() {
+  const overlay = document.getElementById("annAutoOverlay");
+  if (!overlay) return;
+  const sessionKey = `cc_ann_auto_shown_${myUserId || "anon"}`;
+  if (sessionStorage.getItem(sessionKey)) return;
+  const isAdmin = ["admin", "super_admin"].includes(myRole);
+  const visible = announcements.filter((a) => {
+    if (a.status !== "approved") return false;
+    if (a.is_read) return false;
+    if (a.target_type === "all") return true;
+    if (a.target_type === "department" && a.department === myDept) return true;
+    return isAdmin;
+  });
+  if (!visible.length) return;
+  const latest = visible.reduce((acc, curr) => {
+    const aTime = new Date((acc.created_at || "").replace(" ", "T")).getTime();
+    const cTime = new Date((curr.created_at || "").replace(" ", "T")).getTime();
+    return (cTime || 0) > (aTime || 0) ? curr : acc;
+  }, visible[0]);
+
+  const titleEl = document.getElementById("annAutoTitle");
+  const metaEl = document.getElementById("annAutoMeta");
+  const bodyEl = document.getElementById("annAutoBody");
+  if (!titleEl || !metaEl || !bodyEl) return;
+
+  titleEl.textContent = latest.title || "Announcement";
+  metaEl.textContent = `By ${latest.author_name || "Campus Admin"} · ${formatAnnTimeFull(latest.created_at)}`;
+  bodyEl.textContent = latest.body || "";
+
+  overlay.classList.remove("hidden");
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  sessionStorage.setItem(sessionKey, "1");
+}
+
+function closeAutoAnnouncement() {
+  const overlay = document.getElementById("annAutoOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.classList.add("hidden"), 200);
 }
 
 // ── Pending Badge ─────────────────────────────

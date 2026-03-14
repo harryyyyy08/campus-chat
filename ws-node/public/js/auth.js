@@ -134,6 +134,9 @@ async function initApp() {
   await loadConversations();
   loadRequestCount();
   startTokenWatcher();
+  if (typeof showAutoAnnouncementModal === "function") {
+    showAutoAnnouncementModal();
+  }
 }
 
 // ════════════════════════════════════════════
