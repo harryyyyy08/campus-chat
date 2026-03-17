@@ -55,110 +55,121 @@
   <link rel="stylesheet" href="css/voice.css" />
     <link rel="stylesheet" href="css/mobile.css" />
     <style>
-      .ann-auto-overlay {
+      /* ── Persistent Announcement Modal ── */
+      .ann-persist-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.50);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 5000;
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 2000;
+        padding: 20px;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.2s ease;
-        padding: 20px;
       }
-      .ann-auto-overlay.visible {
+      .ann-persist-overlay.visible {
         opacity: 1;
         pointer-events: auto;
       }
-      .ann-auto-card {
-        width: min(560px, 92vw);
-        max-height: 80vh;
-        overflow: auto;
+      .ann-persist-card {
+        width: min(560px, 94vw);
+        max-height: 85vh;
+        overflow-y: auto;
         background: var(--bg-modal);
-        border: 1px solid var(--border);
+        border: 1.5px solid rgba(239, 68, 68, 0.35);
         border-radius: var(--radius-xl);
-        box-shadow: var(--shadow-lg);
-        padding: 24px 28px 22px;
-        transform: translateY(14px);
+        box-shadow: 0 0 0 4px rgba(239,68,68,0.08), var(--shadow-lg);
+        padding: 28px 30px 24px;
+        transform: translateY(16px) scale(0.98);
         opacity: 0;
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease;
       }
-      .ann-auto-overlay.visible .ann-auto-card {
-        transform: translateY(0);
+      .ann-persist-overlay.visible .ann-persist-card {
+        transform: translateY(0) scale(1);
         opacity: 1;
       }
-      .ann-auto-header {
-        display: flex;
-        justify-content: space-between;
+      .ann-persist-header { margin-bottom: 18px; }
+      .ann-persist-pill {
+        display: inline-flex;
         align-items: center;
-        margin-bottom: 12px;
-      }
-      .ann-auto-pill {
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        background: var(--accent-soft);
-        color: var(--accent);
-        padding: 4px 12px;
-        border-radius: var(--radius-full);
+        background: rgba(239,68,68,0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.25);
+        padding: 5px 12px;
+        border-radius: 999px;
+        animation: ann-persist-pulse 2s infinite;
       }
-      .ann-auto-close {
-        background: none;
-        border: none;
+      @keyframes ann-persist-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+        50%       { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+      }
+      .ann-persist-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+      .ann-persist-meta {
+        font-size: 12.5px;
         color: var(--text-muted);
-        cursor: pointer;
-        font-size: 16px;
-        padding: 6px;
-        border-radius: var(--radius-sm);
-        display: flex;
-        align-items: center;
-        transition: color 0.15s, background 0.15s;
+        margin-bottom: 16px;
       }
-      .ann-auto-close:hover {
-        color: var(--text-primary);
-        background: var(--bg-sidebar-hover);
-      }
-      .ann-auto-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 6px;
-        letter-spacing: -0.3px;
-      }
-      .ann-auto-meta {
-        font-size: 12px;
+      .ann-persist-body {
+        font-size: 14.5px;
+        line-height: 1.75;
         color: var(--text-secondary);
-        margin-bottom: 14px;
-      }
-      .ann-auto-body {
-        font-size: 14px;
-        line-height: 1.7;
-        color: var(--text-primary);
         white-space: pre-wrap;
+        padding: 16px;
+        background: var(--bg-base);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
       }
-      .ann-auto-actions {
-        margin-top: 20px;
+      .ann-persist-actions {
         display: flex;
         justify-content: flex-end;
+        gap: 10px;
+        margin-top: 22px;
       }
-      .ann-auto-btn {
+      .ann-persist-btn-view {
+        padding: 10px 20px;
+        border-radius: var(--radius-md);
+        border: 1.5px solid var(--border-strong);
+        background: var(--bg-sidebar);
+        color: var(--text-secondary);
+        font-size: 13.5px;
+        font-weight: 600;
+        font-family: var(--font-body);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .ann-persist-btn-view:hover {
+        background: var(--bg-sidebar-hover);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .ann-persist-btn-ok {
+        padding: 10px 24px;
+        border-radius: var(--radius-md);
+        border: none;
         background: var(--accent);
         color: #fff;
-        border: none;
-        border-radius: var(--radius-md);
-        padding: 10px 20px;
+        font-size: 13.5px;
+        font-weight: 700;
         font-family: var(--font-body);
-        font-size: 13px;
-        font-weight: 600;
         cursor: pointer;
         transition: background 0.15s, box-shadow 0.15s;
       }
-      .ann-auto-btn:hover {
+      .ann-persist-btn-ok:hover {
         background: var(--accent-hover);
         box-shadow: 0 4px 14px var(--accent-glow);
       }
@@ -634,19 +645,24 @@
       </div>
     </div>
 
-    <div class="ann-auto-overlay hidden" id="annAutoOverlay" aria-hidden="true">
-      <div class="ann-auto-card" role="dialog" aria-modal="true" aria-labelledby="annAutoTitle" aria-describedby="annAutoBody">
-        <div class="ann-auto-header">
-          <div class="ann-auto-pill">Announcement</div>
-          <button class="ann-auto-close" id="annAutoClose" aria-label="Close">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+    <!-- Persistent Announcement Modal — hindi mawawala hanggang pindutin -->
+    <div class="ann-persist-overlay hidden" id="annPersistOverlay" aria-hidden="true">
+      <div class="ann-persist-card" role="dialog" aria-modal="true">
+        <div class="ann-persist-header">
+          <div class="ann-persist-pill">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-1px">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            New Announcement
+          </div>
         </div>
-        <div class="ann-auto-title" id="annAutoTitle"></div>
-        <div class="ann-auto-meta" id="annAutoMeta"></div>
-        <div class="ann-auto-body" id="annAutoBody"></div>
-        <div class="ann-auto-actions">
-          <button class="ann-auto-btn" id="annAutoOk">Got it</button>
+        <div class="ann-persist-title" id="annPersistTitle"></div>
+        <div class="ann-persist-meta" id="annPersistMeta"></div>
+        <div class="ann-persist-body" id="annPersistBody"></div>
+        <div class="ann-persist-actions">
+          <button class="ann-persist-btn-view" id="annPersistView">View Announcement</button>
+          <button class="ann-persist-btn-ok" id="annPersistOk">Got it ✓</button>
         </div>
       </div>
     </div>

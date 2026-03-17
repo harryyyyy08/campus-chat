@@ -29,14 +29,14 @@
       let allUsers = [];
       let staleFiles = [];
       let selectedStale = new Set();
+      let adminSocket = null;
 
       // ── Shared post-login UI setup ─────────────────────────
       async function initAdminApp(user) {
         document.getElementById("adminLoadingScreen").style.display = "none";
         document.getElementById("adminLogin").classList.add("hidden");
         document.getElementById("adminApp").classList.remove("hidden");
-        document.getElementById("adminMyName").textContent =
-          user.full_name || user.username;
+        document.getElementById("adminMyName").textContent = user.full_name || user.username;
 
         const badge = document.getElementById("adminRoleBadge");
         if (myRole === "super_admin") {
@@ -51,7 +51,32 @@
           badge.className = "admin-role-badge";
         }
 
+        initAdminSocket(adminToken); // ← TAWAGAN DITO
+
         await loadUsers();
+      }
+
+      // ── Admin Socket — LABAS ng initAdminApp ──────
+      function initAdminSocket(token) {
+        const _host = window.location.hostname;
+        const WS_URL = `http://${_host}:3001`;
+
+        if (typeof io === "undefined") {
+          const script = document.createElement("script");
+          script.src = `${WS_URL}/socket.io/socket.io.js`;
+          script.onload = () => {
+            adminSocket = io(WS_URL, { auth: { token } });
+            adminSocket.on("connect", () => {
+              console.log("[admin] Socket connected:", adminSocket.id);
+            });
+            adminSocket.on("connect_error", (err) => {
+              console.warn("[admin] Socket error:", err.message);
+            });
+          };
+          document.head.appendChild(script);
+        } else {
+          adminSocket = io(WS_URL, { auth: { token } });
+        }
       }
 
       // ── Session restore on page load ───────────────────────

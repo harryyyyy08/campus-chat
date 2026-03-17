@@ -2,8 +2,7 @@
 // ANNOUNCEMENTS — announcements.js
 // ════════════════════════════════════════════
 
-// ✅ BAGO
-const token  = localStorage.getItem("cc_token");
+const token   = localStorage.getItem("cc_token");
 const _ccUser = JSON.parse(localStorage.getItem("cc_user") || "{}");
 const myUserId = Number(_ccUser.id);
 const myRole   = _ccUser.role || "student";
@@ -11,15 +10,18 @@ const myDept   = _ccUser.department || "";
 
 if (!token) { window.location.href = "index.html"; }
 
-// ✅ BAGO — same pattern as config.js
 const _host = window.location.hostname;
 const API   = `http://${_host}/campus-chat/api/index.php`;
 const WS    = `http://${_host}:3001`;
 
 let socket;
-let announcements = [];
-let activeId      = null;
-let currentFilter = "all";
+let announcements  = [];
+let activeId       = null;
+let currentFilter  = "all";
+
+// Queue for multiple announcements arriving at the same time
+let persistQueue   = [];
+let persistShowing = false;
 
 // ── Init ─────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
@@ -30,12 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ── UI Setup ─────────────────────────────────
 function setupUI() {
-  // Show admin-only tabs
   if (["admin", "super_admin"].includes(myRole)) {
     document.querySelectorAll(".admin-only").forEach(el => el.classList.remove("hidden"));
   }
 
-  // Filter tabs
   document.querySelectorAll(".ann-tab").forEach(tab => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".ann-tab").forEach(t => t.classList.remove("active"));
@@ -45,41 +45,31 @@ function setupUI() {
     });
   });
 
-  // Compose button
   document.getElementById("composeBtn").addEventListener("click", () => openModal());
   document.getElementById("closeModal").addEventListener("click", closeModal);
   document.getElementById("cancelModal").addEventListener("click", closeModal);
   document.getElementById("submitAnn").addEventListener("click", submitAnnouncement);
 
-  // Target type → show/hide department field
   document.getElementById("annTarget").addEventListener("change", (e) => {
-    const deptRow     = document.getElementById("deptRow");
-    const pendingNote = document.getElementById("pendingNotice");
-    deptRow.classList.toggle("hidden", e.target.value !== "department");
-    // Show pending notice for students
-    pendingNote.classList.toggle("hidden", myRole !== "student");
+    document.getElementById("deptRow").classList.toggle("hidden", e.target.value !== "department");
   });
 
-  // Show pending notice on open if student
   if (myRole === "student") {
     document.getElementById("pendingNotice").classList.remove("hidden");
   }
 
-  // Popup close
-  document.getElementById("annPopupClose").addEventListener("click", () => {
-    document.getElementById("annPopup").classList.add("hidden");
+  // ── Persistent modal buttons ──
+  document.getElementById("annPersistOk").addEventListener("click", () => {
+    closePersistModal(true);
   });
 
-  const autoOverlay = document.getElementById("annAutoOverlay");
-  const autoClose = document.getElementById("annAutoClose");
-  const autoOk = document.getElementById("annAutoOk");
-  if (autoOverlay && autoClose && autoOk) {
-    autoClose.addEventListener("click", closeAutoAnnouncement);
-    autoOk.addEventListener("click", closeAutoAnnouncement);
-    autoOverlay.addEventListener("click", (e) => {
-      if (e.target === autoOverlay) closeAutoAnnouncement();
-    });
-  }
+  document.getElementById("annPersistView").addEventListener("click", () => {
+    const current = persistQueue[0];
+    closePersistModal(true);
+    if (current) {
+      selectAnnouncement(current.id);
+    }
+  });
 }
 
 // ── Load Announcements ────────────────────────
@@ -93,11 +83,94 @@ async function loadAnnouncements() {
     announcements = data.announcements || [];
     renderList();
     updatePendingBadge();
-    showAutoAnnouncement();
+    showUnreadOnLoad();
   } catch (err) {
     document.getElementById("annList").innerHTML =
       `<div class="ann-no-items">Failed to load: ${err.message}</div>`;
   }
+}
+
+// ── Show unread announcements on first load ───
+function showUnreadOnLoad() {
+  const sessionKey = `cc_ann_shown_${myUserId}`;
+  if (sessionStorage.getItem(sessionKey)) return;
+  sessionStorage.setItem(sessionKey, "1");
+
+  const isAdmin = ["admin", "super_admin"].includes(myRole);
+  const unread  = announcements.filter(a => {
+    if (a.status !== "approved") return false;
+    if (a.is_read) return false;
+    if (a.target_type === "all") return true;
+    if (a.target_type === "department" && a.department === myDept) return true;
+    return isAdmin;
+  });
+
+  if (!unread.length) return;
+
+  // Sort by newest first, queue all unread
+  unread.sort((a, b) =>
+    new Date(b.created_at.replace(" ", "T")) - new Date(a.created_at.replace(" ", "T"))
+  );
+
+  unread.forEach(a => queuePersistModal(a));
+}
+
+// ── Persistent Modal Queue ────────────────────
+function queuePersistModal(announcement) {
+  persistQueue.push(announcement);
+  if (!persistShowing) showNextPersistModal();
+}
+
+function showNextPersistModal() {
+  if (persistQueue.length === 0) {
+    persistShowing = false;
+    return;
+  }
+
+  persistShowing = true;
+  const a = persistQueue[0];
+
+  document.getElementById("annPersistTitle").textContent = a.title || "";
+  document.getElementById("annPersistMeta").textContent  =
+    `By ${a.author_name || "Admin"} · ${formatAnnTimeFull(a.created_at)}`;
+  document.getElementById("annPersistBody").textContent  = a.body || "";
+
+  const overlay = document.getElementById("annPersistOverlay");
+  overlay.classList.remove("hidden");
+  overlay.removeAttribute("aria-hidden");
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+}
+
+function closePersistModal(markRead = false) {
+  const overlay = document.getElementById("annPersistOverlay");
+  overlay.classList.remove("visible");
+
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+    overlay.setAttribute("aria-hidden", "true");
+
+    // Mark as read
+    if (markRead && persistQueue.length > 0) {
+      const a = persistQueue[0];
+      if (!a.is_read && a.status === "approved") {
+        a.is_read = true;
+        fetch(`${API}/announcements/${a.id}/read`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    }
+
+    // Remove from queue and show next
+    persistQueue.shift();
+    renderList();
+
+    if (persistQueue.length > 0) {
+      setTimeout(() => showNextPersistModal(), 150);
+    } else {
+      persistShowing = false;
+    }
+  }, 200);
 }
 
 // ── Render List ───────────────────────────────
@@ -122,7 +195,7 @@ function renderList() {
       <div class="ann-item ${isUnread ? "unread" : ""} ${activeId === a.id ? "active" : ""}"
            data-id="${a.id}" onclick="selectAnnouncement(${a.id})">
         <div class="ann-item-header">
-          <span class="ann-priority-dot ${a.priority}"></span>
+          <span class="ann-priority-dot urgent"></span>
           <span class="ann-item-title">${escAnn(a.title)}</span>
           ${showStatus && a.status !== "approved"
             ? `<span class="ann-status-badge ${a.status}">${a.status}</span>` : ""}
@@ -142,7 +215,6 @@ function selectAnnouncement(id) {
   const a = announcements.find(x => x.id === id);
   if (!a) return;
 
-  // Mark as read
   if (!a.is_read && a.status === "approved") {
     a.is_read = true;
     fetch(`${API}/announcements/${id}/read`, {
@@ -168,9 +240,7 @@ function renderDetail(a) {
 
   detail.innerHTML = `
     <div class="ann-detail-header">
-      <div class="ann-detail-priority ${a.priority}">
-        ${{ low:"🟢 Low", normal:"🔵 Normal", high:"🟠 High", urgent:"🔴 Urgent" }[a.priority]}
-      </div>
+      <div class="ann-detail-priority urgent">🔴 Urgent</div>
       <div class="ann-detail-title">${escAnn(a.title)}</div>
       <div class="ann-detail-info">
         <span>By <strong>${escAnn(a.author_name)}</strong></span>
@@ -201,19 +271,17 @@ function openModal(editId = null) {
   if (editId) {
     const a = announcements.find(x => x.id === editId);
     if (a) {
-      document.getElementById("annTitle").value    = a.title;
-      document.getElementById("annBody").value     = a.body;
-      document.getElementById("annPriority").value = a.priority;
-      document.getElementById("annTarget").value   = a.target_type;
-      document.getElementById("annDept").value     = a.department || "";
+      document.getElementById("annTitle").value  = a.title;
+      document.getElementById("annBody").value   = a.body;
+      document.getElementById("annTarget").value = a.target_type;
+      document.getElementById("annDept").value   = a.department || "";
       document.getElementById("deptRow").classList.toggle("hidden", a.target_type !== "department");
     }
   } else {
-    document.getElementById("annTitle").value    = "";
-    document.getElementById("annBody").value     = "";
-    document.getElementById("annPriority").value = "normal";
-    document.getElementById("annTarget").value   = "all";
-    document.getElementById("annDept").value     = myDept;
+    document.getElementById("annTitle").value  = "";
+    document.getElementById("annBody").value   = "";
+    document.getElementById("annTarget").value = "all";
+    document.getElementById("annDept").value   = myDept;
     document.getElementById("deptRow").classList.add("hidden");
   }
 
@@ -227,12 +295,11 @@ function closeModal() {
 }
 
 async function submitAnnouncement() {
-  const editId   = document.getElementById("editingId").value;
-  const title    = document.getElementById("annTitle").value.trim();
-  const body     = document.getElementById("annBody").value.trim();
-  const priority = document.getElementById("annPriority").value;
-  const target   = document.getElementById("annTarget").value;
-  const dept     = document.getElementById("annDept").value.trim();
+  const editId  = document.getElementById("editingId").value;
+  const title   = document.getElementById("annTitle").value.trim();
+  const body    = document.getElementById("annBody").value.trim();
+  const target  = document.getElementById("annTarget").value;
+  const dept    = document.getElementById("annDept").value.trim();
 
   if (!title || !body) { showToast("Title and body are required."); return; }
   if (target === "department" && !dept) { showToast("Please enter a department."); return; }
@@ -240,7 +307,8 @@ async function submitAnnouncement() {
   const btn = document.getElementById("submitAnn");
   btn.disabled = true; btn.textContent = "Posting…";
 
-  const payload = { title, body, priority, target_type: target, department: dept || null };
+  // Priority is always urgent
+  const payload = { title, body, priority: "urgent", target_type: target, department: dept || null };
   const url     = editId ? `${API}/announcements/${editId}` : `${API}/announcements`;
   const method  = editId ? "PATCH" : "POST";
 
@@ -257,11 +325,9 @@ async function submitAnnouncement() {
 
     if (!editId && data.announcement) {
       if (data.auto_approved) {
-        // Broadcast via socket so other users see it immediately
         socket?.emit("post_announcement", { announcement: data.announcement });
         announcements.unshift(data.announcement);
       } else {
-        // Pending — only add to my list
         announcements.unshift(data.announcement);
         showToast("✅ Submitted for admin approval.");
       }
@@ -319,9 +385,9 @@ function deleteAnn(id) {
       if (activeId === id) {
         activeId = null;
         document.getElementById("annDetail").innerHTML = `
-          <div class="ann-empty-state" id="annEmptyState">
+          <div class="ann-empty-state">
             <span class="ann-empty-icon">📋</span>
-            <p>Select an announcement to read</p>
+            <p>This announcement was deleted.</p>
           </div>`;
       }
       renderList();
@@ -334,7 +400,6 @@ function deleteAnn(id) {
 
 // ── Socket ────────────────────────────────────
 function connectSocket() {
-  // Load socket.io from Node server
   const script = document.createElement("script");
   script.src = `${WS}/socket.io/socket.io.js`;
   script.onload = () => {
@@ -343,23 +408,21 @@ function connectSocket() {
     socket.on("new_announcement", ({ announcement }) => {
       if (!announcement) return;
 
-      // Check if this announcement is visible to me
       const isForMe = announcement.target_type === "all"
         || (announcement.target_type === "department" && announcement.department === myDept);
       const isAdmin = ["admin","super_admin"].includes(myRole);
-
       if (!isForMe && !isAdmin) return;
 
       // Add or update in list
       const idx = announcements.findIndex(a => a.id === announcement.id);
       if (idx >= 0) announcements[idx] = { ...announcements[idx], ...announcement };
-      else announcements.unshift(announcement);
+      else announcements.unshift({ ...announcement, is_read: false });
 
       renderList();
       updatePendingBadge();
 
-      // Show popup notification
-      showPopup(announcement);
+      // Show persistent modal — cannot be dismissed without button click
+      queuePersistModal({ ...announcement, is_read: false });
     });
 
     socket.on("announcement_deleted", ({ announcement_id }) => {
@@ -390,58 +453,6 @@ function connectSocket() {
   document.head.appendChild(script);
 }
 
-// ── Popup Notification ────────────────────────
-function showPopup(a) {
-  const popup = document.getElementById("annPopup");
-  document.getElementById("annPopupTitle").textContent  = a.title;
-  document.getElementById("annPopupAuthor").textContent = `By ${a.author_name}`;
-  popup.classList.remove("hidden");
-  // Auto-hide after 6 seconds
-  clearTimeout(window._popupTimer);
-  window._popupTimer = setTimeout(() => popup.classList.add("hidden"), 6000);
-}
-
-function showAutoAnnouncement() {
-  const overlay = document.getElementById("annAutoOverlay");
-  if (!overlay) return;
-  const sessionKey = `cc_ann_auto_shown_${myUserId || "anon"}`;
-  if (sessionStorage.getItem(sessionKey)) return;
-  const isAdmin = ["admin", "super_admin"].includes(myRole);
-  const visible = announcements.filter((a) => {
-    if (a.status !== "approved") return false;
-    if (a.is_read) return false;
-    if (a.target_type === "all") return true;
-    if (a.target_type === "department" && a.department === myDept) return true;
-    return isAdmin;
-  });
-  if (!visible.length) return;
-  const latest = visible.reduce((acc, curr) => {
-    const aTime = new Date((acc.created_at || "").replace(" ", "T")).getTime();
-    const cTime = new Date((curr.created_at || "").replace(" ", "T")).getTime();
-    return (cTime || 0) > (aTime || 0) ? curr : acc;
-  }, visible[0]);
-
-  const titleEl = document.getElementById("annAutoTitle");
-  const metaEl = document.getElementById("annAutoMeta");
-  const bodyEl = document.getElementById("annAutoBody");
-  if (!titleEl || !metaEl || !bodyEl) return;
-
-  titleEl.textContent = latest.title || "Announcement";
-  metaEl.textContent = `By ${latest.author_name || "Campus Admin"} · ${formatAnnTimeFull(latest.created_at)}`;
-  bodyEl.textContent = latest.body || "";
-
-  overlay.classList.remove("hidden");
-  requestAnimationFrame(() => overlay.classList.add("visible"));
-  sessionStorage.setItem(sessionKey, "1");
-}
-
-function closeAutoAnnouncement() {
-  const overlay = document.getElementById("annAutoOverlay");
-  if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.classList.add("hidden"), 200);
-}
-
 // ── Pending Badge ─────────────────────────────
 function updatePendingBadge() {
   const badge   = document.getElementById("pendingBadge");
@@ -457,12 +468,12 @@ function escAnn(str) {
 }
 
 function formatAnnTime(dateStr) {
-  const d = new Date(dateStr.replace(" ", "T"));
+  const d   = new Date(dateStr.replace(" ", "T"));
   const now = new Date();
   const diff = (now - d) / 1000;
-  if (diff < 60)     return "just now";
-  if (diff < 3600)   return Math.floor(diff/60) + "m ago";
-  if (diff < 86400)  return Math.floor(diff/3600) + "h ago";
+  if (diff < 60)    return "just now";
+  if (diff < 3600)  return Math.floor(diff/60) + "m ago";
+  if (diff < 86400) return Math.floor(diff/3600) + "h ago";
   return d.toLocaleDateString();
 }
 

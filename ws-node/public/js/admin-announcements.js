@@ -71,6 +71,13 @@ async function adminApproveAnn(id, authorId) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed");
+
+    // ✅ FIX: Emit socket event so ALL connected users receive the popup
+    // adminSocket is the socket connection in admin panel
+    if (typeof adminSocket !== "undefined" && adminSocket?.connected) {
+      adminSocket.emit("post_announcement", { announcement: data.announcement });
+    }
+
     showAdminToast("✅ Announcement approved and published!");
     loadAdminAnnouncements();
   } catch (err) {
@@ -87,6 +94,12 @@ async function adminRejectAnn(id, authorId) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed");
+
+    // Notify the author their announcement was rejected via socket
+    if (typeof adminSocket !== "undefined" && adminSocket?.connected) {
+      adminSocket.emit("reject_announcement", { announcement_id: id, author_id: authorId });
+    }
+
     showAdminToast("Announcement rejected.");
     loadAdminAnnouncements();
   } catch (err) {
@@ -103,6 +116,12 @@ async function adminDeleteAnn(id) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed");
+
+    // Broadcast deletion via socket
+    if (typeof adminSocket !== "undefined" && adminSocket?.connected) {
+      adminSocket.emit("delete_announcement", { announcement_id: id });
+    }
+
     showAdminToast("Announcement deleted.");
     loadAdminAnnouncements();
   } catch (err) {

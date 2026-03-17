@@ -74,6 +74,40 @@ function connectSocket() {
     loadConversations();
   });
 
+  // ── Announcement popup sa chat page ──────────
+  socket.on("new_announcement", ({ announcement }) => {
+    if (!announcement) return;
+  
+    // Department filter — show only if relevant to this user
+    const isForMe = announcement.target_type === "all"
+      || (announcement.target_type === "department" && announcement.department === myDept);
+    const isAdminUser = ["admin", "super_admin"].includes(myRole);
+    if (!isForMe && !isAdminUser) return;
+  
+    // Show toast notification on chat page
+    showToast("📢 " + announcement.title);
+  
+    // Update nav badge if it exists
+    const badge = document.getElementById("annNavBadge");
+    if (badge) {
+      const count = (parseInt(badge.textContent) || 0) + 1;
+      badge.textContent = count;
+      badge.classList.remove("hidden");
+    }
+  
+    // Show floating popup if element exists (index.html may have it)
+    const popup = document.getElementById("annPopup");
+    if (popup) {
+      const titleEl  = document.getElementById("annPopupTitle");
+      const authorEl = document.getElementById("annPopupAuthor");
+      if (titleEl)  titleEl.textContent  = announcement.title;
+      if (authorEl) authorEl.textContent = "By " + (announcement.author_name || "Admin");
+      popup.classList.remove("hidden");
+      clearTimeout(window._annPopupTimer);
+      window._annPopupTimer = setTimeout(() => popup.classList.add("hidden"), 6000);
+    }
+  });
+
   // ── message_edited ──────────────────────────────────────────
   socket.on("message_edited", ({ message_id, conversation_id, body, is_edited, edited_at }) => {
     const row = document.querySelector(`.msgRow[data-msg-id="${message_id}"]`);
@@ -130,15 +164,74 @@ function connectSocket() {
   });
 
   socket.on("new_announcement", ({ announcement }) => {
-    showToast("📢 New: " + announcement.title);
-    // Update badge
+    if (!announcement) return;
+
+    const isForMe = announcement.target_type === "all"
+      || (announcement.target_type === "department" && announcement.department === myDept);
+    const isAdminUser = ["admin", "super_admin"].includes(myRole);
+    if (!isForMe && !isAdminUser) return;
+
+    // Update nav badge
     const badge = document.getElementById("annNavBadge");
     if (badge) {
       const count = (parseInt(badge.textContent) || 0) + 1;
       badge.textContent = count;
       badge.classList.remove("hidden");
     }
+
+    // Show persistent modal
+    showIndexPersistModal(announcement);
   });
+
+  // ── Persistent modal logic for index.html ─────
+  let _indexPersistQueue   = [];
+  let _indexPersistShowing = false;
+
+  function showIndexPersistModal(announcement) {
+    _indexPersistQueue.push(announcement);
+    if (!_indexPersistShowing) _showNextIndexModal();
+  }
+
+  function _showNextIndexModal() {
+    if (_indexPersistQueue.length === 0) {
+      _indexPersistShowing = false;
+      return;
+    }
+    _indexPersistShowing = true;
+    const a = _indexPersistQueue[0];
+
+    document.getElementById("annPersistTitle").textContent = a.title || "";
+    document.getElementById("annPersistMeta").textContent  =
+      `By ${a.author_name || "Admin"} · ${new Date((a.created_at || "").replace(" ", "T")).toLocaleString()}`;
+    document.getElementById("annPersistBody").textContent  = a.body || "";
+
+    const overlay = document.getElementById("annPersistOverlay");
+    overlay.classList.remove("hidden");
+    overlay.removeAttribute("aria-hidden");
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    // Setup buttons
+    document.getElementById("annPersistOk").onclick = () => _closeIndexModal();
+    document.getElementById("annPersistView").onclick = () => {
+      _closeIndexModal();
+      window.location.href = "announcements.html";
+    };
+  }
+
+  function _closeIndexModal() {
+    const overlay = document.getElementById("annPersistOverlay");
+    overlay.classList.remove("visible");
+    setTimeout(() => {
+      overlay.classList.add("hidden");
+      overlay.setAttribute("aria-hidden", "true");
+      _indexPersistQueue.shift();
+      if (_indexPersistQueue.length > 0) {
+        setTimeout(() => _showNextIndexModal(), 150);
+      } else {
+        _indexPersistShowing = false;
+      }
+    }, 200);
+  }
 
   // ── message_request_sent (recipient gets notified) ──────────
   socket.on("new_message_request", ({ request_id, from_name }) => {
