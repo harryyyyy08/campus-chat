@@ -1,43 +1,14 @@
 // ════════════════════════════════════════════
-// LOGIN
+// AUTH — js/auth.js
 // ════════════════════════════════════════════
 
-async function login() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value;
-  const errEl = document.getElementById("loginError");
-  errEl.textContent = "";
-  if (!username || !password) {
-    errEl.textContent = "Please enter username and password.";
-    return;
+// ── Redirect to login page ────────────────────
+function goToLogin(expiredMsg = "") {
+  if (expiredMsg) {
+    // Store message to show on login page
+    sessionStorage.setItem("cc_login_msg", expiredMsg);
   }
-
-  try {
-    const res = await fetch(`${API_BASE}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      errEl.textContent = data.error || "Login failed.";
-      return;
-    }
-
-    token = data.access_token;
-    myUserId = data.user.id;
-    myUser = data.user;
-
-    localStorage.setItem("cc_token", token);
-    localStorage.setItem("cc_user", JSON.stringify(data.user));
-    // Save login time so we can detect expiry client-side
-    localStorage.setItem("cc_login_at", Date.now().toString());
-
-    initApp();
-  } catch (err) {
-    errEl.textContent = "Connection error. Is the server running?";
-    console.error(err);
-  }
+  window.location.href = "login.html";
 }
 
 // ════════════════════════════════════════════
@@ -50,26 +21,17 @@ function logout() {
   localStorage.removeItem("cc_user");
   localStorage.removeItem("cc_login_at");
   if (socket) { socket.disconnect(); socket = null; }
-  // Reset all global state so next login starts clean
+
+  // Reset global state
   token = null; myUserId = null; myUser = null;
   currentConversation = null;
-  conversationsCache = [];
-  pendingAttachments = [];
-  pendingAttachment  = null;
-  onlineSet = new Set();
+  conversationsCache  = [];
+  pendingAttachments  = [];
+  pendingAttachment   = null;
+  onlineSet    = new Set();
   unreadCounts = {};
-  // Wipe UI
-  document.getElementById("messages").innerHTML = "";
-  document.getElementById("conversationList").innerHTML = "";
-  const content = document.getElementById("chatContent");
-  if (content) content.classList.add("hidden");
-  document.getElementById("emptyState").style.display = "";
-  document.getElementById("app").classList.remove("visible");
-  document.getElementById("login").style.display = "flex";
-  document.getElementById("username").value = "";
-  document.getElementById("password").value = "";
-  document.getElementById("loginError").textContent = "";
-  clearAttachmentPreview();
+
+  goToLogin();
 }
 
 function handleTokenExpired() {
@@ -79,11 +41,8 @@ function handleTokenExpired() {
   localStorage.removeItem("cc_login_at");
   if (socket) { socket.disconnect(); socket = null; }
   token = null; myUserId = null; myUser = null;
-  document.getElementById("app").classList.remove("visible");
-  document.getElementById("login").style.display = "flex";
-  document.getElementById("username").value = "";
-  document.getElementById("password").value = "";
-  document.getElementById("loginError").textContent = "Your session has expired. Please log in again.";
+
+  goToLogin("Your session has expired. Please log in again.");
 }
 
 // Check if API response is a 401 — call this on every fetch
@@ -96,7 +55,7 @@ function checkAuthError(res) {
 }
 
 // Periodically check if token is still valid (every 5 minutes)
-function startTokenWatcher(ttlSeconds = 86400) {
+function startTokenWatcher() {
   clearInterval(window._tokenCheckInterval);
   const loginAt = parseInt(localStorage.getItem("cc_login_at") || "0");
   if (!loginAt) return;
@@ -106,11 +65,9 @@ function startTokenWatcher(ttlSeconds = 86400) {
       const res = await fetch(`${API_BASE}/conversations/unread`, {
         headers: { Authorization: "Bearer " + token },
       });
-      if (res.status === 401) {
-        handleTokenExpired();
-      }
+      if (res.status === 401) handleTokenExpired();
     } catch {}
-  }, 5 * 60 * 1000); // check every 5 minutes
+  }, 5 * 60 * 1000);
 }
 
 // ════════════════════════════════════════════
@@ -119,13 +76,9 @@ function startTokenWatcher(ttlSeconds = 86400) {
 
 async function initApp() {
   document.getElementById("loadingScreen").style.display = "none";
-  document.getElementById("login").style.display = "none";
   document.getElementById("app").classList.add("visible");
-  document.getElementById("myName").textContent =
-    myUser.full_name || myUser.username;
-  document.getElementById("myAvatar").textContent = initials(
-    myUser.full_name || myUser.username,
-  );
+  document.getElementById("myName").textContent   = myUser.full_name || myUser.username;
+  document.getElementById("myAvatar").textContent = initials(myUser.full_name || myUser.username);
 
   window.myRole = myUser.role || "student";
   connectSocket();
@@ -143,12 +96,12 @@ async function initApp() {
 // SESSION RESTORE (on page load)
 // ════════════════════════════════════════════
 (async function restoreSession() {
-  const savedToken = localStorage.getItem("cc_token");
+  const savedToken   = localStorage.getItem("cc_token");
   const savedUserStr = localStorage.getItem("cc_user");
 
   if (!savedToken || !savedUserStr) {
     document.getElementById("loadingScreen").style.display = "none";
-    document.getElementById("login").style.display = "flex";
+    goToLogin();
     return;
   }
 
@@ -159,15 +112,15 @@ async function initApp() {
     localStorage.removeItem("cc_token");
     localStorage.removeItem("cc_user");
     document.getElementById("loadingScreen").style.display = "none";
-    document.getElementById("login").style.display = "flex";
+    goToLogin();
     return;
   }
 
-  token = savedToken;
+  token    = savedToken;
   myUserId = savedUser.id;
-  myUser = savedUser;
+  myUser   = savedUser;
 
-  // Verify token is still valid before restoring session
+  // Verify token is still valid
   try {
     const res = await fetch(`${API_BASE}/conversations/unread`, {
       headers: { Authorization: "Bearer " + token },
@@ -177,8 +130,7 @@ async function initApp() {
       localStorage.removeItem("cc_user");
       localStorage.removeItem("cc_login_at");
       document.getElementById("loadingScreen").style.display = "none";
-      document.getElementById("login").style.display = "flex";
-      document.getElementById("loginError").textContent = "Your session has expired. Please log in again.";
+      goToLogin("Your session has expired. Please log in again.");
       return;
     }
   } catch {

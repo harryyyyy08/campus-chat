@@ -3,25 +3,6 @@
   
   Purpose: Primary user interface for real-time messaging
   Type: HTML5 Single Page Application
-  
-  Features:
-  - Direct and group messaging
-  - Real-time message delivery with read receipts
-  - Typing indicators and online presence
-  - File and image attachments (drag & drop)
-  - Conversation search and filtering
-  - Message history pagination
-  - Theme toggle (light/dark mode)
-  - Mobile responsive design
-  
-  Architecture:
-  - Session restoration from localStorage
-  - WebSocket connection for real-time updates
-  - Dynamic UI updates via JavaScript (app.js)
-  - Responsive layout using CSS Grid/Flexbox
-  
-  Stylesheets: chat.css
-  Scripts: /socket.io/socket.io.js, app.js
 -->
 
 <!doctype html>
@@ -33,7 +14,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#2563EB" />
+    <meta name="theme-color" content="#16A34A" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -42,17 +23,13 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/login.css" />
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/chat-area.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/attachments.css" />
-  <link rel="stylesheet" href="css/voice.css" />
+    <link rel="stylesheet" href="css/voice.css" />
     <link rel="stylesheet" href="css/mobile.css" />
     <style>
       /* ── Persistent Announcement Modal ── */
@@ -121,7 +98,7 @@
       }
       .ann-persist-meta {
         font-size: 12.5px;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         margin-bottom: 16px;
       }
       .ann-persist-body {
@@ -177,236 +154,70 @@
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
-    <!-- Loading screen shown while checking saved session -->
+
+    <!-- Loading screen -->
     <div id="loadingScreen" style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg-base);flex-direction:column;gap:14px;">
       <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;"></div>
-      <div style="font-size:13px;color:var(--text-muted);font-weight:500;letter-spacing:0.3px;">Loading…</div>
-    </div>
-
-    <!-- LOGIN -->
-    <div id="login" style="display: none">
-      <div class="login-card">
-        <div class="login-logo">
-          <div class="login-logo-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
-          <div>
-            <div class="login-logo-text">Campus<span>Chat</span></div>
-            <div class="login-subtitle">INTRANET MESSAGING</div>
-          </div>
-        </div>
-        <div class="field-group">
-          <label for="username">Username</label>
-          <input
-            id="username"
-            type="text"
-            placeholder="Enter your username"
-            autocomplete="username"
-          />
-        </div>
-        <div class="field-group">
-          <label for="password">Password</label>
-          <div class="password-field">
-            <input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              autocomplete="current-password"
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              aria-label="Show password"
-              data-target="password"
-            >
-              <svg
-                class="icon-on"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              <svg
-                class="icon-off"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"></path>
-                <path d="M1 1l22 22"></path>
-                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
-                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"></path>
-                <path d="M23 12s-1.67 3.11-4.59 5.59"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <button class="btn-primary" onclick="login()">Sign In</button>
-        <p id="loginError"></p>
-        <p
-          style="
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 14px;
-          "
-        >
-          Don't have an account?
-          <a href="/register.html" style="color: var(--accent)"
-            >Register here</a
-          >
-        </p>
-      </div>
+      <div style="font-size:13px;color:var(--text-secondary);font-weight:500;letter-spacing:0.3px;">Loading…</div>
     </div>
 
     <!-- APP -->
     <div id="app">
+
       <!-- SIDEBAR -->
       <div id="sidebar">
         <div id="sidebarHeader">
           <div class="sidebar-top">
             <span class="sidebar-title">Messages</span>
             <div class="sidebar-actions">
-              <button
-                class="icon-btn"
-                id="sidebarCollapseBtn"
-                title="Close sidebar"
-                onclick="toggleSidebar()"
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+              <button class="icon-btn" id="sidebarCollapseBtn" title="Close sidebar" onclick="toggleSidebar()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <line x1="9" y1="3" x2="9" y2="21" />
                 </svg>
               </button>
-              <button
-                class="icon-btn"
-                title="Refresh"
-                onclick="loadConversations()"
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+              <button class="icon-btn" title="Refresh" onclick="loadConversations()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M23 4v6h-6" />
                   <path d="M1 20v-6h6" />
-                  <path
-                    d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
-                  />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                 </svg>
               </button>
-              <button
-                class="icon-btn accent"
-                title="New Direct Chat"
-                onclick="openNewChatModal()"
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+              <button class="icon-btn accent" title="New Direct Chat" onclick="openNewChatModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               </button>
-              <button
-                class="icon-btn accent"
-                title="New Group Chat"
-                onclick="openCreateGroupModal()"
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+              <button class="icon-btn accent" title="New Group Chat" onclick="openCreateGroupModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </button>
-              <button
-                class="icon-btn"
-                title="Message Requests"
-                onclick="openRequestsInbox()"
-                style="position:relative"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <button class="icon-btn" title="Message Requests" onclick="openRequestsInbox()" style="position:relative">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
                 <span id="requestBadge" class="request-nav-badge hidden">0</span>
               </button>
             </div>
           </div>
           <div class="search-wrap">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input
-              id="searchInput"
-              type="text"
-              placeholder="Search conversations…"
-              oninput="filterConversations(this.value)"
-            />
+            <input id="searchInput" type="text" placeholder="Search conversations…" oninput="filterConversations(this.value)" />
           </div>
         </div>
 
         <div class="sidebar-tabs">
-          <button class="tab-btn active" onclick="switchTab(this, 'all')">
-            All
-          </button>
-          <button class="tab-btn" onclick="switchTab(this, 'direct')">
-            Direct
-          </button>
-          <button class="tab-btn" onclick="switchTab(this, 'group')">
-            Groups
-          </button>
+          <button class="tab-btn active" onclick="switchTab(this, 'all')">All</button>
+          <button class="tab-btn" onclick="switchTab(this, 'direct')">Direct</button>
+          <button class="tab-btn" onclick="switchTab(this, 'group')">Groups</button>
         </div>
 
         <div id="onlineStrip"></div>
@@ -421,7 +232,6 @@
               Online
             </div>
           </div>
-          <!-- ADD THIS -->
           <a href="announcements.html" class="icon-btn" title="Announcements" style="position:relative;text-decoration:none;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -429,22 +239,8 @@
             </svg>
             <span id="annNavBadge" class="request-nav-badge hidden"></span>
           </a>
-          <button
-            id="themeToggleBtn"
-            title="Toggle theme"
-            onclick="toggleTheme()"
-          >
-            <svg
-              id="themeIcon"
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+          <button id="themeToggleBtn" title="Toggle theme" onclick="toggleTheme()">
+            <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="5" />
               <line x1="12" y1="1" x2="12" y2="3" />
               <line x1="12" y1="21" x2="12" y2="23" />
@@ -457,16 +253,7 @@
             </svg>
           </button>
           <button class="icon-btn" title="Logout" onclick="logout()">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
@@ -499,44 +286,16 @@
               <div id="chatHeaderName">—</div>
               <div id="chatHeaderStatus">—</div>
             </div>
-            <button
-              class="icon-btn hidden"
-              id="groupInfoBtn"
-              title="Group Members"
-              onclick="openGroupInfoModal()"
-              style="color: var(--text-muted)"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
+            <button class="icon-btn hidden" id="groupInfoBtn" title="Group Members" onclick="openGroupInfoModal()" style="color:var(--text-secondary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
             </button>
-            <button
-              class="icon-btn"
-              id="infoBtn"
-              style="color: var(--text-muted)"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
+            <button class="icon-btn" id="infoBtn" style="color:var(--text-secondary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -547,7 +306,7 @@
           <div id="messages"></div>
           <div id="typingLine"></div>
 
-          <!-- Voice recording bar (shown while recording) -->
+          <!-- Voice recording bar -->
           <div id="voiceRecordingBar" class="hidden">
             <div class="voice-rec-dot"></div>
             <span id="voiceRecordingTimer">00:00</span>
@@ -557,7 +316,7 @@
             </button>
           </div>
 
-          <!-- Attachment preview bar (multi-file) -->
+          <!-- Attachment preview bar -->
           <div id="attachmentPreviewBar" class="hidden">
             <div id="attachPreviewList" class="attach-preview-list"></div>
             <button class="attach-preview-clear" onclick="clearAttachmentPreview()" title="Clear all">
@@ -576,12 +335,7 @@
                   <line x1="15" y1="9" x2="15.01" y2="9"/>
                 </svg>
               </button>
-              <button
-                id="voiceMicBtn"
-                class="tool-btn"
-                title="Record voice message"
-                onclick="toggleVoiceRecording()"
-              >
+              <button id="voiceMicBtn" class="tool-btn" title="Record voice message" onclick="toggleVoiceRecording()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -589,52 +343,18 @@
                   <line x1="8" y1="23" x2="16" y2="23"/>
                 </svg>
               </button>
-              <button
-                class="tool-btn"
-                title="Attach file"
-                onclick="triggerFileInput()"
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
-                  />
+              <button class="tool-btn" title="Attach file" onclick="triggerFileInput()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                 </svg>
               </button>
             </div>
-            <!-- Hidden file input -->
-            <input
-              type="file"
-              id="fileInput"
-              style="display: none"
-              multiple
-              accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-            />
+            <input type="file" id="fileInput" style="display:none" multiple
+              accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
             <div class="input-row">
-              <textarea
-                id="messageInput"
-                placeholder="Message…"
-                rows="1"
-              ></textarea>
+              <textarea id="messageInput" placeholder="Message…" rows="1"></textarea>
               <button id="sendBtn" onclick="sendMessage()" title="Send">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>
@@ -645,7 +365,7 @@
       </div>
     </div>
 
-    <!-- Persistent Announcement Modal — hindi mawawala hanggang pindutin -->
+    <!-- Persistent Announcement Modal -->
     <div class="ann-persist-overlay hidden" id="annPersistOverlay" aria-hidden="true">
       <div class="ann-persist-card" role="dialog" aria-modal="true">
         <div class="ann-persist-header">
@@ -667,27 +387,15 @@
       </div>
     </div>
 
-    <!-- Floating button to re-open sidebar when collapsed -->
-    <button
-      id="sidebarOpenBtn"
-      class="sidebar-open-fab hidden"
-      title="Open sidebar"
-      onclick="toggleSidebar()"
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
+    <!-- Floating sidebar re-open button -->
+    <button id="sidebarOpenBtn" class="sidebar-open-fab hidden" title="Open sidebar" onclick="toggleSidebar()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <line x1="15" y1="3" x2="15" y2="21" />
       </svg>
     </button>
+
+    <!-- MODAL: New Direct Chat -->
     <div class="modal-overlay" id="newChatModal">
       <div class="modal-box">
         <div class="modal-title">
@@ -698,14 +406,7 @@
         </div>
         <div class="modal-label">Find User</div>
         <div class="member-search-wrap">
-          <input
-            id="newChatUsername"
-            class="modal-input"
-            type="text"
-            placeholder="Search by name or username…"
-            oninput="searchUsersForDirect(this.value)"
-            autocomplete="off"
-          />
+          <input id="newChatUsername" class="modal-input" type="text" placeholder="Search by name or username…" oninput="searchUsersForDirect(this.value)" autocomplete="off" />
           <div id="directSearchResults" class="user-search-dropdown hidden"></div>
         </div>
         <div id="newChatRequestRow" class="hidden">
@@ -724,6 +425,7 @@
       </div>
     </div>
 
+    <!-- MODAL: Message Requests -->
     <div class="modal-overlay" id="requestsModal">
       <div class="modal-box" style="width:440px;max-width:95vw">
         <div class="modal-title">
@@ -749,33 +451,16 @@
           </button>
         </div>
         <div class="modal-label">Group Name</div>
-        <input
-          class="modal-input"
-          id="groupName"
-          type="text"
-          placeholder="e.g. BSIT 3-A, Faculty Lounge…"
-          maxlength="100"
-        />
+        <input class="modal-input" id="groupName" type="text" placeholder="e.g. BSIT 3-A, Faculty Lounge…" maxlength="100" />
         <div class="modal-label">Add Members</div>
         <div class="member-search-wrap">
-          <input
-            class="modal-input"
-            id="memberSearchInput"
-            type="text"
-            placeholder="Search by name or username…"
-            autocomplete="off"
-            oninput="searchUsers(this.value)"
-          />
+          <input class="modal-input" id="memberSearchInput" type="text" placeholder="Search by name or username…" autocomplete="off" oninput="searchUsers(this.value)" />
           <div id="userSearchResults" class="user-search-dropdown hidden"></div>
         </div>
         <div id="selectedMembers" class="member-chips"></div>
         <div class="modal-actions">
-          <button class="btn-ghost" onclick="closeModal('createGroupModal')">
-            Cancel
-          </button>
-          <button class="btn-modal-primary" onclick="createGroup()">
-            Create Group
-          </button>
+          <button class="btn-ghost" onclick="closeModal('createGroupModal')">Cancel</button>
+          <button class="btn-modal-primary" onclick="createGroup()">Create Group</button>
         </div>
       </div>
     </div>
@@ -792,38 +477,21 @@
         <div id="addMemberSection" class="hidden">
           <div class="modal-label">Add Member</div>
           <div class="member-search-wrap">
-            <input
-              class="modal-input"
-              id="addMemberInput"
-              type="text"
-              placeholder="Search by name or username…"
-              autocomplete="off"
-              oninput="searchUsersForAdd(this.value)"
-            />
-            <div
-              id="addMemberResults"
-              class="user-search-dropdown hidden"
-            ></div>
+            <input class="modal-input" id="addMemberInput" type="text" placeholder="Search by name or username…" autocomplete="off" oninput="searchUsersForAdd(this.value)" />
+            <div id="addMemberResults" class="user-search-dropdown hidden"></div>
           </div>
         </div>
-        <div class="modal-label" style="margin-top: 8px">Members</div>
+        <div class="modal-label" style="margin-top:8px">Members</div>
         <div id="groupMemberList" class="group-member-list"></div>
-        <div class="modal-actions" style="margin-top: 16px">
-          <button
-            class="btn-ghost danger"
-            onclick="leaveGroup()"
-            id="leaveGroupBtn"
-          >
-            Leave Group
-          </button>
-          <button class="btn-ghost" onclick="closeModal('groupInfoModal')">
-            Close
-          </button>
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn-ghost danger" onclick="leaveGroup()" id="leaveGroupBtn">Leave Group</button>
+          <button class="btn-ghost" onclick="closeModal('groupInfoModal')">Close</button>
         </div>
       </div>
     </div>
 
     <div id="toast"></div>
+
     <script src="js/config.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/messages.js"></script>
@@ -836,26 +504,6 @@
     <script src="js/groups.js"></script>
     <script src="js/voice.js"></script>
     <script src="js/auth.js"></script>
-    <script>
-      function setupPasswordToggles() {
-        document.querySelectorAll(".password-toggle").forEach((btn) => {
-          const targetId = btn.getAttribute("data-target");
-          const input = document.getElementById(targetId);
-          if (!input) return;
-          btn.addEventListener("click", () => {
-            const willShow = input.type === "password";
-            input.type = willShow ? "text" : "password";
-            btn.classList.toggle("is-visible", willShow);
-            btn.setAttribute(
-              "aria-label",
-              willShow ? "Hide password" : "Show password"
-            );
-          });
-        });
-      }
-
-      document.addEventListener("DOMContentLoaded", setupPasswordToggles);
-    </script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

@@ -14,45 +14,48 @@
 
 <div id="app">
 
-  <!-- ── Sidebar Nav ── -->
-  <nav class="ann-nav">
-    <div class="ann-nav-logo" title="Announcements">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
+  <!-- ── Top Header ── -->
+  <header class="ann-header">
+    <div class="ann-header-left">
+
+      <!-- Desktop only: back to chat -->
+      <a href="index.html" class="ann-back-btn ann-back-desktop" title="Back to Chat">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+
+      <!-- Mobile only: smart back (list → index.html, detail → list) -->
+      <button class="ann-back-btn ann-back-mobile" onclick="handleMobileBack()" title="Back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+
+      <div class="ann-header-logo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </div>
+      <span class="ann-header-title">Announcements</span>
     </div>
-    <a href="index.html" class="ann-nav-btn" title="Chat">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-    </a>
-    <a href="announcements.html" class="ann-nav-btn active" title="Announcements">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-        <line x1="9" y1="12" x2="15" y2="12"/>
-        <line x1="9" y1="16" x2="13" y2="16"/>
-      </svg>
-    </a>
-  </nav>
+    <div class="ann-header-right">
+      <button class="ann-compose-btn" id="composeBtn" title="New Announcement">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>New</span>
+      </button>
+    </div>
+  </header>
 
   <!-- ── Main Layout ── -->
   <div class="ann-layout">
 
     <!-- Left: List Panel -->
-    <aside class="ann-sidebar">
-      <div class="ann-sidebar-header">
-        <h2>Announcements</h2>
-        <button class="ann-compose-btn" id="composeBtn" title="New Announcement">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Filter tabs -->
+    <aside class="ann-sidebar" id="annSidebar">
       <div class="ann-tabs">
         <button class="ann-tab active" data-filter="all">All</button>
         <button class="ann-tab" data-filter="unread">Unread</button>
@@ -87,7 +90,6 @@
 </div>
 
 <!-- ── Persistent Announcement Modal ── -->
-<!-- Hindi mawawala hanggang pindutin ang button -->
 <div class="ann-persist-overlay hidden" id="annPersistOverlay" aria-hidden="true">
   <div class="ann-persist-card" role="dialog" aria-modal="true" aria-labelledby="annPersistTitle">
     <div class="ann-persist-header">
@@ -157,7 +159,53 @@
 <!-- ── Toast ── -->
 <div class="ann-toast hidden" id="annToast"></div>
 
+<!-- ── Theme init ── -->
+<script>
+  (function() {
+    const t = localStorage.getItem("cc_theme") || "light";
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+
 <script src="js/config.js"></script>
 <script src="js/announcements.js"></script>
+
+<script>
+  // ── Mobile navigation helpers ───────────────────
+
+  function openMobileDetail() {
+    if (window.innerWidth <= 700) {
+      document.getElementById("annSidebar").classList.add("mobile-hidden");
+      document.getElementById("annDetail").classList.add("mobile-open");
+    }
+  }
+
+  function closeMobileDetail() {
+    document.getElementById("annSidebar").classList.remove("mobile-hidden");
+    document.getElementById("annDetail").classList.remove("mobile-open");
+  }
+
+  // Smart back: if detail is open → go back to list
+  //             if list is showing → go back to index.html
+  function handleMobileBack() {
+    const detailOpen = document.getElementById("annDetail").classList.contains("mobile-open");
+    if (detailOpen) {
+      closeMobileDetail();
+    } else {
+      window.location.href = "index.html";
+    }
+  }
+
+  // Patch selectAnnouncement to trigger mobile slide
+  document.addEventListener("DOMContentLoaded", () => {
+    const origSelect = window.selectAnnouncement;
+    if (typeof origSelect === "function") {
+      window.selectAnnouncement = function(id) {
+        origSelect(id);
+        openMobileDetail();
+      };
+    }
+  });
+</script>
 </body>
 </html>

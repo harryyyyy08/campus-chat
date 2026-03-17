@@ -1,76 +1,78 @@
 /* ═══════════════════════════════════════════
-   CampusChat — Design System
+   CampusChat — Design System (Clean Mint)
    ═══════════════════════════════════════════ */
 
-/* ── Light Theme (default) ── */
+/* ── Light Theme ── */
 :root,
 [data-theme="light"] {
-  --bg-base:          #F0F4F8;
+  --bg-base:          #F0FDF4;
   --bg-sidebar:       #FFFFFF;
-  --bg-sidebar-hover: #F7F9FC;
-  --bg-active:        #EFF6FF;
-  --bg-chat:          #F8FAFC;
+  --bg-sidebar-hover: #F0FDF4;
+  --bg-active:        #DCFCE7;
+  --bg-chat:          #F7FEF9;
   --bg-bubble-in:     #FFFFFF;
-  --bg-bubble-out:    #2563EB;
-  --bg-input:         #F1F5F9;
+  --bg-bubble-out:    #16A34A;
+  --bg-input:         #F0FDF4;
   --bg-modal:         #FFFFFF;
 
-  --accent:       #2563EB;
-  --accent-hover: #1D4ED8;
-  --accent-soft:  rgba(37, 99, 235, 0.08);
-  --accent-glow:  rgba(37, 99, 235, 0.22);
-  --green:        #10B981;
-  --green-soft:   rgba(16, 185, 129, 0.12);
+  --accent:       #16A34A;
+  --accent-hover: #15803D;
+  --accent-soft:  rgba(22, 163, 74, 0.10);
+  --accent-glow:  rgba(22, 163, 74, 0.25);
+
+  --green:        #22C55E;
+  --green-soft:   rgba(34, 197, 94, 0.12);
   --red:          #EF4444;
   --red-soft:     rgba(239, 68, 68, 0.08);
   --amber:        #F59E0B;
 
-  --text-primary:   #0F172A;
-  --text-secondary: #475569;
-  --text-muted:     #94A3B8;
-  --border:         #E2E8F0;
-  --border-strong:  #CBD5E1;
+  --text-primary:   #052E16;
+  --text-secondary: #166534;
+  --text-muted:     #4ADE80;
+  --border:         #BBF7D0;
+  --border-strong:  #86EFAC;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.09), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(22, 163, 74, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 28px rgba(22, 163, 74, 0.10), 0 4px 12px rgba(0, 0, 0, 0.05);
 
-  --toast-bg: #1E293B;
+  --toast-bg: #14532D;
 }
 
 /* ── Dark Theme ── */
 [data-theme="dark"] {
-  --bg-base:          #0F1117;
-  --bg-sidebar:       #161B26;
-  --bg-sidebar-hover: #1E2535;
-  --bg-active:        #1A2A3F;
-  --bg-chat:          #12161F;
-  --bg-bubble-in:     #1E2535;
-  --bg-bubble-out:    #2563EB;
-  --bg-input:         #1E2535;
-  --bg-modal:         #1B2030;
+  --bg-base:          #0F1512;
+  --bg-sidebar:       #161D19;
+  --bg-sidebar-hover: #1C2820;
+  --bg-active:        #1A3024;
+  --bg-chat:          #111710;
+  --bg-bubble-in:     #1C2820;
+  --bg-bubble-out:    #16A34A;
+  --bg-input:         #1C2820;
+  --bg-modal:         #161D19;
 
-  --accent:       #3B82F6;
-  --accent-hover: #2563EB;
-  --accent-soft:  rgba(59, 130, 246, 0.15);
-  --accent-glow:  rgba(59, 130, 246, 0.35);
-  --green:        #22C55E;
-  --green-soft:   rgba(34, 197, 94, 0.12);
-  --red:          #EF4444;
-  --red-soft:     rgba(239, 68, 68, 0.12);
-  --amber:        #F59E0B;
+  --accent:       #4ADE80;
+  --accent-hover: #22C55E;
+  --accent-soft:  rgba(74, 222, 128, 0.10);
+  --accent-glow:  rgba(74, 222, 128, 0.22);
 
-  --text-primary:   #F0F2F7;
-  --text-secondary: #8B95A8;
-  --text-muted:     #4B5566;
-  --border:         rgba(255, 255, 255, 0.06);
-  --border-strong:  rgba(255, 255, 255, 0.1);
+  --green:        #4ADE80;
+  --green-soft:   rgba(74, 222, 128, 0.10);
+  --red:          #F87171;
+  --red-soft:     rgba(248, 113, 113, 0.10);
+  --amber:        #FCD34D;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --text-primary:   #ECFDF5;
+  --text-secondary: #A3B8AC;
+  --text-muted:     #5C7A68;
+  --border:         rgba(255, 255, 255, 0.07);
+  --border-strong:  rgba(255, 255, 255, 0.12);
 
-  --toast-bg: #1E2535;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
+
+  --toast-bg: #1A3024;
 }
 
 /* ── Shared Variables ── */
@@ -116,7 +118,7 @@ body {
   background: var(--border-strong);
   border-radius: 99px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 /* ── Keyframes ── */
 @keyframes spin {

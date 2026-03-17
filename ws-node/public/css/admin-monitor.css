@@ -61,7 +61,7 @@
 .filter-btn.active {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(26, 108, 245, 0.3);
+  border-color: rgba(22, 163, 74, 0.3);
 }
 
 /* ── Monitor layout (split pane) ── */
@@ -157,7 +157,7 @@
 .conv-type-badge.group {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(26, 108, 245, 0.2);
+  border-color: rgba(22, 163, 74, 0.2);
 }
 
 /* ── Message pane (right pane) ── */
@@ -207,7 +207,7 @@
   padding: 2px 8px;
   border-radius: 99px;
   font-weight: 500;
-  border: 1px solid rgba(26, 108, 245, 0.2);
+  border: 1px solid rgba(22, 163, 74, 0.2);
 }
 
 .monitor-msg-list {

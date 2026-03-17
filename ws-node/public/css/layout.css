@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════
-   APP SHELL
+   APP SHELL — Clean Mint
    ════════════════════════════════════════════ */
 #app {
   display: none;
@@ -45,7 +45,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-sidebar);
-  color: var(--text-secondary);
+  color: var(--accent);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -58,8 +58,8 @@
 }
 
 .sidebar-open-fab:hover {
-  background: var(--bg-sidebar-hover);
-  color: var(--text-primary);
+  background: var(--accent);
+  color: #fff;
   box-shadow: var(--shadow-lg);
 }
 
@@ -72,7 +72,7 @@
   border-radius: var(--radius-md);
   border: none;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--accent);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -82,14 +82,15 @@
 }
 
 #themeToggleBtn:hover {
-  background: var(--bg-sidebar-hover);
-  color: var(--text-secondary);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
 }
 
 /* ── Header ── */
 #sidebarHeader {
-  padding: 14px 14px 10px;
+  padding: 16px 14px 12px;
   border-bottom: 1px solid var(--border);
+  background: var(--bg-sidebar);
 }
 
 .sidebar-top {
@@ -119,7 +120,7 @@
   border-radius: var(--radius-md);
   border: none;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -130,8 +131,8 @@
 }
 
 .icon-btn:hover {
-  background: var(--bg-sidebar-hover);
-  color: var(--text-secondary);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .icon-btn.accent {
@@ -154,14 +155,15 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted);
+  color: var(--accent);
   pointer-events: none;
+  opacity: 0.6;
 }
 
 #searchInput {
   width: 100%;
   background: var(--bg-input);
-  border: 1.5px solid transparent;
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-full);
   padding: 8px 14px 8px 36px;
   color: var(--text-primary);
@@ -176,6 +178,7 @@
 #searchInput:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--bg-modal);
 }
 
 #searchInput::placeholder { color: var(--text-muted); }
@@ -194,7 +197,7 @@
   background: none;
   border: none;
   border-radius: var(--radius-md);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
@@ -204,13 +207,14 @@
 }
 
 .tab-btn:hover {
-  background: var(--bg-sidebar-hover);
-  color: var(--text-secondary);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .tab-btn.active {
   background: var(--accent-soft);
   color: var(--accent);
+  font-weight: 700;
 }
 
 /* ── Online strip ── */
@@ -245,7 +249,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -276,7 +280,7 @@
 .online-name {
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   max-width: 42px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -288,7 +292,7 @@
 #conversationList {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 8px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -305,10 +309,10 @@
   position: relative;
 }
 
-.conversation:hover      { background: var(--bg-sidebar-hover); }
-.conversation.active     { background: var(--bg-active); }
+.conversation:hover  { background: var(--bg-sidebar-hover); }
+.conversation.active { background: var(--bg-active); }
 
-/* Blue left indicator on active conversation */
+/* Green left indicator on active conversation */
 .conversation.active::before {
   content: '';
   position: absolute;
@@ -325,7 +329,7 @@
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -339,7 +343,7 @@
 }
 
 .conv-avatar.group {
-  background: linear-gradient(135deg, #0891B2 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #34D399 0%, #059669 100%);
   font-size: 20px;
 }
 
@@ -382,7 +386,7 @@
 
 .conv-preview {
   font-size: 12.5px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -396,6 +400,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-secondary);
 }
 
 /* Unread state */
@@ -405,7 +410,7 @@
 }
 
 .conversation.unread .conv-preview-text {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -429,13 +434,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  background: var(--bg-sidebar);
 }
 
 .my-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -463,7 +469,7 @@
 
 .my-status {
   font-size: 11px;
-  color: var(--green);
+  color: var(--accent);
   font-weight: 500;
   display: flex;
   align-items: center;

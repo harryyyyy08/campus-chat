@@ -6,24 +6,21 @@
     <title>CampusChat — Register</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/login.css" />
-    <link rel="stylesheet" href="css/components.css" />
   </head>
   <body>
     <div id="registerWrap">
+
       <!-- Registration Form -->
-      <div id="registerForm" class="login-card" style="width: 420px">
+      <div id="registerForm" class="login-card" style="max-width:440px;">
         <div class="login-logo">
           <div class="login-logo-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
           <div>
             <div class="login-logo-text">Campus<span>Chat</span></div>
             <div class="login-subtitle">CREATE ACCOUNT</div>
@@ -32,70 +29,30 @@
 
         <div class="field-group">
           <label for="reg_full_name">Full Name</label>
-          <input
-            id="reg_full_name"
-            type="text"
-            placeholder="e.g. Juan dela Cruz"
-          />
+          <input id="reg_full_name" type="text" placeholder="e.g. Juan dela Cruz" />
         </div>
 
         <div class="field-group">
           <label for="reg_username">Username</label>
-          <input
-            id="reg_username"
-            type="text"
-            placeholder="e.g. jdelacruz"
-            autocomplete="username"
-          />
-          <div class="field-hint">
-            Lowercase letters, numbers, underscores only
-          </div>
+          <input id="reg_username" type="text" placeholder="e.g. jdelacruz" autocomplete="username" />
+          <div class="field-hint">Lowercase letters, numbers, underscores only</div>
         </div>
 
         <div class="field-group">
           <label for="reg_password">Password</label>
           <div class="password-field">
-            <input
-              id="reg_password"
-              type="password"
-              placeholder="At least 8 characters"
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              aria-label="Show password"
-              data-target="reg_password"
-            >
-              <svg
-                class="icon-on"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
+            <input id="reg_password" type="password" placeholder="At least 8 characters" />
+            <button type="button" class="password-toggle" aria-label="Show password" data-target="reg_password">
+              <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
-              <svg
-                class="icon-off"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"></path>
-                <path d="M1 1l22 22"></path>
-                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
-                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"></path>
-                <path d="M23 12s-1.67 3.11-4.59 5.59"></path>
+              <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"/>
+                <path d="M1 1l22 22"/>
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"/>
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"/>
+                <path d="M23 12s-1.67 3.11-4.59 5.59"/>
               </svg>
             </button>
           </div>
@@ -104,47 +61,18 @@
         <div class="field-group">
           <label for="reg_password2">Confirm Password</label>
           <div class="password-field">
-            <input
-              id="reg_password2"
-              type="password"
-              placeholder="Repeat your password"
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              aria-label="Show password"
-              data-target="reg_password2"
-            >
-              <svg
-                class="icon-on"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
+            <input id="reg_password2" type="password" placeholder="Repeat your password" />
+            <button type="button" class="password-toggle" aria-label="Show password" data-target="reg_password2">
+              <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
-              <svg
-                class="icon-off"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"></path>
-                <path d="M1 1l22 22"></path>
-                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
-                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"></path>
-                <path d="M23 12s-1.67 3.11-4.59 5.59"></path>
+              <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"/>
+                <path d="M1 1l22 22"/>
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"/>
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"/>
+                <path d="M23 12s-1.67 3.11-4.59 5.59"/>
               </svg>
             </button>
           </div>
@@ -159,216 +87,107 @@
         </div>
 
         <div class="field-group">
-          <label for="reg_department"
-            >Department / Section
-            <span class="optional">(optional)</span></label
-          >
-          <input
-            id="reg_department"
-            type="text"
-            placeholder="e.g. BSIT 3-A, College of Engineering"
-          />
+          <label for="reg_department">
+            Department / Section
+            <span class="optional">(optional)</span>
+          </label>
+          <input id="reg_department" type="text" placeholder="e.g. BSIT 3-A, College of Engineering" />
         </div>
 
-        <button class="btn-primary" onclick="submitRegistration()">
-          Submit Registration
-        </button>
-        <p
-          id="regError"
-          style="
-            color: var(--red);
-            font-size: 12px;
-            margin-top: 10px;
-            text-align: center;
-            min-height: 18px;
-          "
-        ></p>
+        <button class="btn-primary" onclick="submitRegistration()">Submit Registration</button>
+        <p id="regError"></p>
 
-        <p
-          style="
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 14px;
-          "
-        >
+        <p class="login-footer-text">
           Already have an account?
-          <a href="/" style="color: var(--accent)">Sign in</a>
+          <a href="login.html">Sign in</a>
         </p>
       </div>
 
       <!-- Success state -->
-      <div
-        id="registerSuccess"
-        class="login-card hidden"
-        style="width: 420px; text-align: center"
-      >
-        <div style="font-size: 48px; margin-bottom: 16px">✅</div>
-        <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px">
-          Registration Submitted!
-        </div>
-        <div
-          style="
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 24px;
-          "
-        >
+      <div id="registerSuccess" class="login-card hidden" style="max-width:440px;text-align:center;">
+        <div class="reg-success-icon">✅</div>
+        <div class="reg-success-title">Registration Submitted!</div>
+        <div class="reg-success-sub">
           Your account is pending approval by an administrator.<br />
           You will be notified once your account is activated.
         </div>
-        <a
-          href="/"
-          class="btn-primary"
-          style="display: block; text-decoration: none; text-align: center"
-          >Back to Login</a
-        >
+        <a href="login.html" class="btn-primary" style="display:block;text-decoration:none;text-align:center;margin-top:0;">
+          Back to Login
+        </a>
       </div>
+
     </div>
 
     <style>
-      #registerWrap {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        padding: 32px 16px;
-        background:
-          radial-gradient(ellipse 100% 80% at 15% -10%, rgba(37, 99, 235, 0.14) 0%, transparent 55%),
-          radial-gradient(ellipse 70% 60% at 85% 110%, rgba(99, 102, 241, 0.10) 0%, transparent 55%),
-          var(--bg-base);
-      }
-      .field-hint {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-top: 4px;
-      }
-      .optional {
-        font-size: 11px;
-        color: var(--text-muted);
-        font-weight: 400;
-      }
-      .field-select {
-        width: 100%;
-        background: var(--bg-input);
-        border: 1.5px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 11px 14px;
-        color: var(--text-primary);
-        font-family: var(--font-body);
-        font-size: 14px;
-        outline: none;
-        cursor: pointer;
-        transition: border-color var(--anim);
-        appearance: none;
-        -webkit-appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b95a8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 14px center;
-      }
-      .field-select:focus {
-        border-color: var(--accent);
-      }
-      .field-select option {
-        background: var(--bg-modal);
-        color: var(--text-primary);
-      }
+      .reg-success-icon  { font-size: 48px; margin-bottom: 16px; }
+      .reg-success-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+      .reg-success-sub   { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
     </style>
 
     <script>
-      const API_BASE = "http://localhost/campus-chat/api/index.php";
+      // ── Theme ──────────────────────────────────────
+      (function() {
+        const t = localStorage.getItem("cc_theme") || "light";
+        document.documentElement.setAttribute("data-theme", t);
+      })();
 
-      function setupPasswordToggles() {
-        document.querySelectorAll(".password-toggle").forEach((btn) => {
-          const targetId = btn.getAttribute("data-target");
-          const input = document.getElementById(targetId);
-          if (!input) return;
-          btn.addEventListener("click", () => {
-            const willShow = input.type === "password";
-            input.type = willShow ? "text" : "password";
-            btn.classList.toggle("is-visible", willShow);
-            btn.setAttribute(
-              "aria-label",
-              willShow ? "Hide password" : "Show password"
-            );
-          });
+      const _host   = window.location.hostname;
+      const API_BASE = `http://${_host}/campus-chat/api/index.php`;
+
+      // ── Password toggles ───────────────────────────
+      document.querySelectorAll(".password-toggle").forEach(btn => {
+        const input = document.getElementById(btn.dataset.target);
+        if (!input) return;
+        btn.addEventListener("click", () => {
+          const show = input.type === "password";
+          input.type = show ? "text" : "password";
+          btn.classList.toggle("is-visible", show);
+          btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
         });
-      }
+      });
 
+      // ── Enter key ──────────────────────────────────
+      document.addEventListener("keydown", e => {
+        if (e.key === "Enter") submitRegistration();
+      });
+
+      // ── Submit ─────────────────────────────────────
       async function submitRegistration() {
-        const full_name = document.getElementById("reg_full_name").value.trim();
-        const username = document
-          .getElementById("reg_username")
-          .value.trim()
-          .toLowerCase();
-        const password = document.getElementById("reg_password").value;
-        const password2 = document.getElementById("reg_password2").value;
-        const role = document.getElementById("reg_role").value;
-        const department = document
-          .getElementById("reg_department")
-          .value.trim();
-        const errEl = document.getElementById("regError");
+        const full_name  = document.getElementById("reg_full_name").value.trim();
+        const username   = document.getElementById("reg_username").value.trim().toLowerCase();
+        const password   = document.getElementById("reg_password").value;
+        const password2  = document.getElementById("reg_password2").value;
+        const role       = document.getElementById("reg_role").value;
+        const department = document.getElementById("reg_department").value.trim();
+        const errEl      = document.getElementById("regError");
         errEl.textContent = "";
 
-        // Client-side validation
-        if (!full_name) {
-          errEl.textContent = "Full name is required.";
-          return;
-        }
-        if (!username) {
-          errEl.textContent = "Username is required.";
-          return;
-        }
-        if (!/^[a-z0-9_]+$/.test(username)) {
-          errEl.textContent =
-            "Username: lowercase letters, numbers, underscores only.";
-          return;
-        }
-        if (username.length < 3) {
-          errEl.textContent = "Username must be at least 3 characters.";
-          return;
-        }
-        if (password.length < 8) {
-          errEl.textContent = "Password must be at least 8 characters.";
-          return;
-        }
-        if (password !== password2) {
-          errEl.textContent = "Passwords do not match.";
-          return;
-        }
+        if (!full_name)                        { errEl.textContent = "Full name is required."; return; }
+        if (!username)                         { errEl.textContent = "Username is required."; return; }
+        if (!/^[a-z0-9_]+$/.test(username))   { errEl.textContent = "Username: lowercase letters, numbers, underscores only."; return; }
+        if (username.length < 3)              { errEl.textContent = "Username must be at least 3 characters."; return; }
+        if (password.length < 8)              { errEl.textContent = "Password must be at least 8 characters."; return; }
+        if (password !== password2)           { errEl.textContent = "Passwords do not match."; return; }
+
+        const btn = document.querySelector(".btn-primary");
+        btn.disabled = true; btn.textContent = "Submitting…";
 
         try {
-          const res = await fetch(`${API_BASE}/register`, {
-            method: "POST",
+          const res  = await fetch(`${API_BASE}/register`, {
+            method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              full_name,
-              username,
-              password,
-              role,
-              department,
-            }),
+            body:    JSON.stringify({ full_name, username, password, role, department }),
           });
           const data = await res.json();
-          if (!res.ok) {
-            errEl.textContent = data.error || "Registration failed.";
-            return;
-          }
-
+          if (!res.ok) { errEl.textContent = data.error || "Registration failed."; return; }
           document.getElementById("registerForm").classList.add("hidden");
           document.getElementById("registerSuccess").classList.remove("hidden");
         } catch (err) {
           errEl.textContent = "Connection error. Is the server running?";
+        } finally {
+          btn.disabled = false; btn.textContent = "Submit Registration";
         }
       }
-
-      // Allow Enter key to submit
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") submitRegistration();
-      });
-
-      document.addEventListener("DOMContentLoaded", setupPasswordToggles);
     </script>
   </body>
 </html>

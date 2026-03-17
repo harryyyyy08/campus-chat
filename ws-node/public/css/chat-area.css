@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════
-   CHAT AREA
+   CHAT AREA — Clean Mint
    ════════════════════════════════════════════ */
 #chat {
   flex: 1;
@@ -26,7 +26,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,10 +39,7 @@
   letter-spacing: 0.5px;
 }
 
-#chatHeaderInfo {
-  flex: 1;
-  min-width: 0;
-}
+#chatHeaderInfo { flex: 1; min-width: 0; }
 
 #chatHeaderName {
   font-size: 15px;
@@ -55,7 +52,7 @@
 
 #chatHeaderStatus {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-weight: 400;
 }
 
@@ -72,7 +69,7 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   user-select: none;
 }
 
@@ -90,12 +87,12 @@
 .empty-title {
   font-size: 17px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .empty-sub {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 /* ── Messages ── */
@@ -109,24 +106,29 @@
 }
 
 /* ── Date separator ── */
-.date-sep {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 16px 0 12px;
-  color: var(--text-muted);
+.date-separator {
+  text-align: center;
+  margin: 18px 0 10px;
+  position: relative;
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.date-sep::before,
-.date-sep::after {
+.date-separator::before,
+.date-separator::after {
   content: "";
-  flex: 1;
+  position: absolute;
+  top: 50%;
+  width: 38%;
   height: 1px;
   background: var(--border);
 }
+
+.date-separator::before { left: 0; }
+.date-separator::after  { right: 0; }
 
 /* ── Message Rows ── */
 .msgRow {
@@ -141,14 +143,14 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.msgRow.me    { align-self: flex-end; flex-direction: row-reverse; }
-.msgRow.them  { align-self: flex-start; }
+.msgRow.me   { align-self: flex-end;   flex-direction: row-reverse; }
+.msgRow.them { align-self: flex-start; }
 
 .msg-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,7 +175,7 @@
 .msg-sender {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--accent);
   padding-left: 12px;
   letter-spacing: 0.2px;
 }
@@ -203,13 +205,13 @@
   background: var(--bg-bubble-out);
   color: #fff;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.28);
+  box-shadow: 0 2px 12px var(--accent-glow);
 }
 
-/* ── Message meta (time + read status) ── */
+/* ── Message meta ── */
 .meta {
   font-size: 10px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -223,7 +225,7 @@
   min-height: 26px;
   padding: 0 24px 6px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -240,7 +242,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--text-muted);
+  background: var(--accent);
   display: block;
   animation: bounce 1.2s ease infinite;
 }
@@ -254,7 +256,7 @@
 }
 
 /* ══════════════════════════════════════════
-   INPUT BAR  — single-row Messenger style
+   INPUT BAR
    ══════════════════════════════════════════ */
 #inputBar {
   padding: 10px 14px 12px;
@@ -265,14 +267,12 @@
   gap: 8px;
 }
 
-/* Tool buttons (emoji, mic, attach) stay left of the input pill */
 .input-tools {
   display: flex;
   gap: 2px;
   flex-shrink: 0;
 }
 
-/* Pill wrapper: textarea + send button */
 .input-row {
   flex: 1;
   display: flex;
@@ -309,7 +309,7 @@
   overflow-y: auto;
 }
 
-#messageInput::placeholder { color: var(--text-muted); }
+#messageInput::placeholder { color: var(--text-secondary); }
 
 #sendBtn {
   width: 36px;
@@ -333,14 +333,13 @@
 #sendBtn:hover  { background: var(--accent-hover); box-shadow: 0 4px 16px var(--accent-glow); }
 #sendBtn:active { transform: scale(0.90); }
 
-/* Tool buttons */
 .tool-btn {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
   border: none;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -355,7 +354,7 @@
 }
 
 /* ════════════════════════════════════════════
-   MESSAGE HOVER ACTIONS (desktop)
+   MESSAGE HOVER ACTIONS
    ════════════════════════════════════════════ */
 .msg-hover-actions {
   display: flex;
@@ -375,8 +374,8 @@
   }
 }
 
-.msgRow.me .msg-hover-actions    { order: -1; }
-.msgRow.them .msg-hover-actions  { order: 2; }
+.msgRow.me .msg-hover-actions   { order: -1; }
+.msgRow.them .msg-hover-actions { order: 2; }
 
 .msg-hover-btn {
   width: 28px;
@@ -411,31 +410,6 @@
   .msg-hover-actions { display: none; }
 }
 
-/* ── Date separator (alternate style) ── */
-.date-separator {
-  text-align: center;
-  margin: 18px 0 10px;
-  position: relative;
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.date-separator::before,
-.date-separator::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 38%;
-  height: 1px;
-  background: var(--border);
-}
-
-.date-separator::before { left: 0; }
-.date-separator::after  { right: 0; }
-
 /* ── Scroll-to-bottom button ── */
 .scroll-arrow-btn {
   position: absolute;
@@ -447,7 +421,7 @@
   background: var(--bg-modal);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-md);
-  color: var(--text-secondary);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,7 +443,7 @@
   transform: translateY(8px);
 }
 
-/* ── Request badge & banner ── */
+/* ── Request badge ── */
 .request-nav-badge {
   position: absolute;
   top: -4px;
@@ -502,7 +476,7 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -516,9 +490,9 @@
 
 .request-info        { flex: 1; min-width: 0; }
 .request-name        { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.request-handle      { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.request-handle      { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
 .request-preview     { font-size: 13px; color: var(--text-secondary); line-height: 1.4; word-break: break-word; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
-.request-time        { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.request-time        { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
 .request-actions     { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
 
 .request-btn {
@@ -535,12 +509,12 @@
 
 .request-btn.accept          { background: var(--accent); color: #fff; }
 .request-btn.accept:hover    { background: var(--accent-hover); box-shadow: 0 4px 12px var(--accent-glow); }
-.request-btn.decline         { background: var(--bg-sidebar-hover); color: var(--text-muted); border: 1px solid var(--border); }
+.request-btn.decline         { background: var(--bg-sidebar-hover); color: var(--text-secondary); border: 1px solid var(--border); }
 .request-btn.decline:hover   { background: var(--red-soft); color: var(--red); border-color: var(--red); }
-.requests-empty              { text-align: center; padding: 32px 16px; font-size: 13px; color: var(--text-muted); }
+.requests-empty              { text-align: center; padding: 32px 16px; font-size: 13px; color: var(--text-secondary); }
 .request-to-label            { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
 .request-to-name             { font-weight: 600; color: var(--accent); margin-left: 4px; }
-.request-hint                { font-size: 11px; color: var(--text-muted); margin-top: 6px; font-style: italic; }
+.request-hint                { font-size: 11px; color: var(--text-secondary); margin-top: 6px; font-style: italic; }
 
 .pending-badge {
   display: inline-block;
@@ -564,4 +538,35 @@
   padding: 8px 20px;
   text-align: center;
   font-style: italic;
+}
+
+/* ── Edited label ── */
+.msg-edited-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ── Deleted message ── */
+.msg-deleted {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 8px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ── System message ── */
+.system-msg {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  background: var(--bg-input);
+  border-radius: var(--radius-full);
+  align-self: center;
+  margin: 6px 0;
+  border: 1px solid var(--border);
 }

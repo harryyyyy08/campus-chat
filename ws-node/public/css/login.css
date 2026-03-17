@@ -1,19 +1,23 @@
 /* ════════════════════════════════════════════
-   LOGIN  — Modern card on a soft gradient bg
+   LOGIN / REGISTER — Clean Mint
    ════════════════════════════════════════════ */
 
+/* ── Shared page wrapper ── */
+#loginWrap,
+#registerWrap,
 #login {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  padding: 32px 16px;
   background:
-    radial-gradient(ellipse 100% 80% at 15% -10%, rgba(37, 99, 235, 0.14) 0%, transparent 55%),
-    radial-gradient(ellipse 70%  60% at 85% 110%, rgba(99, 102, 241, 0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(22, 163, 74, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(34, 197, 94, 0.08) 0%, transparent 55%),
     var(--bg-base);
-  padding: 24px;
 }
 
+/* ── Card ── */
 .login-card {
   width: 100%;
   max-width: 400px;
@@ -23,8 +27,8 @@
   padding: 44px 40px;
   box-shadow:
     var(--shadow-lg),
-    0 0 0 1px rgba(37, 99, 235, 0.05);
-  animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    0 0 0 1px rgba(22, 163, 74, 0.06);
+  animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ── Logo ── */
@@ -36,14 +40,14 @@
 }
 
 .login-logo-icon {
-  width: 46px;
-  height: 46px;
-  background: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%);
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.30);
   flex-shrink: 0;
   color: #fff;
 }
@@ -61,7 +65,7 @@
 
 .login-subtitle {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   margin-top: 3px;
   letter-spacing: 1.2px;
   font-weight: 600;
@@ -79,6 +83,7 @@
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 6px;
+  letter-spacing: 0.2px;
 }
 
 .field-group input {
@@ -104,17 +109,29 @@
 }
 
 .field-group input::placeholder {
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
-/* ── Password Field ── */
-.password-field {
-  position: relative;
+/* ── Field hint & optional ── */
+.field-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  opacity: 0.75;
 }
 
-.password-field input {
-  padding-right: 46px;
+.optional {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  opacity: 0.7;
 }
+
+/* ── Password field ── */
+.password-field { position: relative; }
+
+.password-field input { padding-right: 46px; }
 
 .password-toggle {
   position: absolute;
@@ -123,21 +140,52 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   padding: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   transition: color var(--anim);
   border-radius: 4px;
+  opacity: 0.7;
 }
 
-.password-toggle:hover            { color: var(--text-secondary); }
-.password-toggle:focus-visible    { outline: 2px solid var(--accent); outline-offset: 2px; }
-.password-toggle svg              { display: block; }
-.password-toggle .icon-off        { display: none; }
+.password-toggle:hover              { color: var(--accent); opacity: 1; }
+.password-toggle:focus-visible      { outline: 2px solid var(--accent); outline-offset: 2px; }
+.password-toggle svg                { display: block; }
+.password-toggle .icon-off          { display: none; }
 .password-toggle.is-visible .icon-on  { display: none; }
 .password-toggle.is-visible .icon-off { display: block; }
+
+/* ── Select ── */
+.field-select {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--anim);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2316a34a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.field-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field-select option {
+  background: var(--bg-modal);
+  color: var(--text-primary);
+}
 
 /* ── Primary Button ── */
 .btn-primary {
@@ -149,14 +197,14 @@
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition:
     background var(--anim),
     box-shadow var(--anim),
     transform 80ms;
   margin-top: 8px;
-  letter-spacing: 0.1px;
+  letter-spacing: 0.2px;
 }
 
 .btn-primary:hover {
@@ -164,15 +212,58 @@
   box-shadow: 0 6px 20px var(--accent-glow);
 }
 
-.btn-primary:active {
-  transform: scale(0.98);
+.btn-primary:active  { transform: scale(0.98); }
+.btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ── Error ── */
-#loginError {
+#loginError,
+#regError {
   color: var(--red);
   font-size: 12px;
   margin-top: 10px;
   min-height: 18px;
   text-align: center;
+}
+
+/* ── Footer link ── */
+.login-footer-text {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 16px;
+}
+
+.login-footer-text a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-footer-text a:hover {
+  text-decoration: underline;
+}
+
+/* ── Admin panel login ── */
+#adminLogin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(22, 163, 74, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(34, 197, 94, 0.08) 0%, transparent 55%),
+    var(--bg-base);
+  padding: 24px;
+}
+
+#adminLogin #adminLoginError {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 10px;
+  text-align: center;
+  min-height: 18px;
 }
