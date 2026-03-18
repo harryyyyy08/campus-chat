@@ -38,7 +38,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/base.css" />
@@ -147,7 +147,7 @@
           <button class="admin-hamburger" id="adminHamburger" onclick="toggleAdminMenu()" aria-label="Menu">
             <span></span><span></span><span></span>
           </button>
-          <span id="adminRoleIcon">🛡️</span>
+          <span id="adminRoleIcon" style="display:flex;align-items:center;color:var(--accent)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
           <span>CampusChat Admin</span>
           <span id="adminRoleBadge" class="admin-role-badge"></span>
         </div>
@@ -181,7 +181,8 @@
             data-tab="chats"
             onclick="switchAdminTab(this, 'chats')"
           >
-            💬 Chat Monitor
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Chat Monitor
             <span id="flaggedCount" class="admin-badge hidden">0</span>
           </button>
           <button
@@ -190,7 +191,8 @@
             data-tab="flagged"
             onclick="switchAdminTab(this, 'flagged')"
           >
-            🚩 Flagged
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            Flagged
           </button>
           <button
             class="admin-tab"
@@ -198,7 +200,8 @@
             data-tab="announcements"
             onclick="switchAdminTab(this, 'announcements')"
           >
-            📢 Announcements
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Announcements
             <span id="annPendingCount" class="admin-badge hidden">0</span>
           </button>
           <button
@@ -207,7 +210,8 @@
             data-tab="storage"
             onclick="switchAdminTab(this, 'storage')"
           >
-            💾 Storage
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg>
+            Storage
           </button>
         </div>
         <div class="admin-nav-right">
@@ -405,7 +409,7 @@
             <!-- Right: message viewer -->
             <div id="monitorMsgPane" class="monitor-msg-pane">
               <div class="monitor-empty">
-                <div style="font-size: 32px; margin-bottom: 12px">💬</div>
+                <div style="margin-bottom: 12px; color: var(--text-muted)"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
                 <div style="font-size: 14px; color: var(--text-muted)">
                   Select a conversation to view messages
                 </div>
