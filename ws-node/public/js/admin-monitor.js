@@ -178,7 +178,7 @@ function showToast(msg) {
 
       async function downloadAdminFile(url, filename) {
         try {
-          const absUrl = "http://localhost" + url;
+          const absUrl = window.location.protocol + "//" + window.location.host + url;
           const res = await fetch(absUrl, {
             headers: { Authorization: "Bearer " + adminToken },
           });
