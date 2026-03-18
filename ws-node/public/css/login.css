@@ -12,8 +12,8 @@
   min-height: 100vh;
   padding: 32px 16px;
   background:
-    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(22, 163, 74, 0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(34, 197, 94, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(139, 92, 246, 0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(167, 139, 250, 0.10) 0%, transparent 55%),
     var(--bg-base);
 }
 
@@ -42,12 +42,12 @@
 .login-logo-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.30);
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.35);
   flex-shrink: 0;
   color: #fff;
 }
@@ -172,7 +172,7 @@
   transition: border-color var(--anim);
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2316a34a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b5cf6' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
 }
@@ -254,8 +254,8 @@
   justify-content: center;
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(22, 163, 74, 0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(34, 197, 94, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(139, 92, 246, 0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(167, 139, 250, 0.10) 0%, transparent 55%),
     var(--bg-base);
   padding: 24px;
 }
