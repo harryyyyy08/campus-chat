@@ -197,7 +197,7 @@
    GROUP / AVATAR STYLES
    ════════════════════════════════════════════ */
 .conv-avatar.group {
-  background: linear-gradient(135deg, #34D399 0%, #16A34A 100%);
+  background: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
   font-size: 18px;
   color: #fff;
 }
@@ -288,7 +288,7 @@
   gap: 5px;
   background: var(--accent-soft);
   color: var(--accent);
-  border: 1px solid rgba(22, 163, 74, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.18);
   border-radius: 99px;
   padding: 3px 10px 3px 12px;
   font-size: 12px;
@@ -333,7 +333,7 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
   display: flex;
   align-items: center;
   justify-content: center;
