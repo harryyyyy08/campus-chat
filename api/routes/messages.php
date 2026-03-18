@@ -118,7 +118,7 @@ if ($method === "GET" && $path === "/messages") {
       LEFT JOIN attachments a ON a.id = m.attachment_id
       WHERE m.conversation_id = ?
         AND m.created_at >= NOW() - INTERVAL 3 DAY
-      ORDER BY m.created_at DESC");
+      ORDER BY m.created_at DESC LIMIT ?");
     $stmt->bindValue(1, $conversation_id, PDO::PARAM_INT);
     $stmt->bindValue(2, $limit, PDO::PARAM_INT);
     $stmt->execute();
