@@ -139,6 +139,9 @@ function connectSocket() {
     const isAdminUser = ["admin", "super_admin"].includes(myRole);
     if (!isForMe && !isAdminUser) return;
 
+    // Notification sound
+    playAnnouncementSound();
+
     // Toast notification
     showToast("📢 " + announcement.title);
 
