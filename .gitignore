@@ -15,6 +15,9 @@ Thumbs.db
 # Claude Code local settings
 .claude/
 
+# Environment secrets
+ws-node/.env
+
 # Logs
 *.log
 ws-node/npm-debug.log*

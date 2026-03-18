@@ -1,12 +1,13 @@
+require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 
 // ── Config ────────────────────────────────────────────────────────
-const JWT_SECRET = "afa4514b999ba44069525e8fe72dcb0a208cb2cffbdbe9c4c09e2d197a58d7cadbdca9d0d3c23cb413ffa5df8d72bccb"; // must match api/config.php
+const JWT_SECRET = process.env.JWT_SECRET;
 const PORT = 3001;
-const PHP_API_BASE = "http://localhost/campus-chat/api/index.php";
+const PHP_API_BASE = process.env.PHP_API_BASE || "http://localhost/campus-chat/api/index.php";
 
 const app = express();
 const server = http.createServer(app);
@@ -43,7 +44,7 @@ io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("Missing token"));
     const claims = jwt.verify(token, JWT_SECRET);
-    socket.user = { id: Number(claims.sub), username: claims.username };
+    socket.user = { id: Number(claims.sub), username: claims.username, role: claims.role };
     return next();
   } catch (err) {
     return next(new Error("Unauthorized: " + err.message));
@@ -66,6 +67,8 @@ io.on("connection", (socket) => {
   // Called after PHP creates/approves an announcement
   // Broadcasts to all relevant users in real-time
   socket.on("post_announcement", async ({ announcement }) => {
+    const role = socket.user.role;
+    if (!["admin", "super_admin", "faculty"].includes(role)) return;
     if (!announcement) return;
 
     // Broadcast to all connected users
@@ -506,7 +509,7 @@ async function deleteOldMessages() {
   try {
     const resp = await fetch(`${PHP_API_BASE}/messages/cleanup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Cleanup-Secret": "campus-chat-cleanup-2026" },
+      headers: { "Content-Type": "application/json", "X-Cleanup-Secret": process.env.CLEANUP_SECRET },
     });
     const data = await resp.json();
     console.log(`[cleanup] Deleted ${data.deleted ?? 0} old messages.`);

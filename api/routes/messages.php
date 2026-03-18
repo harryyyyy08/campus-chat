@@ -312,7 +312,7 @@ if ($method === "POST" && preg_match('#^/messages/(\d+)/react$#', $path, $m)) {
 // ── POST /messages/cleanup ────────────────────────────────────
 if ($method === "POST" && $path === "/messages/cleanup") {
   $secret = $_SERVER["HTTP_X_CLEANUP_SECRET"] ?? "";
-  if ($secret !== "campus-chat-cleanup-2026")
+  if ($secret !== $cfg["cleanup_secret"])
     json_response(["error" => "Forbidden"], 403);
 
   $pdo = db();
