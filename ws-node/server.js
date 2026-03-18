@@ -462,22 +462,7 @@ io.on("connection", (socket) => {
     if (!cid) return;
     // Join sender to the pending conversation room
     socket.join(`conv:${cid}`);
-    // Get recipient info from PHP to notify them
-    try {
-      const resp = await fetch(`${PHP_API_BASE}/conversations/requests/count`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      // Fetch recipient user id from the conversation
-      const convResp = await fetch(`${PHP_API_BASE}/conversations/requests`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      // We notify the recipient directly using PHP data
-      // Find which user is the recipient from conversation members
-      const membResp = await fetch(`${PHP_API_BASE}/conversations/${cid}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => null);
-    } catch {}
-    // Simple approach: emit to the conversation room — recipient will be in it
+    // Emit to the conversation room — recipient will be in it
     io.to(`conv:${cid}`).emit("new_message_request", {
       request_id,
       from_name: socket.user.username,
@@ -499,8 +484,12 @@ io.on("connection", (socket) => {
 
   // ── disconnect ────────────────────────────────────────────────
   socket.on("disconnect", () => {
-    onlineUsers.delete(userId);
-    io.emit("presence", { user_id: userId, online: false });
+    const stillConnected = [...io.sockets.sockets.values()]
+      .some(s => s.id !== socket.id && s.user?.id === userId);
+    if (!stillConnected) {
+      onlineUsers.delete(userId);
+      io.emit("presence", { user_id: userId, online: false });
+    }
   });
 });
 
