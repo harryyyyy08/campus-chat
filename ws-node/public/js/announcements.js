@@ -421,6 +421,9 @@ function connectSocket() {
       renderList();
       updatePendingBadge();
 
+      // Notification sound
+      playAnnouncementSound();
+
       // Show persistent modal — cannot be dismissed without button click
       queuePersistModal({ ...announcement, is_read: false });
     });
