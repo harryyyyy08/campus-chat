@@ -4,13 +4,21 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 
 // ── Config ────────────────────────────────────────────────────────
-const JWT_SECRET = "CHANGE_ME_super_long_random_secret_123456789"; // must match api/config.php
+const JWT_SECRET = "afa4514b999ba44069525e8fe72dcb0a208cb2cffbdbe9c4c09e2d197a58d7cadbdca9d0d3c23cb413ffa5df8d72bccb"; // must match api/config.php
 const PORT = 3001;
 const PHP_API_BASE = "http://localhost/campus-chat/api/index.php";
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: {
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // same-origin requests
+      const ok = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin);
+      cb(ok ? null : new Error("CORS blocked"), ok);
+    }
+  }
+});
 
 // Serve static files from the campus-chat web root
 // so localhost:3001 also works (not just localhost/campus-chat)
@@ -51,10 +59,8 @@ function joinUserToRoom(userId, roomName) {
 
 // ── Connection ────────────────────────────────────────────────────
 io.on("connection", (socket) => {
-  // ════════════════════════════════════════════
-// ADD THESE SOCKET EVENTS TO server.js
-// Inside the io.on("connection", ...) block
-// ════════════════════════════════════════════
+  const userId = socket.user.id;
+  const token = socket.handshake.auth?.token;
 
   // ── post_announcement ─────────────────────────────────────────
   // Called after PHP creates/approves an announcement
@@ -133,8 +139,6 @@ io.on("connection", (socket) => {
       if (ack) ack({ ok: true });
     } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
   });
-  const userId = socket.user.id;
-  const token = socket.handshake.auth?.token;
 
   onlineUsers.add(userId);
   socket.join(`user:${userId}`);

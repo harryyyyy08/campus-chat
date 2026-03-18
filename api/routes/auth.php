@@ -20,6 +20,20 @@
 
 // ── POST /login ──────────────────────────────────────────────────
 if ($method === "POST" && $path === "/login") {
+  // Rate limiting: max 10 attempts per IP per 15 minutes
+  $ip       = $_SERVER["REMOTE_ADDR"] ?? "unknown";
+  $rl_file  = sys_get_temp_dir() . "/cc_rl_" . md5($ip) . ".json";
+  $now      = time();
+  $window   = 15 * 60; // 15 minutes
+  $max_attempts = 10;
+
+  $rl = file_exists($rl_file) ? json_decode(file_get_contents($rl_file), true) : ["count" => 0, "since" => $now];
+  if (($now - $rl["since"]) > $window) $rl = ["count" => 0, "since" => $now]; // reset window
+  if ($rl["count"] >= $max_attempts) {
+    $retry_after = $window - ($now - $rl["since"]);
+    json_response(["error" => "Too many login attempts. Try again in " . ceil($retry_after / 60) . " minute(s)."], 429);
+  }
+
   $in = json_input();
   $username = trim($in["username"] ?? "");
   $password = (string)($in["password"] ?? "");
@@ -29,9 +43,16 @@ if ($method === "POST" && $path === "/login") {
   $stmt = $pdo->prepare("SELECT id, username, full_name, password_hash, status, role FROM users WHERE username = ?");
   $stmt->execute([$username]);
   $user = $stmt->fetch();
-  if (!$user || !password_verify($password, $user["password_hash"])) json_response(["error" => "Invalid credentials"], 401);
+  if (!$user || !password_verify($password, $user["password_hash"])) {
+    $rl["count"]++;
+    file_put_contents($rl_file, json_encode($rl));
+    json_response(["error" => "Invalid credentials"], 401);
+  }
   if ($user["status"] === "pending")  json_response(["error" => "Your account is pending admin approval"], 403);
   if ($user["status"] === "disabled") json_response(["error" => "Your account has been disabled"], 403);
+
+  // Reset rate limit counter on successful login
+  @unlink($rl_file);
 
   $now = time();
   // ✅ BAGO — may role na

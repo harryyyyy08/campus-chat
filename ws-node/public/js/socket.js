@@ -74,39 +74,6 @@ function connectSocket() {
     loadConversations();
   });
 
-  // ── Announcement popup sa chat page ──────────
-  socket.on("new_announcement", ({ announcement }) => {
-    if (!announcement) return;
-  
-    // Department filter — show only if relevant to this user
-    const isForMe = announcement.target_type === "all"
-      || (announcement.target_type === "department" && announcement.department === myDept);
-    const isAdminUser = ["admin", "super_admin"].includes(myRole);
-    if (!isForMe && !isAdminUser) return;
-  
-    // Show toast notification on chat page
-    showToast("📢 " + announcement.title);
-  
-    // Update nav badge if it exists
-    const badge = document.getElementById("annNavBadge");
-    if (badge) {
-      const count = (parseInt(badge.textContent) || 0) + 1;
-      badge.textContent = count;
-      badge.classList.remove("hidden");
-    }
-  
-    // Show floating popup if element exists (index.html may have it)
-    const popup = document.getElementById("annPopup");
-    if (popup) {
-      const titleEl  = document.getElementById("annPopupTitle");
-      const authorEl = document.getElementById("annPopupAuthor");
-      if (titleEl)  titleEl.textContent  = announcement.title;
-      if (authorEl) authorEl.textContent = "By " + (announcement.author_name || "Admin");
-      popup.classList.remove("hidden");
-      clearTimeout(window._annPopupTimer);
-      window._annPopupTimer = setTimeout(() => popup.classList.add("hidden"), 6000);
-    }
-  });
 
   // ── message_edited ──────────────────────────────────────────
   socket.on("message_edited", ({ message_id, conversation_id, body, is_edited, edited_at }) => {
@@ -163,6 +130,7 @@ function connectSocket() {
     setTimeout(() => row.remove(), 260);
   });
 
+  // ── new_announcement ─────────────────────────────────────────
   socket.on("new_announcement", ({ announcement }) => {
     if (!announcement) return;
 
@@ -171,12 +139,27 @@ function connectSocket() {
     const isAdminUser = ["admin", "super_admin"].includes(myRole);
     if (!isForMe && !isAdminUser) return;
 
+    // Toast notification
+    showToast("📢 " + announcement.title);
+
     // Update nav badge
     const badge = document.getElementById("annNavBadge");
     if (badge) {
       const count = (parseInt(badge.textContent) || 0) + 1;
       badge.textContent = count;
       badge.classList.remove("hidden");
+    }
+
+    // Show floating popup if element exists (auto-hide after 6s)
+    const popup = document.getElementById("annPopup");
+    if (popup) {
+      const titleEl  = document.getElementById("annPopupTitle");
+      const authorEl = document.getElementById("annPopupAuthor");
+      if (titleEl)  titleEl.textContent  = announcement.title;
+      if (authorEl) authorEl.textContent = "By " + (announcement.author_name || "Admin");
+      popup.classList.remove("hidden");
+      clearTimeout(window._annPopupTimer);
+      window._annPopupTimer = setTimeout(() => popup.classList.add("hidden"), 6000);
     }
 
     // Show persistent modal

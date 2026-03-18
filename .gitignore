@@ -12,6 +12,9 @@ api/config.php
 .DS_Store
 Thumbs.db
 
+# Claude Code local settings
+.claude/
+
 # Logs
 *.log
 ws-node/npm-debug.log*
