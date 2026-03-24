@@ -1,4 +1,56 @@
 <?php
+// ── GET /admin/reset-requests ─────────────────────────────────────
+if ($method === "GET" && $path === "/admin/reset-requests") {
+  $claims = require_auth(); $pdo = db();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_admin($my_role)) json_response(["error" => "Admin access required"], 403);
+  $stmt = $pdo->prepare("SELECT r.id, r.user_id, r.requested_at, r.status, u.username, u.full_name, u.department, u.role AS user_role FROM password_reset_requests r JOIN users u ON u.id = r.user_id WHERE r.status = 'pending' ORDER BY r.requested_at ASC");
+  $stmt->execute(); $rows = $stmt->fetchAll();
+  foreach ($rows as &$r) { $r["id"] = (int)$r["id"]; $r["user_id"] = (int)$r["user_id"]; }
+  json_response(["requests" => $rows]);
+}
+
+// ── POST /admin/reset-requests/{id}/approve ───────────────────────
+if ($method === "POST" && preg_match('#^/admin/reset-requests/(\d+)/approve$#', $path, $m)) {
+  $req_id  = (int)$m[1];
+  $claims  = require_auth(); $pdo = db();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_admin($my_role)) json_response(["error" => "Admin access required"], 403);
+
+  $stmt = $pdo->prepare("SELECT r.id, r.user_id, r.status FROM password_reset_requests r WHERE r.id = ?");
+  $stmt->execute([$req_id]); $req = $stmt->fetch();
+  if (!$req) json_response(["error" => "Request not found"], 404);
+  if ($req["status"] !== "pending") json_response(["error" => "Request already resolved"], 409);
+
+  // Generate readable 8-char temp password
+  $temp_plain = substr(str_replace(['+','/','='], '', base64_encode(random_bytes(12))), 0, 8);
+  $temp_hash  = password_hash($temp_plain, PASSWORD_DEFAULT);
+
+  $pdo->prepare("UPDATE users SET password_hash = ?, force_password_change = 1 WHERE id = ?")
+      ->execute([$temp_hash, (int)$req["user_id"]]);
+  $pdo->prepare("UPDATE password_reset_requests SET status = 'completed', temp_plain = ?, resolved_at = NOW() WHERE id = ?")
+      ->execute([$temp_plain, $req_id]);
+
+  json_response(["temp_password" => $temp_plain]);
+}
+
+// ── POST /admin/reset-requests/{id}/reject ────────────────────────
+if ($method === "POST" && preg_match('#^/admin/reset-requests/(\d+)/reject$#', $path, $m)) {
+  $req_id  = (int)$m[1];
+  $claims  = require_auth(); $pdo = db();
+  $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?"); $stmt->execute([(int)$claims["sub"]]); $my_role = $stmt->fetchColumn();
+  if (!is_admin($my_role)) json_response(["error" => "Admin access required"], 403);
+
+  $stmt = $pdo->prepare("SELECT status FROM password_reset_requests WHERE id = ?");
+  $stmt->execute([$req_id]); $req = $stmt->fetch();
+  if (!$req) json_response(["error" => "Request not found"], 404);
+  if ($req["status"] !== "pending") json_response(["error" => "Request already resolved"], 409);
+
+  $pdo->prepare("UPDATE password_reset_requests SET status = 'rejected', resolved_at = NOW() WHERE id = ?")
+      ->execute([$req_id]);
+  json_response(["rejected" => true]);
+}
+
 // ── GET /admin/users ─────────────────────────────────────────────
 if ($method === "GET" && $path === "/admin/users") {
   $claims = require_auth(); $pdo = db();
