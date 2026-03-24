@@ -40,7 +40,7 @@ if ($method === "POST" && $path === "/login") {
   if ($username === "" || $password === "") json_response(["error" => "username and password required"], 400);
 
   $pdo  = db();
-  $stmt = $pdo->prepare("SELECT id, username, full_name, password_hash, status, role FROM users WHERE username = ?");
+  $stmt = $pdo->prepare("SELECT id, username, full_name, password_hash, status, role, force_password_change FROM users WHERE username = ?");
   $stmt->execute([$username]);
   $user = $stmt->fetch();
   if (!$user || !password_verify($password, $user["password_hash"])) {
@@ -55,18 +55,18 @@ if ($method === "POST" && $path === "/login") {
   @unlink($rl_file);
 
   $now = time();
-  // ✅ BAGO — may role na
   $token = jwt_sign([
       "iss"      => $cfg["jwt"]["issuer"],
       "sub"      => (int)$user["id"],
       "username" => $user["username"],
-      "role"     => $user["role"],        // ← IDAGDAG ITO
+      "role"     => $user["role"],
       "iat"      => $now,
       "exp"      => $now + $cfg["jwt"]["ttl_seconds"]
   ], $cfg["jwt"]["secret"]);
 
   json_response([
-    "access_token" => $token,
+    "access_token"         => $token,
+    "force_change"         => (bool)$user["force_password_change"],
     "user" => [
       "id"        => (int)$user["id"],
       "username"  => $user["username"],
@@ -125,4 +125,63 @@ if ($method === "POST" && $path === "/register") {
   $pdo->prepare("INSERT INTO users (username, full_name, password_hash, status, role, department) VALUES (?, ?, ?, 'pending', ?, ?)")
       ->execute([$username, $full_name, $hash, $role, $department ?: null]);
   json_response(["registered" => true, "message" => "Registration submitted. Please wait for admin approval."], 201);
+}
+
+// ── POST /forgot-password ─────────────────────────────────────────
+if ($method === "POST" && $path === "/forgot-password") {
+  $in       = json_input();
+  $username = strtolower(trim((string)($in["username"] ?? "")));
+  if ($username === "") json_response(["error" => "Username is required"], 400);
+
+  // Rate limit: max 3 requests per username per hour (prevents spam)
+  $rl_file = sys_get_temp_dir() . "/cc_fpr_" . md5($username) . ".json";
+  $now     = time();
+  $window  = 60 * 60; // 1 hour
+  $rl = file_exists($rl_file) ? json_decode(file_get_contents($rl_file), true) : ["count" => 0, "since" => $now];
+  if (($now - $rl["since"]) > $window) $rl = ["count" => 0, "since" => $now];
+  if ($rl["count"] >= 3) {
+    // Return generic message — don't reveal rate limit details
+    json_response(["message" => "Request submitted. Please contact your administrator."]);
+  }
+
+  $pdo  = db();
+  $stmt = $pdo->prepare("SELECT id, status FROM users WHERE username = ?");
+  $stmt->execute([$username]);
+  $user = $stmt->fetch();
+
+  // Always respond with the same message to prevent username enumeration
+  if (!$user || $user["status"] !== "active") {
+    json_response(["message" => "Request submitted. Please contact your administrator."]);
+  }
+
+  // Avoid duplicate pending requests
+  $stmt = $pdo->prepare("SELECT id FROM password_reset_requests WHERE user_id = ? AND status = 'pending'");
+  $stmt->execute([(int)$user["id"]]);
+  if (!$stmt->fetch()) {
+    $pdo->prepare("INSERT INTO password_reset_requests (user_id) VALUES (?)")
+        ->execute([(int)$user["id"]]);
+  }
+
+  $rl["count"]++;
+  file_put_contents($rl_file, json_encode($rl));
+
+  json_response(["message" => "Request submitted. Please contact your administrator."]);
+}
+
+// ── POST /change-password ─────────────────────────────────────────
+if ($method === "POST" && $path === "/change-password") {
+  $claims      = require_auth();
+  $in          = json_input();
+  $new_pass    = (string)($in["new_password"]     ?? "");
+  $confirm     = (string)($in["confirm_password"] ?? "");
+
+  if (strlen($new_pass) < 8) json_response(["error" => "Password must be at least 8 characters"], 400);
+  if ($new_pass !== $confirm) json_response(["error" => "Passwords do not match"], 400);
+
+  $pdo  = db();
+  $hash = password_hash($new_pass, PASSWORD_DEFAULT);
+  $pdo->prepare("UPDATE users SET password_hash = ?, force_password_change = 0 WHERE id = ?")
+      ->execute([$hash, (int)$claims["sub"]]);
+
+  json_response(["message" => "Password updated successfully."]);
 }
