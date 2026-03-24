@@ -94,6 +94,15 @@
         } else {
           document.getElementById("announcementsPanel").classList.add("hidden");
         }
+
+        if (tab === "resetRequests") {
+          document.getElementById("resetRequestsPanel").classList.remove("hidden");
+          document.getElementById("adminToolbar").classList.add("hidden");
+          document.getElementById("userTableWrap").classList.add("hidden");
+          loadResetRequests();
+        } else {
+          document.getElementById("resetRequestsPanel").classList.add("hidden");
+        }
       }
 
       // ── Load users ────────────────────────────────────────
