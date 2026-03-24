@@ -57,6 +57,9 @@
         <p id="loginError"></p>
 
         <p class="login-footer-text">
+          <a href="forgot-password.html">Forgot your password?</a>
+        </p>
+        <p class="login-footer-text">
           Don't have an account?
           <a href="register.html">Register here</a>
         </p>
@@ -134,8 +137,8 @@
           localStorage.setItem("cc_user",  JSON.stringify(data.user));
           localStorage.setItem("cc_ws_url", data.ws_url || WS_URL);
 
-          // Redirect to chat
-          window.location.href = "index.html";
+          // Redirect — force password change if flagged
+          window.location.href = data.force_change ? "change-password.html" : "index.html";
 
         } catch (err) {
           errEl.textContent = "Connection error. Is the server running?";
