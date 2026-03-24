@@ -123,7 +123,10 @@ async function sendMessageRequest(username, firstMsg) {
     socket.emit("message_request_sent", {
       conversation_id: data.conversation_id,
       request_id: data.request_id,
+      recipient_id: data.recipient_id,
     });
+    await loadConversations();
+    openConversation(data.conversation_id);
     showToast("Message request sent!");
   } catch (err) { showToast("Connection error."); console.error(err); }
 }
