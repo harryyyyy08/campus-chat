@@ -211,8 +211,13 @@ if ($method === "GET" && $path === "/conversations") {
         $c["request_status"] = $rdata["status"];
         // Recipient is not in conversation_members yet — inject their info so the title renders correctly
         $rstmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE id = ?");
-        $rstmt->execute([(int)$rdata["recipient_id"]]); $recipient = $rstmt->fetch();
-        if ($recipient) { $recipient["id"] = (int)$recipient["id"]; $recipient["role"] = "member"; $c["members"][] = $recipient; }
+        $rstmt->execute([(int)$rdata["recipient_id"]]);
+        $recipient = $rstmt->fetch();
+        if ($recipient) {
+          $recipient["id"] = (int)$recipient["id"];
+          $recipient["role"] = "member";
+          $c["members"][] = $recipient;
+        }
       }
     }
   }
