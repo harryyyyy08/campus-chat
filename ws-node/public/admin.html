@@ -31,599 +31,516 @@
 
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CampusChat — Admin Panel</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/login.css" />
-    <link rel="stylesheet" href="css/layout.css" />
-    <link rel="stylesheet" href="css/components.css" />
-    <link rel="stylesheet" href="css/admin-layout.css" />
-    <link rel="stylesheet" href="css/admin-storage.css" />
-    <link rel="stylesheet" href="css/admin-monitor.css" />
-  </head>
-  <body>
-    <!-- Loading screen shown while checking saved session -->
-    <div id="adminLoadingScreen" style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg-base);flex-direction:column;gap:14px;">
-      <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;"></div>
-      <div style="font-size:13px;color:var(--text-muted);font-weight:500;letter-spacing:0.3px;">Checking session…</div>
-    </div>
 
-    <!-- Admin Login -->
-    <div id="adminLogin" class="hidden">
-      <div class="login-card">
-        <div class="login-logo">
-          <div class="login-logo-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-            </div>
-          <div>
-            <div class="login-logo-text">Campus<span>Chat</span></div>
-            <div class="login-subtitle">ADMIN PANEL</div>
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusChat — Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="vendor/altcha/altcha.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/admin-layout.css" />
+  <link rel="stylesheet" href="css/admin-storage.css" />
+  <link rel="stylesheet" href="css/admin-monitor.css" />
+</head>
+
+<body>
+  <!-- Loading screen shown while checking saved session -->
+  <div id="adminLoadingScreen"
+    style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg-base);flex-direction:column;gap:14px;">
+    <div
+      style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;">
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);font-weight:500;letter-spacing:0.3px;">Checking session…</div>
+  </div>
+
+  <!-- Admin Login -->
+  <div id="adminLogin" class="hidden">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
         </div>
-        <div class="field-group">
-          <label>Username</label>
-          <input
-            id="adminUsername"
-            type="text"
-            placeholder="Admin username"
-            autocomplete="username"
-          />
+        <div>
+          <div class="login-logo-text">Campus<span>Chat</span></div>
+          <div class="login-subtitle">ADMIN PANEL</div>
         </div>
-        <div class="field-group">
-          <label>Password</label>
-          <div class="password-field">
-            <input id="adminPassword" type="password" placeholder="Password" />
-            <button
-              type="button"
-              class="password-toggle"
-              aria-label="Show password"
-              data-target="adminPassword"
-            >
-              <svg
-                class="icon-on"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              <svg
-                class="icon-off"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"></path>
-                <path d="M1 1l22 22"></path>
-                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
-                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"></path>
-                <path d="M23 12s-1.67 3.11-4.59 5.59"></path>
-              </svg>
-            </button>
-          </div>
+      </div>
+      <div class="field-group">
+        <label>Username</label>
+        <input id="adminUsername" type="text" placeholder="Admin username" autocomplete="username" />
+      </div>
+      <div class="field-group">
+        <label>Password</label>
+        <div class="password-field">
+          <input id="adminPassword" type="password" placeholder="Password" />
+          <button type="button" class="password-toggle" aria-label="Show password" data-target="adminPassword">
+            <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94"></path>
+              <path d="M1 1l22 22"></path>
+              <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
+              <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24"></path>
+              <path d="M23 12s-1.67 3.11-4.59 5.59"></path>
+            </svg>
+          </button>
         </div>
-        <button class="btn-primary" onclick="adminLogin()">
-          Sign In as Admin
-        </button>
-        <p id="adminLoginError"></p>
-        <p
-          style="
+      </div>
+      <div class="field-group" style="margin-top: 12px; display: flex; justify-content: center;">
+        <altcha-widget id="adminLoginAltcha" auto="off" hidelogo hidefooter
+          style="display:block;max-width:100%;"></altcha-widget>
+      </div>
+      <button class="btn-primary" onclick="adminLogin()">
+        Sign In as Admin
+      </button>
+      <p id="adminLoginError"></p>
+      <p style="
             text-align: center;
             font-size: 12px;
             color: var(--text-muted);
             margin-top: 14px;
-          "
-        >
-          <a href="/" style="color: var(--accent)">← Back to Chat</a>
-        </p>
+          ">
+        <a href="/" style="color: var(--accent)">← Back to Chat</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Admin App -->
+  <div id="adminApp" class="hidden">
+    <div id="adminNav">
+      <div class="admin-nav-logo">
+        <button class="admin-hamburger" id="adminHamburger" onclick="toggleAdminMenu()" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <span id="adminRoleIcon" style="display:flex;align-items:center;color:var(--accent)"><svg width="16" height="16"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg></span>
+        <span>CampusChat Admin</span>
+        <span id="adminRoleBadge" class="admin-role-badge"></span>
+      </div>
+      <div class="admin-nav-tabs" id="adminNavTabs">
+        <button class="admin-tab active" data-tab="pending" onclick="switchAdminTab(this, 'pending')">
+          Pending Approvals
+          <span id="pendingCount" class="admin-badge hidden">0</span>
+        </button>
+        <button class="admin-tab" data-tab="active" onclick="switchAdminTab(this, 'active')">
+          Active Users
+        </button>
+        <button class="admin-tab" data-tab="disabled" onclick="switchAdminTab(this, 'disabled')">
+          Disabled
+        </button>
+        <!-- Storage tab: super_admin only — shown via JS after login -->
+        <button class="admin-tab hidden" id="chatsTabBtn" data-tab="chats" onclick="switchAdminTab(this, 'chats')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          Chat Monitor
+          <span id="flaggedCount" class="admin-badge hidden">0</span>
+        </button>
+        <button class="admin-tab hidden" id="flaggedTabBtn" data-tab="flagged"
+          onclick="switchAdminTab(this, 'flagged')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+            <line x1="4" y1="22" x2="4" y2="15" />
+          </svg>
+          Flagged
+        </button>
+        <button class="admin-tab" id="resetRequestsTabBtn" data-tab="resetRequests"
+          onclick="switchAdminTab(this, 'resetRequests')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          Password Resets
+          <span id="resetReqCount" class="admin-badge hidden">0</span>
+        </button>
+        <button class="admin-tab" id="announcementsTabBtn" data-tab="announcements"
+          onclick="switchAdminTab(this, 'announcements')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 11l18-5v12L3 14v-3" />
+            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+          </svg>
+          Announcements
+          <span id="annPendingCount" class="admin-badge hidden">0</span>
+        </button>
+        <button class="admin-tab hidden" id="storageTabBtn" data-tab="storage"
+          onclick="switchAdminTab(this, 'storage')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="12" x2="2" y2="12" />
+            <path
+              d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+            <line x1="6" y1="16" x2="6.01" y2="16" />
+            <line x1="10" y1="16" x2="10.01" y2="16" />
+          </svg>
+          Storage
+        </button>
+      </div>
+      <div class="admin-nav-right">
+        <span id="adminMyName" style="font-size: 13px; color: var(--text-secondary)"></span>
+        <button id="adminThemeBtn" class="icon-btn" title="Toggle theme" onclick="toggleTheme()">
+          <svg id="adminThemeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        </button>
+        <button class="icon-btn" title="Logout" onclick="adminLogout()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
       </div>
     </div>
 
-    <!-- Admin App -->
-    <div id="adminApp" class="hidden">
-      <div id="adminNav">
-        <div class="admin-nav-logo">
-          <button class="admin-hamburger" id="adminHamburger" onclick="toggleAdminMenu()" aria-label="Menu">
-            <span></span><span></span><span></span>
-          </button>
-          <span id="adminRoleIcon" style="display:flex;align-items:center;color:var(--accent)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-          <span>CampusChat Admin</span>
-          <span id="adminRoleBadge" class="admin-role-badge"></span>
+    <div id="adminContent">
+      <!-- Search + filter bar (hidden on storage tab) -->
+      <div class="admin-toolbar" id="adminToolbar">
+        <div class="admin-search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input id="adminSearch" type="text" placeholder="Search users…" oninput="filterUsers(this.value)" />
         </div>
-        <div class="admin-nav-tabs" id="adminNavTabs">
-          <button
-            class="admin-tab active"
-            data-tab="pending"
-            onclick="switchAdminTab(this, 'pending')"
-          >
-            Pending Approvals
-            <span id="pendingCount" class="admin-badge hidden">0</span>
-          </button>
-          <button
-            class="admin-tab"
-            data-tab="active"
-            onclick="switchAdminTab(this, 'active')"
-          >
-            Active Users
-          </button>
-          <button
-            class="admin-tab"
-            data-tab="disabled"
-            onclick="switchAdminTab(this, 'disabled')"
-          >
-            Disabled
-          </button>
-          <!-- Storage tab: super_admin only — shown via JS after login -->
-          <button
-            class="admin-tab hidden"
-            id="chatsTabBtn"
-            data-tab="chats"
-            onclick="switchAdminTab(this, 'chats')"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Chat Monitor
-            <span id="flaggedCount" class="admin-badge hidden">0</span>
-          </button>
-          <button
-            class="admin-tab hidden"
-            id="flaggedTabBtn"
-            data-tab="flagged"
-            onclick="switchAdminTab(this, 'flagged')"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            Flagged
-          </button>
-          <button
-            class="admin-tab"
-            id="resetRequestsTabBtn"
-            data-tab="resetRequests"
-            onclick="switchAdminTab(this, 'resetRequests')"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Password Resets
-            <span id="resetReqCount" class="admin-badge hidden">0</span>
-          </button>
-          <button
-            class="admin-tab"
-            id="announcementsTabBtn"
-            data-tab="announcements"
-            onclick="switchAdminTab(this, 'announcements')"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            Announcements
-            <span id="annPendingCount" class="admin-badge hidden">0</span>
-          </button>
-          <button
-            class="admin-tab hidden"
-            id="storageTabBtn"
-            data-tab="storage"
-            onclick="switchAdminTab(this, 'storage')"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg>
-            Storage
-          </button>
-        </div>
-        <div class="admin-nav-right">
-          <span
-            id="adminMyName"
-            style="font-size: 13px; color: var(--text-secondary)"
-          ></span>
-          <button
-            id="adminThemeBtn"
-            class="icon-btn"
-            title="Toggle theme"
-            onclick="toggleTheme()"
-          >
-            <svg
-              id="adminThemeIcon"
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="12" cy="12" r="5" />
-              <line x1="12" y1="1" x2="12" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="23" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-              <line x1="1" y1="12" x2="3" y2="12" />
-              <line x1="21" y1="12" x2="23" y2="12" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-            </svg>
-          </button>
-          <button class="icon-btn" title="Logout" onclick="adminLogout()">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        </div>
+        <button class="btn-modal-primary" onclick="loadUsers()" style="padding: 8px 16px; font-size: 13px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round"
+            style="display: inline; margin-right: 4px; vertical-align: middle">
+            <path d="M23 4v6h-6" />
+            <path d="M1 20v-6h6" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+          Refresh
+        </button>
+        <button class="btn-modal-primary" onclick="openDepartmentModal()"
+          style="padding: 8px 16px; font-size: 13px; background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(139,92,246,0.25);"
+          onmouseover="this.style.background='var(--accent)';this.style.color='#fff'"
+          onmouseout="this.style.background='var(--accent-soft)';this.style.color='var(--accent)'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round"
+            style="display: inline; margin-right: 4px; vertical-align: middle">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          Manage Departments
+        </button>
       </div>
 
-      <div id="adminContent">
-        <!-- Search + filter bar (hidden on storage tab) -->
-        <div class="admin-toolbar" id="adminToolbar">
-          <div class="admin-search-wrap">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+      <!-- User table (shown on user tabs) -->
+      <div id="userTableWrap">
+        <table id="userTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Department</th>
+              <th>Registered</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr>
+              <td colspan="6" class="table-empty">Loading…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Chat Monitor panel (super_admin only) -->
+      <div id="chatsPanel" class="hidden">
+        <!-- Global message search -->
+        <div class="monitor-search-bar">
+          <div class="admin-search-wrap" style="max-width: 480px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input
-              id="adminSearch"
-              type="text"
-              placeholder="Search users…"
-              oninput="filterUsers(this.value)"
-            />
+            <input id="msgSearchInput" type="text" placeholder="Search messages across all chats…"
+              oninput="debounceMessageSearch(this.value)" />
           </div>
-          <button
-            class="btn-modal-primary"
-            onclick="loadUsers()"
-            style="padding: 8px 16px; font-size: 13px"
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              style="display: inline; margin-right: 4px; vertical-align: middle"
-            >
-              <path d="M23 4v6h-6" />
-              <path d="M1 20v-6h6" />
-              <path
-                d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
-              />
-            </svg>
+          <div class="conv-type-filter">
+            <button class="filter-btn active" onclick="setConvFilter(this, 'all')">
+              All
+            </button>
+            <button class="filter-btn" onclick="setConvFilter(this, 'direct')">
+              Direct
+            </button>
+            <button class="filter-btn" onclick="setConvFilter(this, 'group')">
+              Groups
+            </button>
+          </div>
+          <button class="btn-modal-primary" onclick="refreshChats()" style="padding: 8px 16px; font-size: 13px">
             Refresh
           </button>
         </div>
 
-        <!-- User table (shown on user tabs) -->
-        <div id="userTableWrap">
-          <table id="userTable">
+        <!-- Search results (hidden by default) -->
+        <div id="msgSearchResults" class="hidden">
+          <div class="section-label">
+            Search Results
+            <span id="searchResultCount" class="muted-count"></span>
+          </div>
+          <div id="msgSearchList"></div>
+        </div>
+
+        <!-- Conversation list + message viewer -->
+        <div id="monitorLayout" class="monitor-layout">
+          <!-- Left: conversation list -->
+          <div id="monitorConvList" class="monitor-conv-list">
+            <div class="table-empty" style="padding: 32px 16px">
+              Click Refresh to load conversations.
+            </div>
+          </div>
+
+          <!-- Right: message viewer -->
+          <div id="monitorMsgPane" class="monitor-msg-pane">
+            <div class="monitor-empty">
+              <div style="margin-bottom: 12px; color: var(--text-muted)"><svg width="36" height="36" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg></div>
+              <div style="font-size: 14px; color: var(--text-muted)">
+                Select a conversation to view messages
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flagged Messages panel (super_admin only) -->
+      <div id="flaggedPanel" class="hidden">
+        <div class="storage-toolbar">
+          <span style="font-size: 13px; color: var(--text-secondary)">All flagged messages — click 🚩 to unflag</span>
+          <button class="btn-modal-primary" onclick="loadFlaggedMessages()" style="padding: 8px 16px; font-size: 13px">
+            Refresh
+          </button>
+        </div>
+        <div id="flaggedList">
+          <div class="table-empty" style="padding: 48px">
+            Click Refresh to load flagged messages.
+          </div>
+        </div>
+      </div>
+
+      <!-- Storage panel (super_admin only) -->
+      <div id="storagePanel" class="hidden">
+        <div class="storage-stats">
+          <div class="stat-card">
+            <div class="stat-label">Total Files</div>
+            <div class="stat-value" id="statTotalFiles">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">DB Tracked Size</div>
+            <div class="stat-value" id="statDbSize">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Actual Disk Used</div>
+            <div class="stat-value" id="statDiskUsed">—</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-label">Stale Files (6+ months)</div>
+            <div class="stat-value" id="statStaleCount">—</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-label">Reclaimable Space</div>
+            <div class="stat-value" id="statStaleSize">—</div>
+          </div>
+        </div>
+
+        <div class="storage-toolbar">
+          <span style="font-size: 13px; color: var(--text-secondary)">Files not accessed in the last 6 months</span>
+          <div style="display: flex; gap: 8px">
+            <button class="btn-modal-primary" onclick="loadStorage()" style="padding: 8px 16px; font-size: 13px">
+              Refresh
+            </button>
+            <button class="action-btn reject" id="deleteAllBtn" onclick="cleanupAll()"
+              style="padding: 8px 16px; font-size: 13px">
+              Delete All Stale
+            </button>
+          </div>
+        </div>
+
+        <div id="staleTableWrap">
+          <table id="staleTable">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Department</th>
-                <th>Registered</th>
+                <th>
+                  <input type="checkbox" id="selectAllStale" onchange="toggleSelectAll(this)" />
+                </th>
+                <th>File Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Uploaded By</th>
+                <th>Last Accessed</th>
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="userTableBody">
+            <tbody id="staleTableBody">
               <tr>
-                <td colspan="6" class="table-empty">Loading…</td>
+                <td colspan="7" class="table-empty">
+                  Click Refresh to load storage data.
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Chat Monitor panel (super_admin only) -->
-        <div id="chatsPanel" class="hidden">
-          <!-- Global message search -->
-          <div class="monitor-search-bar">
-            <div class="admin-search-wrap" style="max-width: 480px">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                id="msgSearchInput"
-                type="text"
-                placeholder="Search messages across all chats…"
-                oninput="debounceMessageSearch(this.value)"
-              />
-            </div>
-            <div class="conv-type-filter">
-              <button
-                class="filter-btn active"
-                onclick="setConvFilter(this, 'all')"
-              >
-                All
-              </button>
-              <button
-                class="filter-btn"
-                onclick="setConvFilter(this, 'direct')"
-              >
-                Direct
-              </button>
-              <button class="filter-btn" onclick="setConvFilter(this, 'group')">
-                Groups
-              </button>
-            </div>
-            <button
-              class="btn-modal-primary"
-              onclick="refreshChats()"
-              style="padding: 8px 16px; font-size: 13px"
-            >
-              Refresh
-            </button>
-          </div>
-
-          <!-- Search results (hidden by default) -->
-          <div id="msgSearchResults" class="hidden">
-            <div class="section-label">
-              Search Results
-              <span id="searchResultCount" class="muted-count"></span>
-            </div>
-            <div id="msgSearchList"></div>
-          </div>
-
-          <!-- Conversation list + message viewer -->
-          <div id="monitorLayout" class="monitor-layout">
-            <!-- Left: conversation list -->
-            <div id="monitorConvList" class="monitor-conv-list">
-              <div class="table-empty" style="padding: 32px 16px">
-                Click Refresh to load conversations.
-              </div>
-            </div>
-
-            <!-- Right: message viewer -->
-            <div id="monitorMsgPane" class="monitor-msg-pane">
-              <div class="monitor-empty">
-                <div style="margin-bottom: 12px; color: var(--text-muted)"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-                <div style="font-size: 14px; color: var(--text-muted)">
-                  Select a conversation to view messages
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="storage-selection-bar hidden" id="selectionBar">
+          <span id="selectionCount">0 files selected</span>
+          <button class="action-btn reject" onclick="cleanupSelected()">
+            Delete Selected
+          </button>
         </div>
-
-        <!-- Flagged Messages panel (super_admin only) -->
-        <div id="flaggedPanel" class="hidden">
-          <div class="storage-toolbar">
-            <span style="font-size: 13px; color: var(--text-secondary)"
-              >All flagged messages — click 🚩 to unflag</span
-            >
-            <button
-              class="btn-modal-primary"
-              onclick="loadFlaggedMessages()"
-              style="padding: 8px 16px; font-size: 13px"
-            >
-              Refresh
-            </button>
-          </div>
-          <div id="flaggedList">
-            <div class="table-empty" style="padding: 48px">
-              Click Refresh to load flagged messages.
-            </div>
-          </div>
+      </div>
+      <!-- Password Reset Requests panel -->
+      <div id="resetRequestsPanel" class="hidden">
+        <div style="padding:20px 24px 8px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary);">Pending Password Reset Requests</div>
+          <button class="btn-modal-primary" onclick="loadResetRequests()"
+            style="padding:7px 14px;font-size:12px;">Refresh</button>
         </div>
-
-        <!-- Storage panel (super_admin only) -->
-        <div id="storagePanel" class="hidden">
-          <div class="storage-stats">
-            <div class="stat-card">
-              <div class="stat-label">Total Files</div>
-              <div class="stat-value" id="statTotalFiles">—</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">DB Tracked Size</div>
-              <div class="stat-value" id="statDbSize">—</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Actual Disk Used</div>
-              <div class="stat-value" id="statDiskUsed">—</div>
-            </div>
-            <div class="stat-card warn">
-              <div class="stat-label">Stale Files (6+ months)</div>
-              <div class="stat-value" id="statStaleCount">—</div>
-            </div>
-            <div class="stat-card warn">
-              <div class="stat-label">Reclaimable Space</div>
-              <div class="stat-value" id="statStaleSize">—</div>
-            </div>
-          </div>
-
-          <div class="storage-toolbar">
-            <span style="font-size: 13px; color: var(--text-secondary)"
-              >Files not accessed in the last 6 months</span
-            >
-            <div style="display: flex; gap: 8px">
-              <button
-                class="btn-modal-primary"
-                onclick="loadStorage()"
-                style="padding: 8px 16px; font-size: 13px"
-              >
-                Refresh
-              </button>
-              <button
-                class="action-btn reject"
-                id="deleteAllBtn"
-                onclick="cleanupAll()"
-                style="padding: 8px 16px; font-size: 13px"
-              >
-                Delete All Stale
-              </button>
-            </div>
-          </div>
-
-          <div id="staleTableWrap">
-            <table id="staleTable">
-              <thead>
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      id="selectAllStale"
-                      onchange="toggleSelectAll(this)"
-                    />
-                  </th>
-                  <th>File Name</th>
-                  <th>Type</th>
-                  <th>Size</th>
-                  <th>Uploaded By</th>
-                  <th>Last Accessed</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="staleTableBody">
-                <tr>
-                  <td colspan="7" class="table-empty">
-                    Click Refresh to load storage data.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="storage-selection-bar hidden" id="selectionBar">
-            <span id="selectionCount">0 files selected</span>
-            <button class="action-btn reject" onclick="cleanupSelected()">
-              Delete Selected
-            </button>
-          </div>
+        <div style="padding:4px 24px 12px;font-size:12px;color:var(--text-muted);">
+          Verify the user's identity (in person or via phone) before approving.
         </div>
-        <!-- Password Reset Requests panel -->
-        <div id="resetRequestsPanel" class="hidden">
-          <div style="padding:20px 24px 8px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">Pending Password Reset Requests</div>
-            <button class="btn-modal-primary" onclick="loadResetRequests()" style="padding:7px 14px;font-size:12px;">Refresh</button>
-          </div>
-          <div style="padding:4px 24px 12px;font-size:12px;color:var(--text-muted);">
-            Verify the user's identity (in person or via phone) before approving.
-          </div>
-          <div id="resetReqList" style="padding:0 24px 24px;">
-            <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">Loading…</div>
-          </div>
+        <div id="resetReqList" style="padding:0 24px 24px;">
+          <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">Loading…</div>
         </div>
+      </div>
 
-        <!-- Temp password modal (shown once after approve) -->
-        <div id="tempPwModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;">
-          <div style="background:var(--bg-modal);border:1px solid var(--border);border-radius:16px;padding:32px 28px;width:100%;max-width:360px;box-shadow:var(--shadow-lg);">
-            <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Temporary Password</div>
-            <p style="font-size:13px;color:var(--text-secondary);margin:0 0 20px;line-height:1.6;">
-              Give this password to the user <strong>in person or via phone</strong>. It will not be shown again.
-            </p>
-            <div style="background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;">
-              <span id="tempPwValue" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text-primary);letter-spacing:1px;"></span>
-              <button onclick="copyTempPw()" style="font-size:12px;padding:6px 12px;border-radius:7px;border:1px solid var(--border-strong);background:var(--bg-base);color:var(--text-primary);cursor:pointer;font-weight:500;" id="tempPwCopyBtn">Copy</button>
-            </div>
-            <div style="background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5;">
-              The user will be required to change this password immediately upon login.
-            </div>
-            <button onclick="closeTempPwModal()" class="btn-primary" style="width:100%;">Done</button>
+      <!-- Temp password modal (shown once after approve) -->
+      <div id="tempPwModal" class="hidden"
+        style="position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;">
+        <div
+          style="background:var(--bg-modal);border:1px solid var(--border);border-radius:16px;padding:32px 28px;width:100%;max-width:360px;box-shadow:var(--shadow-lg);">
+          <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Temporary Password
           </div>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 20px;line-height:1.6;">
+            Give this password to the user <strong>in person or via phone</strong>. It will not be shown again.
+          </p>
+          <div
+            style="background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;">
+            <span id="tempPwValue"
+              style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text-primary);letter-spacing:1px;"></span>
+            <button onclick="copyTempPw()"
+              style="font-size:12px;padding:6px 12px;border-radius:7px;border:1px solid var(--border-strong);background:var(--bg-base);color:var(--text-primary);cursor:pointer;font-weight:500;"
+              id="tempPwCopyBtn">Copy</button>
+          </div>
+          <div
+            style="background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5;">
+            The user will be required to change this password immediately upon login.
+          </div>
+          <button onclick="closeTempPwModal()" class="btn-primary" style="width:100%;">Done</button>
         </div>
+      </div>
 
-        <!-- Announcements panel -->
-        <div id="announcementsPanel" class="hidden">
-          <div class="storage-toolbar">
-            <div class="admin-search-wrap">
-              <select id="annFilterStatus" onchange="loadAdminAnnouncements()" style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-strong);border-radius:8px;padding:7px 12px;font-size:13px;">
-                <option value="pending">Pending Approval</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="">All</option>
-              </select>
-            </div>
-            <button class="btn-modal-primary" onclick="loadAdminAnnouncements()" style="padding:8px 16px;font-size:13px;">Refresh</button>
+      <!-- Announcements panel -->
+      <div id="announcementsPanel" class="hidden">
+        <div class="storage-toolbar">
+          <div class="admin-search-wrap">
+            <select id="annFilterStatus" onchange="loadAdminAnnouncements()"
+              style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-strong);border-radius:8px;padding:7px 12px;font-size:13px;">
+              <option value="pending">Pending Approval</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="">All</option>
+            </select>
           </div>
-          <div id="annAdminList">
-            <div class="table-empty" style="padding:48px">Click Refresh to load announcements.</div>
-          </div>
+          <button class="btn-modal-primary" onclick="loadAdminAnnouncements()"
+            style="padding:8px 16px;font-size:13px;">Refresh</button>
+        </div>
+        <div id="annAdminList">
+          <div class="table-empty" style="padding:48px">Click Refresh to load announcements.</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div id="toast"></div>
+  <div id="toast"></div>
 
-    <!-- Mobile nav drawer overlay -->
-    <div id="adminNavOverlay" class="admin-nav-overlay" onclick="closeAdminMenu()"></div>
+  <!-- Mobile nav drawer overlay -->
+  <div id="adminNavOverlay" class="admin-nav-overlay" onclick="closeAdminMenu()"></div>
 
-    <!-- Mobile message pane modal -->
-    <div id="monitorMsgModal" class="monitor-msg-modal hidden">
-      <div class="monitor-msg-modal-inner">
-        <div class="monitor-msg-modal-header">
-          <button class="monitor-msg-back" onclick="closeMonitorModal()">← Back</button>
-        </div>
-        <div id="monitorMsgModalPane" class="monitor-msg-modal-pane"></div>
+  <!-- Mobile message pane modal -->
+  <div id="monitorMsgModal" class="monitor-msg-modal hidden">
+    <div class="monitor-msg-modal-inner">
+      <div class="monitor-msg-modal-header">
+        <button class="monitor-msg-back" onclick="closeMonitorModal()">← Back</button>
       </div>
+      <div id="monitorMsgModalPane" class="monitor-msg-modal-pane"></div>
     </div>
-    <script src="js/admin-users.js"></script>
-    <script src="js/admin-storage.js"></script>
-    <script src="js/admin-monitor.js"></script>
-    <script src="js/admin-auth.js"></script>
-    <script src="js/admin-announcements.js"></script>
-    <script src="js/admin-reset-requests.js"></script>
-    <script>
-      function setupPasswordToggles() {
-        document.querySelectorAll(".password-toggle").forEach((btn) => {
-          const targetId = btn.getAttribute("data-target");
-          const input = document.getElementById(targetId);
-          if (!input) return;
-          btn.addEventListener("click", () => {
-            const willShow = input.type === "password";
-            input.type = willShow ? "text" : "password";
-            btn.classList.toggle("is-visible", willShow);
-            btn.setAttribute(
-              "aria-label",
-              willShow ? "Hide password" : "Show password"
-            );
-          });
+  </div>
+  <script type="module" src="vendor/altcha/altcha.js"></script>
+  <script src="js/admin-users.js"></script>
+  <script src="js/admin-storage.js"></script>
+  <script src="js/admin-monitor.js"></script>
+  <script src="js/admin-auth.js"></script>
+  <script src="js/admin-departments.js"></script>
+  <script src="js/admin-announcements.js"></script>
+  <script src="js/admin-reset-requests.js"></script>
+  <script>
+    (function setupAdminAltcha() {
+      const widget = document.getElementById("adminLoginAltcha");
+      if (!widget) return;
+      const host = window.location.hostname;
+      widget.setAttribute("challengeurl", `http://${host}/campus-chat/api/index.php/altcha/challenge?scope=admin-login`);
+      widget.setAttribute("workerurl", "./worker.js");
+      widget.setAttribute("verifyurl", `http://${host}/campus-chat/api/index.php/altcha/verify-code`);
+    })();
+
+    function setupPasswordToggles() {
+      document.querySelectorAll(".password-toggle").forEach((btn) => {
+        const targetId = btn.getAttribute("data-target");
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        btn.addEventListener("click", () => {
+          const willShow = input.type === "password";
+          input.type = willShow ? "text" : "password";
+          btn.classList.toggle("is-visible", willShow);
+          btn.setAttribute(
+            "aria-label",
+            willShow ? "Hide password" : "Show password"
+          );
         });
-      }
+      });
+    }
 
-      document.addEventListener("DOMContentLoaded", setupPasswordToggles);
-    </script>
-  </body>
+    document.addEventListener("DOMContentLoaded", setupPasswordToggles);
+  </script>
+</body>
+
 </html>

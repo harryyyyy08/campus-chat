@@ -7,7 +7,8 @@ const jwt = require("jsonwebtoken");
 // ── Config ────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET;
 const PORT = 3001;
-const PHP_API_BASE = process.env.PHP_API_BASE || "http://localhost/campus-chat/api/index.php";
+const PHP_API_BASE =
+  process.env.PHP_API_BASE || "http://localhost/campus-chat/api/index.php";
 
 const app = express();
 const server = http.createServer(app);
@@ -15,10 +16,13 @@ const io = new Server(server, {
   cors: {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true); // same-origin requests
-      const ok = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin);
+      const ok =
+        /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(
+          origin,
+        );
       cb(ok ? null : new Error("CORS blocked"), ok);
-    }
-  }
+    },
+  },
 });
 
 // Serve static files from the campus-chat web root
@@ -44,7 +48,11 @@ io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("Missing token"));
     const claims = jwt.verify(token, JWT_SECRET);
-    socket.user = { id: Number(claims.sub), username: claims.username, role: claims.role };
+    socket.user = {
+      id: Number(claims.sub),
+      username: claims.username,
+      role: claims.role,
+    };
     return next();
   } catch (err) {
     return next(new Error("Unauthorized: " + err.message));
@@ -79,15 +87,24 @@ io.on("connection", (socket) => {
   // ── approve_announcement ──────────────────────────────────────
   socket.on("approve_announcement", async ({ announcement_id }, ack) => {
     const aid = Number(announcement_id);
-    if (!aid) { if (ack) ack({ ok: false, error: "announcement_id required" }); return; }
+    if (!aid) {
+      if (ack) ack({ ok: false, error: "announcement_id required" });
+      return;
+    }
 
     try {
       const resp = await fetch(`${PHP_API_BASE}/announcements/${aid}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await resp.json();
-      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Approve failed" }); return; }
+      if (!resp.ok) {
+        if (ack) ack({ ok: false, error: data?.error || "Approve failed" });
+        return;
+      }
 
       // Broadcast approved announcement to all users
       io.emit("new_announcement", { announcement: data.announcement });
@@ -97,50 +114,80 @@ io.on("connection", (socket) => {
         status: "approved",
       });
       if (ack) ack({ ok: true });
-    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
+    } catch (err) {
+      if (ack) ack({ ok: false, error: err.message });
+    }
   });
 
   // ── reject_announcement ───────────────────────────────────────
-  socket.on("reject_announcement", async ({ announcement_id, author_id }, ack) => {
-    const aid = Number(announcement_id);
-    if (!aid) { if (ack) ack({ ok: false, error: "announcement_id required" }); return; }
-
-    try {
-      const resp = await fetch(`${PHP_API_BASE}/announcements/${aid}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
-      const data = await resp.json();
-      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Reject failed" }); return; }
-
-      // Notify the author their announcement was rejected
-      if (author_id) {
-        io.to(`user:${Number(author_id)}`).emit("announcement_status", {
-          announcement_id: aid,
-          status: "rejected",
-        });
+  socket.on(
+    "reject_announcement",
+    async ({ announcement_id, author_id }, ack) => {
+      const aid = Number(announcement_id);
+      if (!aid) {
+        if (ack) ack({ ok: false, error: "announcement_id required" });
+        return;
       }
-      if (ack) ack({ ok: true });
-    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
-  });
+
+      try {
+        const resp = await fetch(
+          `${PHP_API_BASE}/announcements/${aid}/reject`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        const data = await resp.json();
+        if (!resp.ok) {
+          if (ack) ack({ ok: false, error: data?.error || "Reject failed" });
+          return;
+        }
+
+        // Notify the author their announcement was rejected
+        if (author_id) {
+          io.to(`user:${Number(author_id)}`).emit("announcement_status", {
+            announcement_id: aid,
+            status: "rejected",
+          });
+        }
+        if (ack) ack({ ok: true });
+      } catch (err) {
+        if (ack) ack({ ok: false, error: err.message });
+      }
+    },
+  );
 
   // ── delete_announcement ───────────────────────────────────────
   socket.on("delete_announcement", async ({ announcement_id }, ack) => {
     const aid = Number(announcement_id);
-    if (!aid) { if (ack) ack({ ok: false, error: "announcement_id required" }); return; }
+    if (!aid) {
+      if (ack) ack({ ok: false, error: "announcement_id required" });
+      return;
+    }
 
     try {
       const resp = await fetch(`${PHP_API_BASE}/announcements/${aid}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await resp.json();
-      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Delete failed" }); return; }
+      if (!resp.ok) {
+        if (ack) ack({ ok: false, error: data?.error || "Delete failed" });
+        return;
+      }
 
       // Broadcast deletion to all users
       io.emit("announcement_deleted", { announcement_id: aid });
       if (ack) ack({ ok: true });
-    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
+    } catch (err) {
+      if (ack) ack({ ok: false, error: err.message });
+    }
   });
 
   onlineUsers.add(userId);
@@ -196,11 +243,18 @@ io.on("connection", (socket) => {
     try {
       const conversation_id = Number(payload?.conversation_id);
       const body = String(payload?.body || "").trim();
-      const client_msg_id   = payload?.client_msg_id || null;
-      const attachment_id   = payload?.attachment_id  || null;
-      const attachment_ids  = Array.isArray(payload?.attachment_ids) ? payload.attachment_ids : (attachment_id ? [attachment_id] : []);
+      const client_msg_id = payload?.client_msg_id || null;
+      const attachment_id = payload?.attachment_id || null;
+      const attachment_ids = Array.isArray(payload?.attachment_ids)
+        ? payload.attachment_ids
+        : attachment_id
+          ? [attachment_id]
+          : [];
 
-      if (!conversation_id || (!body && !attachment_id && !attachment_ids.length)) {
+      if (
+        !conversation_id ||
+        (!body && !attachment_id && !attachment_ids.length)
+      ) {
         if (ack) ack({ ok: false, error: "conversation_id and body required" });
         return;
       }
@@ -211,30 +265,51 @@ io.on("connection", (socket) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ conversation_id, body, attachment_id, attachment_ids }),
+        body: JSON.stringify({
+          conversation_id,
+          body,
+          attachment_id,
+          attachment_ids,
+        }),
       });
       const data = await resp.json();
-      console.log("[server] PHP response keys:", Object.keys(data), "attachments:", data.attachments);
+      console.log(
+        "[server] PHP response keys:",
+        Object.keys(data),
+        "attachments:",
+        data.attachments,
+      );
       if (!resp.ok) {
         if (ack) ack({ ok: false, error: data?.error || "PHP API error" });
         return;
       }
 
       // Normalize attachments — PHP may return attachments as array or null
-      const phpAttachments = Array.isArray(data.attachments) ? data.attachments : [];
-      const phpAttachment  = data.attachment || (phpAttachments[0] ?? null);
+      const phpAttachments = Array.isArray(data.attachments)
+        ? data.attachments
+        : [];
+      const phpAttachment = data.attachment || (phpAttachments[0] ?? null);
       // Carry over duration from client payload (voice messages)
-      const clientAtts = Array.isArray(payload?.attachment_ids) ? payload.attachment_ids : [];
-      const allAttachments = (phpAttachments.length > 0 ? phpAttachments
-                           : phpAttachment ? [phpAttachment] : [])
-                           .map((a, i) => ({ ...a, duration: payload?.attachments_meta?.[i]?.duration || 0 }));
+      const clientAtts = Array.isArray(payload?.attachment_ids)
+        ? payload.attachment_ids
+        : [];
+      const allAttachments = (
+        phpAttachments.length > 0
+          ? phpAttachments
+          : phpAttachment
+            ? [phpAttachment]
+            : []
+      ).map((a, i) => ({
+        ...a,
+        duration: payload?.attachments_meta?.[i]?.duration || 0,
+      }));
 
       const msg = {
         id: data.message_id,
         conversation_id: data.conversation_id,
         sender_id: data.sender_id,
         body: data.body,
-        attachment:  phpAttachment,
+        attachment: phpAttachment,
         attachments: allAttachments,
         status: "sent",
         created_at: data.created_at,
@@ -270,34 +345,121 @@ io.on("connection", (socket) => {
   });
 
   // ── edit_message ──────────────────────────────────────────────
-  socket.on("edit_message", async ({ message_id, conversation_id, body }, ack) => {
+  socket.on(
+    "edit_message",
+    async ({ message_id, conversation_id, body }, ack) => {
+      const mid = Number(message_id);
+      const cid = Number(conversation_id);
+      if (!mid || !cid || !body?.trim()) {
+        if (ack)
+          ack({
+            ok: false,
+            error: "message_id, conversation_id, and body required",
+          });
+        return;
+      }
+      try {
+        const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ body: body.trim() }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          if (ack) ack({ ok: false, error: data?.error || "Edit failed" });
+          return;
+        }
+        // Broadcast edit to all members of the conversation
+        io.to(`conv:${cid}`).emit("message_edited", {
+          message_id: mid,
+          conversation_id: cid,
+          body: data.body,
+          is_edited: true,
+          edited_at: data.edited_at,
+        });
+        if (ack) ack({ ok: true });
+      } catch (err) {
+        if (ack) ack({ ok: false, error: err.message });
+      }
+    },
+  );
+
+  // ── react_message ────────────────────────────────────────────
+  socket.on(
+    "react_message",
+    async ({ message_id, conversation_id, emoji }, ack) => {
+      const mid = Number(message_id);
+      const cid = Number(conversation_id);
+      if (!mid || !cid || !emoji) {
+        if (ack)
+          ack({
+            ok: false,
+            error: "message_id, conversation_id, emoji required",
+          });
+        return;
+      }
+      try {
+        const resp = await fetch(`${PHP_API_BASE}/messages/${mid}/react`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ emoji }),
+        });
+        const data = await resp.json();
+        console.log("[server] react data:", JSON.stringify(data)); // debug
+        if (!resp.ok) {
+          if (ack) ack({ ok: false, error: data?.error || "React failed" });
+          return;
+        }
+
+        // Broadcast reactions to ALL members — each client keeps their own my_reactions
+        // We send reactor_id so each client can decide whose my_reactions to use
+        io.to(`conv:${cid}`).emit("message_reacted", {
+          message_id: mid,
+          conversation_id: cid,
+          reactions: data.reactions, // all reactions for this message
+          my_reactions: data.my_reactions, // only the reactor's my_reactions
+          reactor_id: userId,
+        });
+        if (ack) ack({ ok: true });
+      } catch (err) {
+        if (ack) ack({ ok: false, error: err.message });
+      }
+    },
+  );
+
+  // ── hide_message (delete for me) ──────────────────────────────
+  socket.on("hide_message", async ({ message_id, conversation_id }, ack) => {
     const mid = Number(message_id);
     const cid = Number(conversation_id);
-    if (!mid || !cid || !body?.trim()) {
-      if (ack) ack({ ok: false, error: "message_id, conversation_id, and body required" });
+    if (!mid || !cid) {
+      if (ack)
+        ack({ ok: false, error: "message_id and conversation_id required" });
       return;
     }
     try {
       const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
-        method: "PATCH",
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ body: body.trim() }),
+        body: JSON.stringify({ for_me: true }),
       });
       const data = await resp.json();
       if (!resp.ok) {
-        if (ack) ack({ ok: false, error: data?.error || "Edit failed" });
+        if (ack) ack({ ok: false, error: data?.error || "Hide failed" });
         return;
       }
-      // Broadcast edit to all members of the conversation
-      io.to(`conv:${cid}`).emit("message_edited", {
+      // Only emit to THIS user's socket — not to everyone
+      io.to(`user:${userId}`).emit("message_hidden", {
         message_id: mid,
         conversation_id: cid,
-        body: data.body,
-        is_edited: true,
-        edited_at: data.edited_at,
       });
       if (ack) ack({ ok: true });
     } catch (err) {
@@ -305,62 +467,13 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ── react_message ────────────────────────────────────────────
-  socket.on("react_message", async ({ message_id, conversation_id, emoji }, ack) => {
-    const mid = Number(message_id);
-    const cid = Number(conversation_id);
-    if (!mid || !cid || !emoji) {
-      if (ack) ack({ ok: false, error: "message_id, conversation_id, emoji required" });
-      return;
-    }
-    try {
-      const resp = await fetch(`${PHP_API_BASE}/messages/${mid}/react`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ emoji }),
-      });
-      const data = await resp.json();
-      console.log("[server] react data:", JSON.stringify(data)); // debug
-      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "React failed" }); return; }
-
-      // Broadcast reactions to ALL members — each client keeps their own my_reactions
-      // We send reactor_id so each client can decide whose my_reactions to use
-      io.to(`conv:${cid}`).emit("message_reacted", {
-        message_id: mid,
-        conversation_id: cid,
-        reactions: data.reactions,        // all reactions for this message
-        my_reactions: data.my_reactions,  // only the reactor's my_reactions
-        reactor_id: userId,
-      });
-      if (ack) ack({ ok: true });
-    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
-  });
-
-  // ── hide_message (delete for me) ──────────────────────────────
-  socket.on("hide_message", async ({ message_id, conversation_id }, ack) => {
-    const mid = Number(message_id);
-    const cid = Number(conversation_id);
-    if (!mid || !cid) { if (ack) ack({ ok: false, error: "message_id and conversation_id required" }); return; }
-    try {
-      const resp = await fetch(`${PHP_API_BASE}/messages/${mid}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ for_me: true }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) { if (ack) ack({ ok: false, error: data?.error || "Hide failed" }); return; }
-      // Only emit to THIS user's socket — not to everyone
-      io.to(`user:${userId}`).emit("message_hidden", { message_id: mid, conversation_id: cid });
-      if (ack) ack({ ok: true });
-    } catch (err) { if (ack) ack({ ok: false, error: err.message }); }
-  });
-
   // ── delete_message ────────────────────────────────────────────
   socket.on("delete_message", async ({ message_id, conversation_id }, ack) => {
     const mid = Number(message_id);
     const cid = Number(conversation_id);
     if (!mid || !cid) {
-      if (ack) ack({ ok: false, error: "message_id and conversation_id required" });
+      if (ack)
+        ack({ ok: false, error: "message_id and conversation_id required" });
       return;
     }
     try {
@@ -494,8 +607,9 @@ io.on("connection", (socket) => {
 
   // ── disconnect ────────────────────────────────────────────────
   socket.on("disconnect", () => {
-    const stillConnected = [...io.sockets.sockets.values()]
-      .some(s => s.id !== socket.id && s.user?.id === userId);
+    const stillConnected = [...io.sockets.sockets.values()].some(
+      (s) => s.id !== socket.id && s.user?.id === userId,
+    );
     if (!stillConnected) {
       onlineUsers.delete(userId);
       io.emit("presence", { user_id: userId, online: false });
@@ -503,15 +617,49 @@ io.on("connection", (socket) => {
   });
 });
 
-// ── Auto-delete messages older than 3 days ────────────────────
+// ── Auto-delete messages older than 1 month ───────────────────
 async function deleteOldMessages() {
+  const isProd = process.env.NODE_ENV === "production";
+  const verboseCleanup = process.env.CLEANUP_VERBOSE === "1";
   try {
     const resp = await fetch(`${PHP_API_BASE}/messages/cleanup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Cleanup-Secret": process.env.CLEANUP_SECRET },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Cleanup-Secret": process.env.CLEANUP_SECRET,
+      },
     });
-    const data = await resp.json();
-    console.log(`[cleanup] Deleted ${data.deleted ?? 0} old messages.`);
+
+    const raw = await resp.text();
+    let data = {};
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        const snippet = raw.replace(/\s+/g, " ").slice(0, 180);
+        console.error(
+          `[cleanup] Non-JSON response (${resp.status}): ${snippet}${raw.length > 180 ? "..." : ""}`,
+        );
+        return;
+      }
+    }
+
+    if (!resp.ok) {
+      console.error(
+        `[cleanup] API error ${resp.status}: ${data.error || "Unknown error"}`,
+      );
+      return;
+    }
+
+    const deleted = Number(data.deleted ?? 0);
+    if (deleted > 0 || !isProd || verboseCleanup) {
+      console.log(`[cleanup] Deleted ${deleted} old messages.`);
+    }
+    if (Array.isArray(data.skipped_tables) && data.skipped_tables.length) {
+      console.warn(
+        `[cleanup] Skipped missing tables: ${data.skipped_tables.join(", ")}`,
+      );
+    }
   } catch (err) {
     console.error("[cleanup] Error:", err.message);
   }
