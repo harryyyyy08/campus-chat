@@ -43,6 +43,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="vendor/altcha/altcha.css" />
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/admin-layout.css" />
@@ -99,6 +100,10 @@
             </svg>
           </button>
         </div>
+      </div>
+      <div class="field-group" style="margin-top: 12px; display: flex; justify-content: center;">
+        <altcha-widget id="adminLoginAltcha" auto="off" hidelogo hidefooter
+          style="display:block;max-width:100%;"></altcha-widget>
       </div>
       <button class="btn-primary" onclick="adminLogin()">
         Sign In as Admin
@@ -499,6 +504,7 @@
       <div id="monitorMsgModalPane" class="monitor-msg-modal-pane"></div>
     </div>
   </div>
+  <script type="module" src="vendor/altcha/altcha.js"></script>
   <script src="js/admin-users.js"></script>
   <script src="js/admin-storage.js"></script>
   <script src="js/admin-monitor.js"></script>
@@ -507,6 +513,15 @@
   <script src="js/admin-announcements.js"></script>
   <script src="js/admin-reset-requests.js"></script>
   <script>
+    (function setupAdminAltcha() {
+      const widget = document.getElementById("adminLoginAltcha");
+      if (!widget) return;
+      const host = window.location.hostname;
+      widget.setAttribute("challengeurl", `http://${host}/campus-chat/api/index.php/altcha/challenge?scope=admin-login`);
+      widget.setAttribute("workerurl", "./worker.js");
+      widget.setAttribute("verifyurl", `http://${host}/campus-chat/api/index.php/altcha/verify-code`);
+    })();
+
     function setupPasswordToggles() {
       document.querySelectorAll(".password-toggle").forEach((btn) => {
         const targetId = btn.getAttribute("data-target");

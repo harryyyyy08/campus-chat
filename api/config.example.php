@@ -33,5 +33,12 @@ return [
   'ws' => [
     'url' => 'http://YOUR_SERVER_IP:3001',  // WebSocket server URL (update to actual IP)
   ],
+  'altcha' => [
+    'enabled' => true, // Set false to temporarily disable ALTCHA checks
+    'hmac_key' => '', // Optional; falls back to jwt.secret when empty
+    'algorithm' => 'SHA-256',
+    'max_number' => 10000, // Balanced for faster intranet verification UX
+    'ttl_seconds' => 180, // Challenge validity window
+  ],
   'cleanup_secret' => 'your_cleanup_secret_here', // Must match ws-node/.env CLEANUP_SECRET
 ];
