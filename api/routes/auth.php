@@ -480,8 +480,7 @@ if ($method === "POST" && $path === "/forgot-password") {
   $rl = file_exists($rl_file) ? json_decode(file_get_contents($rl_file), true) : ["count" => 0, "since" => $now];
   if (($now - $rl["since"]) > $window) $rl = ["count" => 0, "since" => $now];
   if ($rl["count"] >= 3) {
-    // Return generic message — don't reveal rate limit details
-    json_response(["message" => "Request submitted. Please contact your administrator."]);
+    json_response(["error" => "Too many requests. Please try again after 1 hour."], 429);
   }
 
   $pdo  = db();
