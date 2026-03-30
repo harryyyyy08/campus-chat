@@ -409,6 +409,10 @@ async function declineRequest(reqId) {
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || "Failed"); return; }
+    socket.emit("request_declined", {
+      requester_id: data.requester_id,
+      conversation_id: data.conversation_id,
+    });
     requestsCache = requestsCache.filter(r => r.request_id !== reqId);
     renderRequestsModal();
     loadRequestCount();

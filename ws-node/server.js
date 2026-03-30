@@ -570,13 +570,14 @@ io.on("connection", (socket) => {
 
   // ── message_request_sent ─────────────────────────────────────
   // Notify recipient that someone sent them a request
-  socket.on("message_request_sent", async ({ conversation_id, request_id }) => {
+  socket.on("message_request_sent", async ({ conversation_id, request_id, recipient_id }) => {
     const cid = Number(conversation_id);
-    if (!cid) return;
+    const rid = Number(recipient_id);
+    if (!cid || !rid) return;
     // Join sender to the pending conversation room
     socket.join(`conv:${cid}`);
-    // Emit to the conversation room — recipient will be in it
-    io.to(`conv:${cid}`).emit("new_message_request", {
+    // Notify via user room — always reliable regardless of when recipient connected
+    io.to(`user:${rid}`).emit("new_message_request", {
       request_id,
       from_name: socket.user.username,
       conversation_id: cid,
@@ -589,10 +590,19 @@ io.on("connection", (socket) => {
     const cid = Number(conversation_id);
     const rid = Number(requester_id);
     if (!cid || !rid) return;
-    // Add both users to the conversation room
-    joinUserToRoom(rid, `conv:${cid}`);
+    joinUserToRoom(rid, `conv:${cid}`);  // join requester (Carl) to conv room
+    socket.join(`conv:${cid}`);          // join acceptor (Jaymark) to conv room
     // Notify sender their request was accepted
     io.to(`user:${rid}`).emit("request_accepted", { conversation_id: cid });
+  });
+
+  // ── request_declined ──────────────────────────────────────────
+  // Recipient declined — notify sender
+  socket.on("request_declined", ({ requester_id, conversation_id }) => {
+    const rid = Number(requester_id);
+    const cid = Number(conversation_id);
+    if (!rid) return;
+    io.to(`user:${rid}`).emit("request_declined", { conversation_id: cid });
   });
 
   // ── disconnect ────────────────────────────────────────────────

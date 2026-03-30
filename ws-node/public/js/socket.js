@@ -286,15 +286,18 @@ function connectSocket() {
 
   // ── request_accepted (sender gets notified) ──────────────────
   socket.on("request_accepted", ({ conversation_id }) => {
-    socket.emit("join_conversation", { conversation_id });
+    const cid = Number(conversation_id);
+    socket.emit("join_conversation", { conversation_id: cid });
+    // Clear banner immediately — before the async reload
+    if (Number(currentConversation) === cid) {
+      showPendingRequestBanner(false);
+    }
     loadConversations().then(() => {
       showToast("Your message request was accepted!");
-      // If currently viewing this conversation, clear pending banner
-      if (currentConversation === conversation_id) {
+      if (Number(currentConversation) === cid) {
         showPendingRequestBanner(false);
       }
-      // Refresh conversation item to remove Pending badge
-      const conv = getConversation(conversation_id);
+      const conv = getConversation(cid);
       if (conv) {
         conv.is_request = false;
         buildConversationItem(conv);
@@ -303,8 +306,19 @@ function connectSocket() {
   });
 
   // ── request_declined (sender gets notified) ──────────────────
-  socket.on("request_declined", () => {
+  socket.on("request_declined", ({ conversation_id }) => {
+    const cid = Number(conversation_id);
     showToast("Your message request was declined.");
+    conversationsCache = conversationsCache.filter(c => c.conversation_id !== cid);
+    renderConversationList();
+    if (Number(currentConversation) === cid) {
+      currentConversation = null;
+      const emptyState = document.getElementById("emptyState");
+      const chatContent = document.getElementById("chatContent");
+      if (emptyState) emptyState.style.display = "";
+      if (chatContent) chatContent.classList.add("hidden");
+      showPendingRequestBanner(false);
+    }
   });
 
   socket.on("connect_error", (err) => {

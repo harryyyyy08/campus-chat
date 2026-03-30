@@ -209,6 +209,10 @@ if ($method === "GET" && $path === "/conversations") {
         $c["requester_id"]  = (int)$rdata["requester_id"];
         $c["recipient_id"]  = (int)$rdata["recipient_id"];
         $c["request_status"] = $rdata["status"];
+        // Recipient is not in conversation_members yet — inject their info so the title renders correctly
+        $rstmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE id = ?");
+        $rstmt->execute([(int)$rdata["recipient_id"]]); $recipient = $rstmt->fetch();
+        if ($recipient) { $recipient["id"] = (int)$recipient["id"]; $recipient["role"] = "member"; $c["members"][] = $recipient; }
       }
     }
   }
@@ -321,6 +325,7 @@ if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/accept$#',
   try {
     $pdo->prepare("UPDATE conversations SET is_request = 0 WHERE id = ?")->execute([$req["conversation_id"]]);
     $pdo->prepare("UPDATE message_requests SET status = 'accepted', updated_at = NOW() WHERE id = ?")->execute([$req_id]);
+    $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')")->execute([$req["conversation_id"], $user_id]);
     $pdo->commit();
     json_response(["accepted" => true, "conversation_id" => (int)$req["conversation_id"], "requester_id" => (int)$req["requester_id"]]);
   } catch (Exception $e) {
