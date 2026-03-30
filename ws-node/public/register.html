@@ -98,11 +98,8 @@
       </div>
 
       <div class="field-group">
-        <label for="reg_department">
-          Department / Section
-          <span class="optional">(optional)</span>
-        </label>
-        <select id="reg_department" class="field-select">
+        <label for="reg_department">Department / Section</label>
+        <select id="reg_department" class="field-select" required>
           <option value="">— Select Department —</option>
         </select>
       </div>
@@ -270,6 +267,7 @@
 
       if (!full_name) { errEl.textContent = "Full name is required."; return; }
       if (!username) { errEl.textContent = "Username is required."; return; }
+      if (!department_id) { errEl.textContent = "Please select a department."; return; }
       if (!/^[a-z0-9_]+$/.test(username)) { errEl.textContent = "Username: lowercase letters, numbers, underscores only."; return; }
       if (username.length < 3) { errEl.textContent = "Username must be at least 3 characters."; return; }
       if (password.length < 8) { errEl.textContent = "Password must be at least 8 characters."; return; }
@@ -288,7 +286,7 @@
         const res = await fetch(`${API_BASE}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ full_name, username, password, role, department_id: department_id || null, altcha }),
+          body: JSON.stringify({ full_name, username, password, role, department_id, altcha }),
         });
         const data = await res.json();
         if (!res.ok) { errEl.textContent = data.error || "Registration failed."; return; }

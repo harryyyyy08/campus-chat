@@ -443,6 +443,7 @@ if ($method === "POST" && $path === "/register") {
   if (strlen($username) < 3) json_response(["error" => "Username must be at least 3 characters"], 400);
   if (strlen($password) < 8) json_response(["error" => "Password must be at least 8 characters"], 400);
   if (!in_array($role, ["student", "faculty"])) $role = "student";
+  if ($department_id <= 0 && $department_name === "") json_response(["error" => "Department is required"], 400);
 
   $stmt = $pdo->prepare("SELECT 1 FROM users WHERE username = ?");
   $stmt->execute([$username]);
