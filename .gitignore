@@ -21,3 +21,9 @@ ws-node/.env
 # Logs
 *.log
 ws-node/npm-debug.log*
+
+#pentesting files
+kali-pentest-checklist.txt
+kali-ws-room-join-beginner.txt
+
+.gitignore

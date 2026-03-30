@@ -2,25 +2,27 @@
 // ANNOUNCEMENTS — announcements.js
 // ════════════════════════════════════════════
 
-const token   = localStorage.getItem("cc_token");
+const token = localStorage.getItem("cc_token");
 const _ccUser = JSON.parse(localStorage.getItem("cc_user") || "{}");
 const myUserId = Number(_ccUser.id);
-const myRole   = _ccUser.role || "student";
-const myDept   = _ccUser.department || "";
+const myRole = _ccUser.role || "student";
+const myDept = _ccUser.department || "";
 
-if (!token) { window.location.href = "index.html"; }
+if (!token) {
+  window.location.href = "index.html";
+}
 
 const _host = window.location.hostname;
-const API   = `http://${_host}/campus-chat/api/index.php`;
-const WS    = `http://${_host}:3001`;
+const API = `http://${_host}/campus-chat/api/index.php`;
+const WS = `http://${_host}:3001`;
 
 let socket;
-let announcements  = [];
-let activeId       = null;
-let currentFilter  = "all";
+let announcements = [];
+let activeId = null;
+let currentFilter = "all";
 
 // Queue for multiple announcements arriving at the same time
-let persistQueue   = [];
+let persistQueue = [];
 let persistShowing = false;
 
 // ── Init ─────────────────────────────────────
@@ -33,25 +35,46 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── UI Setup ─────────────────────────────────
 function setupUI() {
   if (["admin", "super_admin"].includes(myRole)) {
-    document.querySelectorAll(".admin-only").forEach(el => el.classList.remove("hidden"));
+    document
+      .querySelectorAll(".admin-only")
+      .forEach((el) => el.classList.remove("hidden"));
   }
 
-  document.querySelectorAll(".ann-tab").forEach(tab => {
+  const deptLabel = myDept
+    ? `My Department (${myDept})`
+    : "My Department (Not set)";
+  const deptDisplay = document.querySelector("[data-ann-my-dept-display]");
+  const deptRow = document.querySelector("[data-ann-dept-row]");
+  if (deptDisplay) deptDisplay.textContent = deptLabel;
+  const deptOption = document.querySelector(
+    '#annTarget option[value="department"]',
+  );
+  if (deptOption) deptOption.textContent = deptLabel;
+
+  document.querySelectorAll(".ann-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".ann-tab").forEach(t => t.classList.remove("active"));
+      document
+        .querySelectorAll(".ann-tab")
+        .forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       currentFilter = tab.dataset.filter;
       renderList();
     });
   });
 
-  document.getElementById("composeBtn").addEventListener("click", () => openModal());
+  document
+    .getElementById("composeBtn")
+    .addEventListener("click", () => openModal());
   document.getElementById("closeModal").addEventListener("click", closeModal);
   document.getElementById("cancelModal").addEventListener("click", closeModal);
-  document.getElementById("submitAnn").addEventListener("click", submitAnnouncement);
+  document
+    .getElementById("submitAnn")
+    .addEventListener("click", submitAnnouncement);
 
   document.getElementById("annTarget").addEventListener("change", (e) => {
-    document.getElementById("deptRow").classList.toggle("hidden", e.target.value !== "department");
+    if (deptRow) {
+      deptRow.hidden = e.target.value !== "department";
+    }
   });
 
   if (myRole === "student") {
@@ -75,8 +98,8 @@ function setupUI() {
 // ── Load Announcements ────────────────────────
 async function loadAnnouncements() {
   try {
-    const res  = await fetch(`${API}/announcements`, {
-      headers: { Authorization: `Bearer ${token}` }
+    const res = await fetch(`${API}/announcements`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Load failed");
@@ -97,7 +120,7 @@ function showUnreadOnLoad() {
   sessionStorage.setItem(sessionKey, "1");
 
   const isAdmin = ["admin", "super_admin"].includes(myRole);
-  const unread  = announcements.filter(a => {
+  const unread = announcements.filter((a) => {
     if (a.status !== "approved") return false;
     if (a.is_read) return false;
     if (a.target_type === "all") return true;
@@ -108,11 +131,13 @@ function showUnreadOnLoad() {
   if (!unread.length) return;
 
   // Sort by newest first, queue all unread
-  unread.sort((a, b) =>
-    new Date(b.created_at.replace(" ", "T")) - new Date(a.created_at.replace(" ", "T"))
+  unread.sort(
+    (a, b) =>
+      new Date(b.created_at.replace(" ", "T")) -
+      new Date(a.created_at.replace(" ", "T")),
   );
 
-  unread.forEach(a => queuePersistModal(a));
+  unread.forEach((a) => queuePersistModal(a));
 }
 
 // ── Persistent Modal Queue ────────────────────
@@ -131,9 +156,9 @@ function showNextPersistModal() {
   const a = persistQueue[0];
 
   document.getElementById("annPersistTitle").textContent = a.title || "";
-  document.getElementById("annPersistMeta").textContent  =
+  document.getElementById("annPersistMeta").textContent =
     `By ${a.author_name || "Admin"} · ${formatAnnTimeFull(a.created_at)}`;
-  document.getElementById("annPersistBody").textContent  = a.body || "";
+  document.getElementById("annPersistBody").textContent = a.body || "";
 
   const overlay = document.getElementById("annPersistOverlay");
   overlay.classList.remove("hidden");
@@ -156,7 +181,7 @@ function closePersistModal(markRead = false) {
         a.is_read = true;
         fetch(`${API}/announcements/${a.id}/read`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
       }
     }
@@ -178,27 +203,34 @@ function renderList() {
   const list = document.getElementById("annList");
   let filtered = announcements;
 
-  if (currentFilter === "unread")  filtered = filtered.filter(a => !a.is_read && a.status === "approved");
-  if (currentFilter === "mine")    filtered = filtered.filter(a => a.author_id === myUserId);
-  if (currentFilter === "pending") filtered = filtered.filter(a => a.status === "pending");
+  if (currentFilter === "unread")
+    filtered = filtered.filter((a) => !a.is_read && a.status === "approved");
+  if (currentFilter === "mine")
+    filtered = filtered.filter((a) => a.author_id === myUserId);
+  if (currentFilter === "pending")
+    filtered = filtered.filter((a) => a.status === "pending");
 
   if (filtered.length === 0) {
     list.innerHTML = `<div class="ann-no-items">No announcements here.</div>`;
     return;
   }
 
-  list.innerHTML = filtered.map(a => {
-    const isUnread = !a.is_read && a.status === "approved";
-    const isAdmin  = ["admin","super_admin"].includes(myRole);
-    const showStatus = a.author_id === myUserId || isAdmin;
-    return `
+  list.innerHTML = filtered
+    .map((a) => {
+      const isUnread = !a.is_read && a.status === "approved";
+      const isAdmin = ["admin", "super_admin"].includes(myRole);
+      const showStatus = a.author_id === myUserId || isAdmin;
+      return `
       <div class="ann-item ${isUnread ? "unread" : ""} ${activeId === a.id ? "active" : ""}"
            data-id="${a.id}" onclick="selectAnnouncement(${a.id})">
         <div class="ann-item-header">
           <span class="ann-priority-dot urgent"></span>
           <span class="ann-item-title">${escAnn(a.title)}</span>
-          ${showStatus && a.status !== "approved"
-            ? `<span class="ann-status-badge ${a.status}">${a.status}</span>` : ""}
+          ${
+            showStatus && a.status !== "approved"
+              ? `<span class="ann-status-badge ${a.status}">${a.status}</span>`
+              : ""
+          }
         </div>
         <div class="ann-item-preview">${escAnn(a.body.slice(0, 60))}${a.body.length > 60 ? "…" : ""}</div>
         <div class="ann-item-meta">
@@ -206,20 +238,21 @@ function renderList() {
           <span class="ann-item-time">${formatAnnTime(a.created_at)}</span>
         </div>
       </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 // ── Select / Show Detail ──────────────────────
 function selectAnnouncement(id) {
   activeId = id;
-  const a = announcements.find(x => x.id === id);
+  const a = announcements.find((x) => x.id === id);
   if (!a) return;
 
   if (!a.is_read && a.status === "approved") {
     a.is_read = true;
     fetch(`${API}/announcements/${id}/read`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
@@ -228,15 +261,16 @@ function selectAnnouncement(id) {
 }
 
 function renderDetail(a) {
-  const detail   = document.getElementById("annDetail");
-  const isMe     = a.author_id === myUserId;
-  const isAdmin  = ["admin","super_admin"].includes(myRole);
-  const canEdit  = isMe || isAdmin;
+  const detail = document.getElementById("annDetail");
+  const isMe = a.author_id === myUserId;
+  const isAdmin = ["admin", "super_admin"].includes(myRole);
+  const canEdit = isMe || isAdmin;
   const canApprove = isAdmin && a.status === "pending";
 
-  const targetLabel = a.target_type === "all"
-    ? "📢 All Users"
-    : `🏫 ${escAnn(a.department || "Department")}`;
+  const targetLabel =
+    a.target_type === "all"
+      ? "📢 All Users"
+      : `🏫 ${escAnn(a.department || "Department")}`;
 
   detail.innerHTML = `
     <div class="ann-detail-header">
@@ -248,15 +282,18 @@ function renderDetail(a) {
         <span>${formatAnnTimeFull(a.created_at)}</span>
         <span class="sep">·</span>
         <span class="ann-detail-target">${targetLabel}</span>
-        ${a.status !== "approved"
-          ? `<span class="ann-status-badge ${a.status}">${a.status}</span>` : ""}
+        ${
+          a.status !== "approved"
+            ? `<span class="ann-status-badge ${a.status}">${a.status}</span>`
+            : ""
+        }
       </div>
     </div>
     <hr class="ann-detail-divider" />
     <div class="ann-detail-body">${escAnn(a.body)}</div>
     <div class="ann-detail-actions">
-      ${canEdit    ? `<button class="ann-btn ann-btn-edit"   onclick="openModal(${a.id})">✏️ Edit</button>` : ""}
-      ${canEdit    ? `<button class="ann-btn ann-btn-delete" onclick="deleteAnn(${a.id})">🗑️ Delete</button>` : ""}
+      ${canEdit ? `<button class="ann-btn ann-btn-edit"   onclick="openModal(${a.id})">✏️ Edit</button>` : ""}
+      ${canEdit ? `<button class="ann-btn ann-btn-delete" onclick="deleteAnn(${a.id})">🗑️ Delete</button>` : ""}
       ${canApprove ? `<button class="ann-btn ann-btn-approve" onclick="approveAnn(${a.id})">✅ Approve</button>` : ""}
       ${canApprove ? `<button class="ann-btn ann-btn-reject"  onclick="rejectAnn(${a.id})">❌ Reject</button>` : ""}
     </div>`;
@@ -265,27 +302,35 @@ function renderDetail(a) {
 // ── Modal ─────────────────────────────────────
 function openModal(editId = null) {
   const modal = document.getElementById("composeModal");
-  document.getElementById("modalTitle").textContent = editId ? "Edit Announcement" : "New Announcement";
+  document.getElementById("modalTitle").textContent = editId
+    ? "Edit Announcement"
+    : "New Announcement";
   document.getElementById("editingId").value = editId || "";
 
   if (editId) {
-    const a = announcements.find(x => x.id === editId);
+    const a = announcements.find((x) => x.id === editId);
     if (a) {
-      document.getElementById("annTitle").value  = a.title;
-      document.getElementById("annBody").value   = a.body;
+      document.getElementById("annTitle").value = a.title;
+      document.getElementById("annBody").value = a.body;
       document.getElementById("annTarget").value = a.target_type;
-      document.getElementById("annDept").value   = a.department || "";
-      document.getElementById("deptRow").classList.toggle("hidden", a.target_type !== "department");
+      document.getElementById("annDept").value = a.department || "";
+      const deptRow = document.querySelector("[data-ann-dept-row]");
+      if (deptRow) {
+        deptRow.hidden = a.target_type !== "department";
+      }
     }
   } else {
-    document.getElementById("annTitle").value  = "";
-    document.getElementById("annBody").value   = "";
+    document.getElementById("annTitle").value = "";
+    document.getElementById("annBody").value = "";
     document.getElementById("annTarget").value = "all";
-    document.getElementById("annDept").value   = myDept;
-    document.getElementById("deptRow").classList.add("hidden");
+    document.getElementById("annDept").value = myDept;
+    const deptRow = document.querySelector("[data-ann-dept-row]");
+    if (deptRow) deptRow.hidden = true;
   }
 
-  document.getElementById("pendingNotice").classList.toggle("hidden", myRole !== "student");
+  document
+    .getElementById("pendingNotice")
+    .classList.toggle("hidden", myRole !== "student");
   modal.classList.remove("hidden");
   document.getElementById("annTitle").focus();
 }
@@ -295,27 +340,45 @@ function closeModal() {
 }
 
 async function submitAnnouncement() {
-  const editId  = document.getElementById("editingId").value;
-  const title   = document.getElementById("annTitle").value.trim();
-  const body    = document.getElementById("annBody").value.trim();
-  const target  = document.getElementById("annTarget").value;
-  const dept    = document.getElementById("annDept").value.trim();
+  const editId = document.getElementById("editingId").value;
+  const title = document.getElementById("annTitle").value.trim();
+  const body = document.getElementById("annBody").value.trim();
+  const target = document.getElementById("annTarget").value;
+  const dept = document.getElementById("annDept").value.trim();
 
-  if (!title || !body) { showToast("Title and body are required."); return; }
-  if (target === "department" && !dept) { showToast("Please enter a department."); return; }
+  if (!title || !body) {
+    showToast("Title and body are required.");
+    return;
+  }
+  if (target === "department" && !dept) {
+    showToast("Please enter a department.");
+    return;
+  }
 
   const btn = document.getElementById("submitAnn");
-  btn.disabled = true; btn.textContent = "Posting…";
+  btn.disabled = true;
+  btn.textContent = "Posting…";
 
   // Priority is always urgent
-  const payload = { title, body, priority: "urgent", target_type: target, department: dept || null };
-  const url     = editId ? `${API}/announcements/${editId}` : `${API}/announcements`;
-  const method  = editId ? "PATCH" : "POST";
+  const payload = {
+    title,
+    body,
+    priority: "urgent",
+    target_type: target,
+    department: dept || null,
+  };
+  const url = editId
+    ? `${API}/announcements/${editId}`
+    : `${API}/announcements`;
+  const method = editId ? "PATCH" : "POST";
 
   try {
-    const res  = await fetch(url, {
+    const res = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(payload),
     });
     const data = await res.json();
@@ -342,7 +405,8 @@ async function submitAnnouncement() {
   } catch (err) {
     showToast("Error: " + err.message);
   } finally {
-    btn.disabled = false; btn.textContent = "Post Announcement";
+    btn.disabled = false;
+    btn.textContent = "Post Announcement";
   }
 }
 
@@ -353,7 +417,7 @@ function approveAnn(id) {
       showToast("✅ Announcement approved and published.");
       loadAnnouncements().then(() => {
         if (activeId === id) {
-          const a = announcements.find(x => x.id === id);
+          const a = announcements.find((x) => x.id === id);
           if (a) renderDetail(a);
         }
       });
@@ -365,15 +429,19 @@ function approveAnn(id) {
 
 function rejectAnn(id) {
   if (!confirm("Reject this announcement?")) return;
-  const a = announcements.find(x => x.id === id);
-  socket?.emit("reject_announcement", { announcement_id: id, author_id: a?.author_id }, (ack) => {
-    if (ack?.ok) {
-      showToast("Announcement rejected.");
-      loadAnnouncements().then(renderList);
-    } else {
-      showToast("Error: " + (ack?.error || "Failed"));
-    }
-  });
+  const a = announcements.find((x) => x.id === id);
+  socket?.emit(
+    "reject_announcement",
+    { announcement_id: id, author_id: a?.author_id },
+    (ack) => {
+      if (ack?.ok) {
+        showToast("Announcement rejected.");
+        loadAnnouncements().then(renderList);
+      } else {
+        showToast("Error: " + (ack?.error || "Failed"));
+      }
+    },
+  );
 }
 
 // ── Delete ────────────────────────────────────
@@ -381,7 +449,7 @@ function deleteAnn(id) {
   if (!confirm("Delete this announcement?")) return;
   socket?.emit("delete_announcement", { announcement_id: id }, (ack) => {
     if (ack?.ok) {
-      announcements = announcements.filter(a => a.id !== id);
+      announcements = announcements.filter((a) => a.id !== id);
       if (activeId === id) {
         activeId = null;
         document.getElementById("annDetail").innerHTML = `
@@ -408,14 +476,17 @@ function connectSocket() {
     socket.on("new_announcement", ({ announcement }) => {
       if (!announcement) return;
 
-      const isForMe = announcement.target_type === "all"
-        || (announcement.target_type === "department" && announcement.department === myDept);
-      const isAdmin = ["admin","super_admin"].includes(myRole);
+      const isForMe =
+        announcement.target_type === "all" ||
+        (announcement.target_type === "department" &&
+          announcement.department === myDept);
+      const isAdmin = ["admin", "super_admin"].includes(myRole);
       if (!isForMe && !isAdmin) return;
 
       // Add or update in list
-      const idx = announcements.findIndex(a => a.id === announcement.id);
-      if (idx >= 0) announcements[idx] = { ...announcements[idx], ...announcement };
+      const idx = announcements.findIndex((a) => a.id === announcement.id);
+      if (idx >= 0)
+        announcements[idx] = { ...announcements[idx], ...announcement };
       else announcements.unshift({ ...announcement, is_read: false });
 
       renderList();
@@ -429,7 +500,7 @@ function connectSocket() {
     });
 
     socket.on("announcement_deleted", ({ announcement_id }) => {
-      announcements = announcements.filter(a => a.id !== announcement_id);
+      announcements = announcements.filter((a) => a.id !== announcement_id);
       if (activeId === announcement_id) {
         activeId = null;
         document.getElementById("annDetail").innerHTML = `
@@ -442,11 +513,13 @@ function connectSocket() {
     });
 
     socket.on("announcement_status", ({ announcement_id, status }) => {
-      const a = announcements.find(x => x.id === announcement_id);
+      const a = announcements.find((x) => x.id === announcement_id);
       if (a) a.status = status;
       renderList();
-      if (status === "approved") showToast("✅ Your announcement was approved!");
-      if (status === "rejected") showToast("❌ Your announcement was rejected.");
+      if (status === "approved")
+        showToast("✅ Your announcement was approved!");
+      if (status === "rejected")
+        showToast("❌ Your announcement was rejected.");
     });
 
     socket.on("connect_error", (err) => {
@@ -458,25 +531,27 @@ function connectSocket() {
 
 // ── Pending Badge ─────────────────────────────
 function updatePendingBadge() {
-  const badge   = document.getElementById("pendingBadge");
-  const pending = announcements.filter(a => a.status === "pending").length;
+  const badge = document.getElementById("pendingBadge");
+  const pending = announcements.filter((a) => a.status === "pending").length;
   if (badge) badge.textContent = pending > 0 ? pending : "";
 }
 
 // ── Helpers ───────────────────────────────────
 function escAnn(str) {
   return String(str || "")
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function formatAnnTime(dateStr) {
-  const d   = new Date(dateStr.replace(" ", "T"));
+  const d = new Date(dateStr.replace(" ", "T"));
   const now = new Date();
   const diff = (now - d) / 1000;
-  if (diff < 60)    return "just now";
-  if (diff < 3600)  return Math.floor(diff/60) + "m ago";
-  if (diff < 86400) return Math.floor(diff/3600) + "h ago";
+  if (diff < 60) return "just now";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
   return d.toLocaleDateString();
 }
 

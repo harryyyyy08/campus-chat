@@ -5,12 +5,13 @@
 
 // ── GET /announcements — list visible announcements for current user ──
 if ($method === "GET" && $path === "/announcements") {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $user_id = (int)$claims["sub"];
   $role    = $claims["role"] ?? "student";
 
   // Get user's department
-  $stmt = $pdo->prepare("SELECT department FROM users WHERE id = ?");
+  $stmt = $pdo->prepare("SELECT d.name AS department FROM users u LEFT JOIN departments d ON d.id = u.department WHERE u.id = ?");
   $stmt->execute([$user_id]);
   $user = $stmt->fetch();
   $dept = $user["department"] ?? null;
@@ -22,11 +23,12 @@ if ($method === "GET" && $path === "/announcements") {
   if ($is_admin) {
     $stmt = $pdo->prepare("
       SELECT a.*, u.username AS author_name, u.role AS author_role,
-             u.department AS author_dept,
+            ud.name AS author_dept,
              ab.username AS approver_name,
              (SELECT COUNT(*) FROM announcement_reads ar WHERE ar.announcement_id = a.id) AS read_count
       FROM announcements a
       JOIN users u ON u.id = a.author_id
+          LEFT JOIN departments ud ON ud.id = u.department
       LEFT JOIN users ab ON ab.id = a.approved_by
       ORDER BY a.created_at DESC
       LIMIT 100
@@ -35,11 +37,12 @@ if ($method === "GET" && $path === "/announcements") {
   } else {
     $stmt = $pdo->prepare("
       SELECT a.*, u.username AS author_name, u.role AS author_role,
-             u.department AS author_dept,
+            ud.name AS author_dept,
              ab.username AS approver_name,
              (SELECT COUNT(*) FROM announcement_reads ar WHERE ar.announcement_id = a.id) AS read_count
       FROM announcements a
       JOIN users u ON u.id = a.author_id
+          LEFT JOIN departments ud ON ud.id = u.department
       LEFT JOIN users ab ON ab.id = a.approved_by
       WHERE (
       -- Approved announcements visible to this user
@@ -65,14 +68,14 @@ if ($method === "GET" && $path === "/announcements") {
   $read_ids = $read_stmt->fetchAll(PDO::FETCH_COLUMN);
   $read_set = array_flip($read_ids);
 
-  $result = array_map(function($r) use ($read_set) {
+  $result = array_map(function ($r) use ($read_set) {
     return [
       "id"           => (int)$r["id"],
       "author_id"    => (int)$r["author_id"],
       "author_name"  => $r["author_name"],
       "author_role"  => $r["author_role"],
       "author_dept"  => $r["author_dept"],
-      "approver_name"=> $r["approver_name"],
+      "approver_name" => $r["approver_name"],
       "title"        => $r["title"],
       "body"         => $r["body"],
       "priority"     => $r["priority"],
@@ -93,13 +96,15 @@ if ($method === "GET" && $path === "/announcements") {
 
 // ── POST /announcements — create announcement ─────────────────────
 if ($method === "POST" && $path === "/announcements") {
-  $claims  = require_auth(); $pdo = db(); $in = json_input();
+  $claims  = require_auth();
+  $pdo = db();
+  $in = json_input();
   $user_id = (int)$claims["sub"];
   $role    = $claims["role"] ?? "student";
 
   $title       = trim((string)($in["title"] ?? ""));
   $body        = trim((string)($in["body"] ?? ""));
-  $priority    = in_array($in["priority"] ?? "", ["low","normal","high","urgent"]) ? $in["priority"] : "normal";
+  $priority    = in_array($in["priority"] ?? "", ["low", "normal", "high", "urgent"]) ? $in["priority"] : "normal";
   $target_type = ($in["target_type"] ?? "all") === "department" ? "department" : "all";
   $department  = $target_type === "department" ? trim((string)($in["department"] ?? "")) : null;
 
@@ -122,8 +127,11 @@ if ($method === "POST" && $path === "/announcements") {
   $ann_id = (int)$pdo->lastInsertId();
 
   $stmt = $pdo->prepare("
-    SELECT a.*, u.username AS author_name, u.role AS author_role, u.department AS author_dept
-    FROM announcements a JOIN users u ON u.id = a.author_id WHERE a.id = ?
+    SELECT a.*, u.username AS author_name, u.role AS author_role, ud.name AS author_dept
+    FROM announcements a
+    JOIN users u ON u.id = a.author_id
+    LEFT JOIN departments ud ON ud.id = u.department
+    WHERE a.id = ?
   ");
   $stmt->execute([$ann_id]);
   $ann = $stmt->fetch();
@@ -153,13 +161,16 @@ if ($method === "POST" && $path === "/announcements") {
 
 // ── PATCH /announcements/{id} — edit announcement ─────────────────
 if ($method === "PATCH" && preg_match('#^/announcements/(\d+)$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db(); $in = json_input();
+  $claims  = require_auth();
+  $pdo = db();
+  $in = json_input();
   $ann_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
   $role    = $claims["role"] ?? "student";
 
   $stmt = $pdo->prepare("SELECT * FROM announcements WHERE id = ?");
-  $stmt->execute([$ann_id]); $ann = $stmt->fetch();
+  $stmt->execute([$ann_id]);
+  $ann = $stmt->fetch();
   if (!$ann) json_response(["error" => "Announcement not found"], 404);
 
   $is_admin = in_array($role, ["admin", "super_admin"]);
@@ -168,12 +179,12 @@ if ($method === "PATCH" && preg_match('#^/announcements/(\d+)$#', $path, $m)) {
 
   $title       = isset($in["title"])       ? trim((string)$in["title"])       : $ann["title"];
   $body        = isset($in["body"])        ? trim((string)$in["body"])        : $ann["body"];
-  $priority    = isset($in["priority"]) && in_array($in["priority"], ["low","normal","high","urgent"])
-                 ? $in["priority"] : $ann["priority"];
+  $priority    = isset($in["priority"]) && in_array($in["priority"], ["low", "normal", "high", "urgent"])
+    ? $in["priority"] : $ann["priority"];
   $target_type = isset($in["target_type"]) ? ($in["target_type"] === "department" ? "department" : "all") : $ann["target_type"];
   $department  = $target_type === "department"
-                 ? (isset($in["department"]) ? trim((string)$in["department"]) : $ann["department"])
-                 : null;
+    ? (isset($in["department"]) ? trim((string)$in["department"]) : $ann["department"])
+    : null;
 
   if ($title === "" || $body === "")
     json_response(["error" => "title and body required"], 400);
@@ -193,13 +204,15 @@ if ($method === "PATCH" && preg_match('#^/announcements/(\d+)$#', $path, $m)) {
 
 // ── DELETE /announcements/{id} ────────────────────────────────────
 if ($method === "DELETE" && preg_match('#^/announcements/(\d+)$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $ann_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
   $role    = $claims["role"] ?? "student";
 
   $stmt = $pdo->prepare("SELECT author_id FROM announcements WHERE id = ?");
-  $stmt->execute([$ann_id]); $ann = $stmt->fetch();
+  $stmt->execute([$ann_id]);
+  $ann = $stmt->fetch();
   if (!$ann) json_response(["error" => "Announcement not found"], 404);
 
   $is_admin = in_array($role, ["admin", "super_admin"]);
@@ -214,7 +227,8 @@ if ($method === "DELETE" && preg_match('#^/announcements/(\d+)$#', $path, $m)) {
 
 // ── POST /announcements/{id}/approve ─────────────────────────────
 if ($method === "POST" && preg_match('#^/announcements/(\d+)/approve$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $ann_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
   $role    = $claims["role"] ?? "student";
@@ -223,7 +237,8 @@ if ($method === "POST" && preg_match('#^/announcements/(\d+)/approve$#', $path, 
     json_response(["error" => "Admin only"], 403);
 
   $stmt = $pdo->prepare("SELECT * FROM announcements WHERE id = ?");
-  $stmt->execute([$ann_id]); $ann = $stmt->fetch();
+  $stmt->execute([$ann_id]);
+  $ann = $stmt->fetch();
   if (!$ann) json_response(["error" => "Announcement not found"], 404);
 
   $pdo->prepare("
@@ -232,10 +247,14 @@ if ($method === "POST" && preg_match('#^/announcements/(\d+)/approve$#', $path, 
 
   // Fetch updated
   $stmt = $pdo->prepare("
-    SELECT a.*, u.username AS author_name, u.role AS author_role, u.department AS author_dept
-    FROM announcements a JOIN users u ON u.id = a.author_id WHERE a.id = ?
+    SELECT a.*, u.username AS author_name, u.role AS author_role, ud.name AS author_dept
+    FROM announcements a
+    JOIN users u ON u.id = a.author_id
+    LEFT JOIN departments ud ON ud.id = u.department
+    WHERE a.id = ?
   ");
-  $stmt->execute([$ann_id]); $ann = $stmt->fetch();
+  $stmt->execute([$ann_id]);
+  $ann = $stmt->fetch();
 
   json_response([
     "ok" => true,
@@ -262,7 +281,8 @@ if ($method === "POST" && preg_match('#^/announcements/(\d+)/approve$#', $path, 
 
 // ── POST /announcements/{id}/reject ──────────────────────────────
 if ($method === "POST" && preg_match('#^/announcements/(\d+)/reject$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $ann_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
   $role    = $claims["role"] ?? "student";
@@ -271,7 +291,7 @@ if ($method === "POST" && preg_match('#^/announcements/(\d+)/reject$#', $path, $
     json_response(["error" => "Admin only"], 403);
 
   $stmt = $pdo->prepare("SELECT id FROM announcements WHERE id = ?");
-  $stmt->execute([$ann_id]); 
+  $stmt->execute([$ann_id]);
   if (!$stmt->fetch()) json_response(["error" => "Announcement not found"], 404);
 
   $pdo->prepare("UPDATE announcements SET status='rejected' WHERE id=?")->execute([$ann_id]);
@@ -280,12 +300,13 @@ if ($method === "POST" && preg_match('#^/announcements/(\d+)/reject$#', $path, $
 
 // ── POST /announcements/{id}/read ────────────────────────────────
 if ($method === "POST" && preg_match('#^/announcements/(\d+)/read$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $ann_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
 
   $pdo->prepare("INSERT IGNORE INTO announcement_reads (announcement_id, user_id) VALUES (?, ?)")
-      ->execute([$ann_id, $user_id]);
+    ->execute([$ann_id, $user_id]);
 
   json_response(["ok" => true]);
 }

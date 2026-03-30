@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Configuration Example File
  * 
@@ -18,6 +19,7 @@
 
 return [
   'db' => [
+    'dsn' => 'mysql:host=localhost;dbname=campus_chat;charset=utf8mb4', // Preferred DSN format
     'host' => 'localhost',           // Database server address
     'name' => 'campus_chat',          // Database name
     'user' => 'root',                 // Database user
@@ -31,4 +33,5 @@ return [
   'ws' => [
     'url' => 'http://YOUR_SERVER_IP:3001',  // WebSocket server URL (update to actual IP)
   ],
+  'cleanup_secret' => 'your_cleanup_secret_here', // Must match ws-node/.env CLEANUP_SECRET
 ];

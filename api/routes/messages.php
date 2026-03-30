@@ -1,7 +1,9 @@
 <?php
 // ── POST /messages ───────────────────────────────────────────────
 if ($method === "POST" && $path === "/messages") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
   $conversation_id = (int)($in["conversation_id"] ?? 0);
   $body            = trim((string)($in["body"] ?? ""));
   $user_id         = (int)$claims["sub"];
@@ -31,7 +33,7 @@ if ($method === "POST" && $path === "/messages") {
   // Use first attachment_id in legacy column for backward compat
   $primary_att = !empty($attachment_ids) ? $attachment_ids[0] : null;
   $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, body, attachment_id, status) VALUES (?, ?, ?, ?, 'sent')")
-      ->execute([$conversation_id, $user_id, $body, $primary_att]);
+    ->execute([$conversation_id, $user_id, $body, $primary_att]);
   $message_id = (int)$pdo->lastInsertId();
 
   // Link all attachments via message_attachments table + update message_id
@@ -39,15 +41,17 @@ if ($method === "POST" && $path === "/messages") {
     $pdo->prepare("UPDATE attachments SET message_id = ? WHERE id = ?")->execute([$message_id, $att_id]);
     try {
       $pdo->prepare("INSERT INTO message_attachments (message_id, attachment_id, sort_order) VALUES (?, ?, ?)")
-          ->execute([$message_id, $att_id, $sort]);
-    } catch (PDOException $e) { /* table may not exist yet — graceful fallback */ }
+        ->execute([$message_id, $att_id, $sort]);
+    } catch (PDOException $e) { /* table may not exist yet — graceful fallback */
+    }
   }
 
   // Build attachments array for response
   $attachments_out = [];
   foreach ($attachment_ids as $att_id) {
     $stmt = $pdo->prepare("SELECT original_name, stored_name, mime_type, file_size, COALESCE(is_video,0) AS is_video FROM attachments WHERE id = ?");
-    $stmt->execute([$att_id]); $att = $stmt->fetch();
+    $stmt->execute([$att_id]);
+    $att = $stmt->fetch();
     if ($att) $attachments_out[] = [
       "id"            => $att_id,
       "original_name" => $att["original_name"],
@@ -60,12 +64,16 @@ if ($method === "POST" && $path === "/messages") {
   }
 
   $stmt = $pdo->prepare("SELECT id, conversation_id, sender_id, body, status, created_at FROM messages WHERE id = ?");
-  $stmt->execute([$message_id]); $row = $stmt->fetch();
-  $row["id"] = (int)$row["id"]; $row["conversation_id"] = (int)$row["conversation_id"]; $row["sender_id"] = (int)$row["sender_id"];
+  $stmt->execute([$message_id]);
+  $row = $stmt->fetch();
+  $row["id"] = (int)$row["id"];
+  $row["conversation_id"] = (int)$row["conversation_id"];
+  $row["sender_id"] = (int)$row["sender_id"];
 
   // Check if conversation is a pending request
   $rqCheck = $pdo->prepare("SELECT COALESCE(is_request, 0) AS is_request FROM conversations WHERE id = ?");
-  $rqCheck->execute([$conversation_id]); $rqRow = $rqCheck->fetch();
+  $rqCheck->execute([$conversation_id]);
+  $rqRow = $rqCheck->fetch();
   $is_pending_request = $rqRow ? (bool)$rqRow["is_request"] : false;
 
   json_response([
@@ -83,7 +91,8 @@ if ($method === "POST" && $path === "/messages") {
 
 // ── GET /messages ────────────────────────────────────────────────
 if ($method === "GET" && $path === "/messages") {
-  $claims = require_auth(); $pdo = db();
+  $claims = require_auth();
+  $pdo = db();
   $conversation_id = (int)($_GET["conversation_id"] ?? 0);
   $limit   = min(max((int)($_GET["limit"] ?? 50), 1), 200);
   $user_id = (int)$claims["sub"];
@@ -126,13 +135,16 @@ if ($method === "GET" && $path === "/messages") {
   $rows = array_reverse($stmt->fetchAll());
   $result = [];
   foreach ($rows as $r) {
-    $r["id"] = (int)$r["id"]; $r["conversation_id"] = (int)$r["conversation_id"]; $r["sender_id"] = (int)$r["sender_id"];
+    $r["id"] = (int)$r["id"];
+    $r["conversation_id"] = (int)$r["conversation_id"];
+    $r["sender_id"] = (int)$r["sender_id"];
     $r["is_edited"]  = (bool)$r["is_edited"];
     $r["is_deleted"] = (bool)$r["is_deleted"];
     $r["attachment"]  = null;
     $r["attachments"] = [];
     if ($r["is_deleted"]) {
-      $r["body"] = null; $r["attachment_id"] = null;
+      $r["body"] = null;
+      $r["attachment_id"] = null;
     } elseif ($r["attachment_id"]) {
       // Legacy single attachment
       $r["attachment"] = [
@@ -170,9 +182,11 @@ if ($method === "GET" && $path === "/messages") {
     // Fetch reactions — safe fallback if table not yet created
     try {
       $rs = $pdo->prepare("SELECT emoji, COUNT(*) as count FROM message_reactions WHERE message_id = ? GROUP BY emoji ORDER BY count DESC");
-      $rs->execute([(int)$r["id"]]); $reactions = $rs->fetchAll();
+      $rs->execute([(int)$r["id"]]);
+      $reactions = $rs->fetchAll();
       $ur = $pdo->prepare("SELECT emoji FROM message_reactions WHERE message_id = ? AND user_id = ?");
-      $ur->execute([(int)$r["id"], $user_id]); $my_reactions = $ur->fetchAll(PDO::FETCH_COLUMN);
+      $ur->execute([(int)$r["id"], $user_id]);
+      $my_reactions = $ur->fetchAll(PDO::FETCH_COLUMN);
       $r["reactions"]    = array_map(fn($rx) => ["emoji" => $rx["emoji"], "count" => (int)$rx["count"]], $reactions);
       $r["my_reactions"] = $my_reactions;
     } catch (PDOException $e) {
@@ -187,8 +201,11 @@ if ($method === "GET" && $path === "/messages") {
 
 // ── POST /messages/seen ──────────────────────────────────────────
 if ($method === "POST" && $path === "/messages/seen") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
-  $conversation_id = (int)($in["conversation_id"] ?? 0); $user_id = (int)$claims["sub"];
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
+  $conversation_id = (int)($in["conversation_id"] ?? 0);
+  $user_id = (int)$claims["sub"];
   if ($conversation_id <= 0) json_response(["error" => "conversation_id required"], 400);
   $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
   $stmt->execute([$conversation_id, $user_id]);
@@ -196,15 +213,24 @@ if ($method === "POST" && $path === "/messages/seen") {
   $pdo->beginTransaction();
   try {
     $stmt = $pdo->prepare("SELECT m.id FROM messages m LEFT JOIN message_reads mr ON mr.message_id = m.id AND mr.user_id = ? WHERE m.conversation_id = ? AND m.sender_id <> ? AND mr.id IS NULL");
-    $stmt->execute([$user_id, $conversation_id, $user_id]); $unseen = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $stmt->execute([$user_id, $conversation_id, $user_id]);
+    $unseen = $stmt->fetchAll(PDO::FETCH_COLUMN);
     if (!empty($unseen)) {
-      $ph = implode(',', array_fill(0, count($unseen), '(?,?,NOW())')); $params = [];
-      foreach ($unseen as $mid) { $params[] = (int)$mid; $params[] = $user_id; }
+      $ph = implode(',', array_fill(0, count($unseen), '(?,?,NOW())'));
+      $params = [];
+      foreach ($unseen as $mid) {
+        $params[] = (int)$mid;
+        $params[] = $user_id;
+      }
       $pdo->prepare("INSERT IGNORE INTO message_reads (message_id, user_id, read_at) VALUES {$ph}")->execute($params);
-      $ms = $pdo->prepare("SELECT user_id FROM conversation_members WHERE conversation_id = ?"); $ms->execute([$conversation_id]); $all_ids = $ms->fetchAll(PDO::FETCH_COLUMN);
+      $ms = $pdo->prepare("SELECT user_id FROM conversation_members WHERE conversation_id = ?");
+      $ms->execute([$conversation_id]);
+      $all_ids = $ms->fetchAll(PDO::FETCH_COLUMN);
       foreach ($unseen as $mid) {
         $mid = (int)$mid;
-        $ss = $pdo->prepare("SELECT sender_id FROM messages WHERE id = ?"); $ss->execute([$mid]); $sid = (int)$ss->fetchColumn();
+        $ss = $pdo->prepare("SELECT sender_id FROM messages WHERE id = ?");
+        $ss->execute([$mid]);
+        $sid = (int)$ss->fetchColumn();
         $readers = array_values(array_filter($all_ids, fn($uid) => (int)$uid !== $sid));
         $rc = $pdo->prepare("SELECT COUNT(*) FROM message_reads WHERE message_id = ? AND user_id IN (" . implode(',', array_fill(0, count($readers), '?')) . ")");
         $rc->execute(array_merge([$mid], $readers));
@@ -213,42 +239,51 @@ if ($method === "POST" && $path === "/messages/seen") {
       }
     }
     $pdo->prepare("INSERT INTO conversation_read_status (conversation_id, user_id, last_read_at, last_read_msg_id) VALUES (?, ?, NOW(), (SELECT MAX(id) FROM messages WHERE conversation_id = ?)) ON DUPLICATE KEY UPDATE last_read_at = NOW(), last_read_msg_id = (SELECT MAX(id) FROM messages WHERE conversation_id = ?)")
-        ->execute([$conversation_id, $user_id, $conversation_id, $conversation_id]);
+      ->execute([$conversation_id, $user_id, $conversation_id, $conversation_id]);
     $pdo->commit();
     json_response(["conversation_id" => $conversation_id, "updated" => count($unseen), "unseen_ids" => array_values($unseen)]);
-  } catch (Exception $e) { $pdo->rollBack(); json_response(["error" => $e->getMessage()], 500); }
+  } catch (Exception $e) {
+    $pdo->rollBack();
+    json_response(["error" => $e->getMessage()], 500);
+  }
 }
 
 // ── PATCH /messages/{id} — edit (sender only, 15 min limit) ──────
 if ($method === "PATCH" && preg_match('#^/messages/(\d+)$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $msg_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
   $in      = json_input();
   $new_body = trim((string)($in["body"] ?? ""));
   if ($new_body === "") json_response(["error" => "body required"], 400);
   $stmt = $pdo->prepare("SELECT sender_id, body, created_at, is_deleted, attachment_id FROM messages WHERE id = ?");
-  $stmt->execute([$msg_id]); $msg = $stmt->fetch();
+  $stmt->execute([$msg_id]);
+  $msg = $stmt->fetch();
   if (!$msg) json_response(["error" => "Message not found"], 404);
   if ((int)$msg["sender_id"] !== $user_id) json_response(["error" => "Cannot edit another user's message"], 403);
   if ($msg["is_deleted"]) json_response(["error" => "Cannot edit a deleted message"], 400);
   if ((time() - strtotime($msg["created_at"])) > 15 * 60) json_response(["error" => "Edit window has expired (15 minutes)"], 403);
   if (!$msg["body"] && $msg["attachment_id"]) json_response(["error" => "Cannot edit attachment-only messages"], 400);
   $pdo->prepare("UPDATE messages SET body = ?, is_edited = 1, edited_at = NOW() WHERE id = ?")->execute([$new_body, $msg_id]);
-  $stmt = $pdo->prepare("SELECT conversation_id FROM messages WHERE id = ?"); $stmt->execute([$msg_id]); $row = $stmt->fetch();
+  $stmt = $pdo->prepare("SELECT conversation_id FROM messages WHERE id = ?");
+  $stmt->execute([$msg_id]);
+  $row = $stmt->fetch();
   json_response(["edited" => true, "message_id" => $msg_id, "conversation_id" => (int)$row["conversation_id"], "body" => $new_body, "is_edited" => true, "edited_at" => date("Y-m-d H:i:s")]);
 }
 
 // ── DELETE /messages/{id} — hard delete for everyone (sender, 15min) ─
 if ($method === "DELETE" && preg_match('#^/messages/(\d+)$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $msg_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
   $in      = json_input();
   $for_me_only = (bool)($in["for_me"] ?? false);
 
   $stmt = $pdo->prepare("SELECT sender_id, created_at, is_deleted, conversation_id FROM messages WHERE id = ?");
-  $stmt->execute([$msg_id]); $msg = $stmt->fetch();
+  $stmt->execute([$msg_id]);
+  $msg = $stmt->fetch();
   if (!$msg) json_response(["error" => "Message not found"], 404);
 
   if ($for_me_only) {
@@ -267,7 +302,8 @@ if ($method === "DELETE" && preg_match('#^/messages/(\d+)$#', $path, $m)) {
 
 // ── POST /messages/{id}/react ─────────────────────────────────────
 if ($method === "POST" && preg_match('#^/messages/(\d+)/react$#', $path, $m)) {
-  $claims  = require_auth(); $pdo = db();
+  $claims  = require_auth();
+  $pdo = db();
   $msg_id  = (int)$m[1];
   $user_id = (int)$claims["sub"];
   $in      = json_input();
@@ -276,7 +312,8 @@ if ($method === "POST" && preg_match('#^/messages/(\d+)/react$#', $path, $m)) {
 
   // Verify message exists and user is member of conversation
   $stmt = $pdo->prepare("SELECT conversation_id FROM messages WHERE id = ?");
-  $stmt->execute([$msg_id]); $msg = $stmt->fetch();
+  $stmt->execute([$msg_id]);
+  $msg = $stmt->fetch();
   if (!$msg) json_response(["error" => "Message not found"], 404);
   $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
   $stmt->execute([$msg["conversation_id"], $user_id]);
@@ -284,7 +321,8 @@ if ($method === "POST" && preg_match('#^/messages/(\d+)/react$#', $path, $m)) {
 
   // Toggle: if already reacted with same emoji, remove it
   $stmt = $pdo->prepare("SELECT id FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?");
-  $stmt->execute([$msg_id, $user_id, $emoji]); $existing = $stmt->fetchColumn();
+  $stmt->execute([$msg_id, $user_id, $emoji]);
+  $existing = $stmt->fetchColumn();
 
   if ($existing) {
     $pdo->prepare("DELETE FROM message_reactions WHERE id = ?")->execute([$existing]);
@@ -296,9 +334,11 @@ if ($method === "POST" && preg_match('#^/messages/(\d+)/react$#', $path, $m)) {
 
   // Get updated reaction counts for this message
   $rs = $pdo->prepare("SELECT emoji, COUNT(*) as count FROM message_reactions WHERE message_id = ? GROUP BY emoji ORDER BY count DESC");
-  $rs->execute([$msg_id]); $reactions = $rs->fetchAll();
+  $rs->execute([$msg_id]);
+  $reactions = $rs->fetchAll();
   $ur = $pdo->prepare("SELECT emoji FROM message_reactions WHERE message_id = ? AND user_id = ?");
-  $ur->execute([$msg_id, $user_id]); $my_reactions = $ur->fetchAll(PDO::FETCH_COLUMN);
+  $ur->execute([$msg_id, $user_id]);
+  $my_reactions = $ur->fetchAll(PDO::FETCH_COLUMN);
 
   json_response([
     "toggled"      => $toggled,
@@ -311,36 +351,54 @@ if ($method === "POST" && preg_match('#^/messages/(\d+)/react$#', $path, $m)) {
 
 // ── POST /messages/cleanup ────────────────────────────────────
 if ($method === "POST" && $path === "/messages/cleanup") {
-  $secret = $_SERVER["HTTP_X_CLEANUP_SECRET"] ?? "";
-  if ($secret !== $cfg["cleanup_secret"])
+  $secret = (string)($_SERVER["HTTP_X_CLEANUP_SECRET"] ?? "");
+  $configuredSecret = (string)($cfg["cleanup_secret"] ?? "");
+
+  if ($configuredSecret === "")
+    json_response(["error" => "Cleanup secret is not configured"], 500);
+  if (!hash_equals($configuredSecret, $secret))
     json_response(["error" => "Forbidden"], 403);
 
   $pdo = db();
+  $skipped_tables = [];
 
-  // Hard delete messages older than 1 MONTH (including related records)
-  $pdo->prepare("
-    DELETE mr FROM message_reactions mr
-    JOIN messages m ON m.id = mr.message_id
-    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
-  ")->execute();
+  $cleanup_steps = [
+    "message_reactions" => "
+      DELETE mr FROM message_reactions mr
+      JOIN messages m ON m.id = mr.message_id
+      WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+    ",
+    "message_reads" => "
+      DELETE mrd FROM message_reads mrd
+      JOIN messages m ON m.id = mrd.message_id
+      WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+    ",
+    "message_hidden" => "
+      DELETE mh FROM message_hidden mh
+      JOIN messages m ON m.id = mh.message_id
+      WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+    ",
+    "attachments" => "
+      DELETE a FROM attachments a
+      JOIN messages m ON m.id = a.message_id
+      WHERE m.created_at < NOW() - INTERVAL 1 MONTH
+    ",
+  ];
 
-  $pdo->prepare("
-    DELETE mrd FROM message_reads mrd
-    JOIN messages m ON m.id = mrd.message_id
-    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
-  ")->execute();
-
-  $pdo->prepare("
-    DELETE mh FROM message_hidden mh
-    JOIN messages m ON m.id = mh.message_id
-    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
-  ")->execute();
-
-  $pdo->prepare("
-    DELETE a FROM attachments a
-    JOIN messages m ON m.id = a.message_id
-    WHERE m.created_at < NOW() - INTERVAL 1 MONTH
-  ")->execute();
+  foreach ($cleanup_steps as $table => $sql) {
+    try {
+      $pdo->prepare($sql)->execute();
+    } catch (PDOException $e) {
+      $mysqlErrno = (int)($e->errorInfo[1] ?? 0);
+      $sqlState = (string)$e->getCode();
+      // Ignore missing optional tables so cleanup can still proceed.
+      if ($mysqlErrno === 1146 || $sqlState === "42S02") {
+        $skipped_tables[] = $table;
+        continue;
+      }
+      json_response(["error" => "Cleanup failed"], 500);
+    }
+  }
 
   $stmt = $pdo->prepare("
     DELETE FROM messages
@@ -349,5 +407,5 @@ if ($method === "POST" && $path === "/messages/cleanup") {
   $stmt->execute();
   $deleted = $stmt->rowCount();
 
-  json_response(["ok" => true, "deleted" => $deleted]);
+  json_response(["ok" => true, "deleted" => $deleted, "skipped_tables" => $skipped_tables]);
 }

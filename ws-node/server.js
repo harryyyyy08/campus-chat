@@ -607,8 +607,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// ── Auto-delete messages older than 3 days ────────────────────
+// ── Auto-delete messages older than 1 month ───────────────────
 async function deleteOldMessages() {
+  const isProd = process.env.NODE_ENV === "production";
+  const verboseCleanup = process.env.CLEANUP_VERBOSE === "1";
   try {
     const resp = await fetch(`${PHP_API_BASE}/messages/cleanup`, {
       method: "POST",
@@ -617,8 +619,37 @@ async function deleteOldMessages() {
         "X-Cleanup-Secret": process.env.CLEANUP_SECRET,
       },
     });
-    const data = await resp.json();
-    console.log(`[cleanup] Deleted ${data.deleted ?? 0} old messages.`);
+
+    const raw = await resp.text();
+    let data = {};
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        const snippet = raw.replace(/\s+/g, " ").slice(0, 180);
+        console.error(
+          `[cleanup] Non-JSON response (${resp.status}): ${snippet}${raw.length > 180 ? "..." : ""}`,
+        );
+        return;
+      }
+    }
+
+    if (!resp.ok) {
+      console.error(
+        `[cleanup] API error ${resp.status}: ${data.error || "Unknown error"}`,
+      );
+      return;
+    }
+
+    const deleted = Number(data.deleted ?? 0);
+    if (deleted > 0 || !isProd || verboseCleanup) {
+      console.log(`[cleanup] Deleted ${deleted} old messages.`);
+    }
+    if (Array.isArray(data.skipped_tables) && data.skipped_tables.length) {
+      console.warn(
+        `[cleanup] Skipped missing tables: ${data.skipped_tables.join(", ")}`,
+      );
+    }
   } catch (err) {
     console.error("[cleanup] Error:", err.message);
   }

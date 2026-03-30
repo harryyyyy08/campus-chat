@@ -20,15 +20,20 @@ function logout() {
   localStorage.removeItem("cc_token");
   localStorage.removeItem("cc_user");
   localStorage.removeItem("cc_login_at");
-  if (socket) { socket.disconnect(); socket = null; }
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
 
   // Reset global state
-  token = null; myUserId = null; myUser = null;
+  token = null;
+  myUserId = null;
+  myUser = null;
   currentConversation = null;
-  conversationsCache  = [];
-  pendingAttachments  = [];
-  pendingAttachment   = null;
-  onlineSet    = new Set();
+  conversationsCache = [];
+  pendingAttachments = [];
+  pendingAttachment = null;
+  onlineSet = new Set();
   unreadCounts = {};
 
   goToLogin();
@@ -39,8 +44,13 @@ function handleTokenExpired() {
   localStorage.removeItem("cc_token");
   localStorage.removeItem("cc_user");
   localStorage.removeItem("cc_login_at");
-  if (socket) { socket.disconnect(); socket = null; }
-  token = null; myUserId = null; myUser = null;
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+  token = null;
+  myUserId = null;
+  myUser = null;
 
   goToLogin("Your session has expired. Please log in again.");
 }
@@ -60,14 +70,17 @@ function startTokenWatcher() {
   const loginAt = parseInt(localStorage.getItem("cc_login_at") || "0");
   if (!loginAt) return;
 
-  window._tokenCheckInterval = setInterval(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/conversations/unread`, {
-        headers: { Authorization: "Bearer " + token },
-      });
-      if (res.status === 401) handleTokenExpired();
-    } catch {}
-  }, 5 * 60 * 1000);
+  window._tokenCheckInterval = setInterval(
+    async () => {
+      try {
+        const res = await fetch(`${API_BASE}/conversations/unread`, {
+          headers: { Authorization: "Bearer " + token },
+        });
+        if (res.status === 401) handleTokenExpired();
+      } catch {}
+    },
+    5 * 60 * 1000,
+  );
 }
 
 // ════════════════════════════════════════════
@@ -77,8 +90,19 @@ function startTokenWatcher() {
 async function initApp() {
   document.getElementById("loadingScreen").style.display = "none";
   document.getElementById("app").classList.add("visible");
-  document.getElementById("myName").textContent   = myUser.full_name || myUser.username;
-  document.getElementById("myAvatar").textContent = initials(myUser.full_name || myUser.username);
+  document.getElementById("myName").textContent =
+    myUser.full_name || myUser.username;
+  document.getElementById("myAvatar").textContent = initials(
+    myUser.full_name || myUser.username,
+  );
+
+  const myDeptEl = document.getElementById("myDepartment");
+  if (myDeptEl) {
+    const department = String(myUser.department || "").trim();
+    const deptText = department || "Not set";
+    myDeptEl.textContent = deptText;
+    myDeptEl.title = deptText;
+  }
 
   window.myRole = myUser.role || "student";
   connectSocket();
@@ -96,7 +120,7 @@ async function initApp() {
 // SESSION RESTORE (on page load)
 // ════════════════════════════════════════════
 (async function restoreSession() {
-  const savedToken   = localStorage.getItem("cc_token");
+  const savedToken = localStorage.getItem("cc_token");
   const savedUserStr = localStorage.getItem("cc_user");
 
   if (!savedToken || !savedUserStr) {
@@ -116,9 +140,9 @@ async function initApp() {
     return;
   }
 
-  token    = savedToken;
+  token = savedToken;
   myUserId = savedUser.id;
-  myUser   = savedUser;
+  myUser = savedUser;
 
   // Verify token is still valid
   try {

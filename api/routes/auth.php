@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Authentication Routes Module
  * 
@@ -40,7 +41,7 @@ if ($method === "POST" && $path === "/login") {
   if ($username === "" || $password === "") json_response(["error" => "username and password required"], 400);
 
   $pdo  = db();
-  $stmt = $pdo->prepare("SELECT id, username, full_name, password_hash, status, role, force_password_change FROM users WHERE username = ?");
+  $stmt = $pdo->prepare("SELECT u.id, u.username, u.full_name, u.password_hash, u.status, u.role, u.force_password_change, d.name AS department FROM users u LEFT JOIN departments d ON d.id = u.department WHERE u.username = ?");
   $stmt->execute([$username]);
   $user = $stmt->fetch();
   if (!$user || !password_verify($password, $user["password_hash"])) {
@@ -56,12 +57,12 @@ if ($method === "POST" && $path === "/login") {
 
   $now = time();
   $token = jwt_sign([
-      "iss"      => $cfg["jwt"]["issuer"],
-      "sub"      => (int)$user["id"],
-      "username" => $user["username"],
-      "role"     => $user["role"],
-      "iat"      => $now,
-      "exp"      => $now + $cfg["jwt"]["ttl_seconds"]
+    "iss"      => $cfg["jwt"]["issuer"],
+    "sub"      => (int)$user["id"],
+    "username" => $user["username"],
+    "role"     => $user["role"],
+    "iat"      => $now,
+    "exp"      => $now + $cfg["jwt"]["ttl_seconds"]
   ], $cfg["jwt"]["secret"]);
 
   json_response([
@@ -71,7 +72,8 @@ if ($method === "POST" && $path === "/login") {
       "id"        => (int)$user["id"],
       "username"  => $user["username"],
       "full_name" => $user["full_name"],
-      "role"      => $user["role"]
+      "role"      => $user["role"],
+      "department" => $user["department"]
     ],
     "ws_url" => $cfg["ws"]["url"]
   ]);
@@ -79,8 +81,9 @@ if ($method === "POST" && $path === "/login") {
 
 // ── GET /me ──────────────────────────────────────────────────────
 if ($method === "GET" && $path === "/me") {
-  $claims = require_auth(); $pdo = db();
-  $stmt = $pdo->prepare("SELECT id, username, full_name, role, created_at FROM users WHERE id = ?");
+  $claims = require_auth();
+  $pdo = db();
+  $stmt = $pdo->prepare("SELECT u.id, u.username, u.full_name, u.role, u.created_at, d.name AS department FROM users u LEFT JOIN departments d ON d.id = u.department WHERE u.id = ?");
   $stmt->execute([(int)$claims["sub"]]);
   $me = $stmt->fetch();
   if (!$me) json_response(["error" => "User not found"], 404);
@@ -90,10 +93,12 @@ if ($method === "GET" && $path === "/me") {
 
 // ── GET /users/search ────────────────────────────────────────────
 if ($method === "GET" && $path === "/users/search") {
-  $claims = require_auth(); $user_id = (int)$claims["sub"];
+  $claims = require_auth();
+  $user_id = (int)$claims["sub"];
   $q = trim($_GET["q"] ?? "");
   if (strlen($q) < 1) json_response(["users" => []]);
-  $pdo = db(); $like = "%" . $q . "%";
+  $pdo = db();
+  $like = "%" . $q . "%";
   $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE id <> ? AND status = 'active' AND (username LIKE ? OR full_name LIKE ?) ORDER BY full_name, username LIMIT 20");
   $stmt->execute([$user_id, $like, $like]);
   $users = $stmt->fetchAll();
@@ -103,27 +108,41 @@ if ($method === "GET" && $path === "/users/search") {
 
 // ── POST /register ───────────────────────────────────────────────
 if ($method === "POST" && $path === "/register") {
-  $pdo = db(); $in = json_input();
+  $pdo = db();
+  $in = json_input();
   $full_name  = trim((string)($in["full_name"]  ?? ""));
   $username   = strtolower(trim((string)($in["username"] ?? "")));
   $password   = (string)($in["password"]   ?? "");
   $role       = (string)($in["role"]       ?? "student");
-  $department = trim((string)($in["department"] ?? ""));
+  $department_id = (int)($in["department_id"] ?? 0);
+  $department_name = trim((string)($in["department"] ?? ""));
 
   if ($full_name === "")  json_response(["error" => "Full name is required"], 400);
   if ($username === "")   json_response(["error" => "Username is required"], 400);
   if (!preg_match('/^[a-z0-9_]+$/', $username)) json_response(["error" => "Username: lowercase letters, numbers, underscores only"], 400);
   if (strlen($username) < 3) json_response(["error" => "Username must be at least 3 characters"], 400);
   if (strlen($password) < 8) json_response(["error" => "Password must be at least 8 characters"], 400);
-  if (!in_array($role, ["student","faculty"])) $role = "student";
+  if (!in_array($role, ["student", "faculty"])) $role = "student";
 
   $stmt = $pdo->prepare("SELECT 1 FROM users WHERE username = ?");
   $stmt->execute([$username]);
   if ($stmt->fetchColumn()) json_response(["error" => "Username is already taken"], 409);
 
+  if ($department_id <= 0 && $department_name !== "") {
+    $stmt = $pdo->prepare("SELECT id FROM departments WHERE name = ? LIMIT 1");
+    $stmt->execute([$department_name]);
+    $department_id = (int)($stmt->fetchColumn() ?: 0);
+  }
+
+  if ($department_id > 0) {
+    $stmt = $pdo->prepare("SELECT 1 FROM departments WHERE id = ?");
+    $stmt->execute([$department_id]);
+    if (!$stmt->fetchColumn()) json_response(["error" => "Invalid department"], 400);
+  }
+
   $hash = password_hash($password, PASSWORD_DEFAULT);
   $pdo->prepare("INSERT INTO users (username, full_name, password_hash, status, role, department) VALUES (?, ?, ?, 'pending', ?, ?)")
-      ->execute([$username, $full_name, $hash, $role, $department ?: null]);
+    ->execute([$username, $full_name, $hash, $role, $department_id > 0 ? $department_id : null]);
   json_response(["registered" => true, "message" => "Registration submitted. Please wait for admin approval."], 201);
 }
 
@@ -159,7 +178,7 @@ if ($method === "POST" && $path === "/forgot-password") {
   $stmt->execute([(int)$user["id"]]);
   if (!$stmt->fetch()) {
     $pdo->prepare("INSERT INTO password_reset_requests (user_id) VALUES (?)")
-        ->execute([(int)$user["id"]]);
+      ->execute([(int)$user["id"]]);
   }
 
   $rl["count"]++;
@@ -181,7 +200,7 @@ if ($method === "POST" && $path === "/change-password") {
   $pdo  = db();
   $hash = password_hash($new_pass, PASSWORD_DEFAULT);
   $pdo->prepare("UPDATE users SET password_hash = ?, force_password_change = 0 WHERE id = ?")
-      ->execute([$hash, (int)$claims["sub"]]);
+    ->execute([$hash, (int)$claims["sub"]]);
 
   json_response(["message" => "Password updated successfully."]);
 }

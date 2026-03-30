@@ -18,7 +18,8 @@ function applyTheme(theme) {
 }
 
 function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const current =
+    document.documentElement.getAttribute("data-theme") || "light";
   applyTheme(current === "dark" ? "light" : "dark");
 }
 
@@ -64,7 +65,7 @@ let unreadCounts = {};
 let selectedMembers = [];
 
 // Pending attachment (uploaded but not yet sent)
-let pendingAttachment  = null;
+let pendingAttachment = null;
 let pendingAttachments = [];
 
 // ════════════════════════════════════════════
@@ -80,19 +81,8 @@ function showToast(msg, duration = 3000) {
 }
 
 async function showAutoAnnouncementModal() {
-  const overlay = document.getElementById("annAutoOverlay");
-  if (!overlay) return;
-
-  if (!overlay.dataset.bound) {
-    const closeBtn = document.getElementById("annAutoClose");
-    const okBtn = document.getElementById("annAutoOk");
-    if (closeBtn) closeBtn.addEventListener("click", closeAutoAnnouncementModal);
-    if (okBtn) okBtn.addEventListener("click", closeAutoAnnouncementModal);
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeAutoAnnouncementModal();
-    });
-    overlay.dataset.bound = "1";
-  }
+  const persistOverlay = document.getElementById("annPersistOverlay");
+  if (!persistOverlay) return;
 
   const savedToken = localStorage.getItem("cc_token");
   const savedUserStr = localStorage.getItem("cc_user");
@@ -104,7 +94,8 @@ async function showAutoAnnouncementModal() {
   } catch {
     return;
   }
-  const sessionKey = `cc_ann_auto_shown_${savedUser.id || "anon"}`;
+  const tokenSuffix = String(savedToken).slice(-16);
+  const sessionKey = `cc_ann_auto_shown_${savedUser.id || "anon"}_${tokenSuffix}`;
   if (sessionStorage.getItem(sessionKey)) return;
 
   try {
@@ -114,46 +105,30 @@ async function showAutoAnnouncementModal() {
     const data = await res.json();
     if (!res.ok) return;
     const list = data.announcements || [];
-    const role = savedUser.role || "student";
-    const dept = savedUser.department || "";
-    const isAdmin = ["admin", "super_admin"].includes(role);
+    const dept = String(savedUser.department || "").trim();
     const visible = list.filter((a) => {
       if (a.status !== "approved") return false;
-      if (a.is_read) return false;
       if (a.target_type === "all") return true;
-      if (a.target_type === "department" && a.department === dept) return true;
-      return isAdmin;
+      if (a.target_type !== "department") return false;
+      return String(a.department || "").trim() === dept;
     });
     if (!visible.length) return;
-    const latest = visible.reduce((acc, curr) => {
-      const aTime = new Date((acc.created_at || "").replace(" ", "T")).getTime();
-      const cTime = new Date((curr.created_at || "").replace(" ", "T")).getTime();
-      return (cTime || 0) > (aTime || 0) ? curr : acc;
-    }, visible[0]);
 
-    const titleEl = document.getElementById("annAutoTitle");
-    const metaEl = document.getElementById("annAutoMeta");
-    const bodyEl = document.getElementById("annAutoBody");
-    if (!titleEl || !metaEl || !bodyEl) return;
+    visible.sort((a, b) => {
+      const aTime =
+        new Date((a.created_at || "").replace(" ", "T")).getTime() || 0;
+      const bTime =
+        new Date((b.created_at || "").replace(" ", "T")).getTime() || 0;
+      return bTime - aTime;
+    });
 
-    const rawDate = (latest.created_at || "").replace(" ", "T");
-    const date = new Date(rawDate);
-    const metaTime = isNaN(date.getTime()) ? latest.created_at : date.toLocaleString();
-    titleEl.textContent = latest.title || "Announcement";
-    metaEl.textContent = `By ${latest.author_name || "Campus Admin"} · ${metaTime || ""}`;
-    bodyEl.textContent = latest.body || "";
+    const latest = visible[0];
+    if (typeof window.queueIndexAnnouncementModal === "function") {
+      window.queueIndexAnnouncementModal(latest);
+    }
 
-    overlay.classList.remove("hidden");
-    requestAnimationFrame(() => overlay.classList.add("visible"));
     sessionStorage.setItem(sessionKey, "1");
   } catch {}
-}
-
-function closeAutoAnnouncementModal() {
-  const overlay = document.getElementById("annAutoOverlay");
-  if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.classList.add("hidden"), 200);
 }
 
 function openModal(id) {
@@ -218,17 +193,24 @@ function isImageMime(mime) {
 // Allows <img src="..."> to work without fetch + Blob — no membership issues.
 function protectedImgUrl(url) {
   const absUrl = toAbsoluteUrl(url);
-  return absUrl + (absUrl.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
+  return (
+    absUrl +
+    (absUrl.includes("?") ? "&" : "?") +
+    "token=" +
+    encodeURIComponent(token)
+  );
 }
 
 // Load a protected image by setting src to a ?token= URL directly.
 async function loadProtectedImage(imgEl, url) {
   imgEl.src = protectedImgUrl(url);
   return new Promise((resolve, reject) => {
-    imgEl.onload  = () => resolve();
+    imgEl.onload = () => resolve();
     imgEl.onerror = () => {
       const wrap = imgEl.closest(".attach-image-wrap");
-      if (wrap) wrap.innerHTML = '<div class="attach-img-err">Could not load image</div>';
+      if (wrap)
+        wrap.innerHTML =
+          '<div class="attach-img-err">Could not load image</div>';
       reject(new Error("Image load failed: " + url));
     };
   });
