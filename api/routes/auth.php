@@ -266,19 +266,11 @@ if ($method === "GET" && $path === "/altcha/challenge") {
   if ($scope === "") $scope = "auth";
 
   $expires = (string)(time() + (int)$settings["ttl_seconds"]);
-  $code = altcha_generate_code(4);
-  $codeSig = altcha_code_signature((string)$settings["hmac_key"], $code, $scope, $expires);
 
   $challenge = altcha_create_challenge($settings, [
-    "scope" => $scope,
+    "scope"   => $scope,
     "expires" => $expires,
-    "code_sig" => $codeSig,
-    "code_len" => "4",
   ]);
-  $challenge["codeChallenge"] = [
-    "image" => altcha_code_image_data_uri($code),
-    "length" => 4,
-  ];
 
   header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
   json_response($challenge);
@@ -373,6 +365,10 @@ if ($method === "POST" && $path === "/login") {
 
   // Reset rate limit counter on successful login
   @unlink($rl_file);
+
+  // Record last IP and last seen for geomapping
+  db()->prepare("UPDATE users SET last_ip = ?, last_seen_at = NOW() WHERE id = ?")
+      ->execute([$ip, (int)$user["id"]]);
 
   $now = time();
   $token = jwt_sign([

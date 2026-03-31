@@ -194,6 +194,19 @@ io.on("connection", (socket) => {
   socket.join(`user:${userId}`);
   io.emit("presence", { user_id: userId, online: true });
 
+  // Update last_ip for geomapping — fire-and-forget, non-critical
+  (async () => {
+    try {
+      await fetch(`${PHP_API_BASE}/internal/update-ip`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-Real-IP": socket.handshake.address,
+        },
+      });
+    } catch (_) { /* non-critical */ }
+  })();
+
   // Auto-join all conversation rooms on connect (includes hidden — so messages still arrive)
   (async () => {
     try {

@@ -95,7 +95,8 @@ function switchAdminTab(btn, tab) {
   const isStorage = tab === "storage";
   const isChats = tab === "chats";
   const isFlagged = tab === "flagged";
-  const isUserTab = !isStorage && !isChats && !isFlagged;
+  const isGeomap  = tab === "geomap";
+  const isUserTab = !isStorage && !isChats && !isFlagged && !isGeomap;
 
   document
     .getElementById("userTableWrap")
@@ -134,6 +135,15 @@ function switchAdminTab(btn, tab) {
     loadResetRequests();
   } else {
     document.getElementById("resetRequestsPanel").classList.add("hidden");
+  }
+
+  if (isGeomap) {
+    document.getElementById("geomapPanel").classList.remove("hidden");
+    document.getElementById("adminToolbar").classList.add("hidden");
+    document.getElementById("userTableWrap").classList.add("hidden");
+    loadGeomap();
+  } else {
+    document.getElementById("geomapPanel").classList.add("hidden");
   }
 }
 

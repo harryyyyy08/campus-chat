@@ -85,6 +85,7 @@ require_once __DIR__ . "/routes/conversations.php";
 require_once __DIR__ . "/routes/messages.php";
 require_once __DIR__ . "/routes/uploads.php";
 require_once __DIR__ . "/routes/departments.php";
+require_once __DIR__ . "/routes/location.php";
 require_once __DIR__ . "/routes/admin.php";
 require_once __DIR__ . "/routes/announcements.php";
 

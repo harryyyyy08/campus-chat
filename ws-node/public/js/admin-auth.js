@@ -48,6 +48,7 @@
           document.getElementById("storageTabBtn").classList.remove("hidden");
           document.getElementById("chatsTabBtn").classList.remove("hidden");
           document.getElementById("flaggedTabBtn").classList.remove("hidden");
+          document.getElementById("geomapTabBtn").classList.remove("hidden");
         } else {
           badge.textContent = "Admin";
           badge.className = "admin-role-badge";
