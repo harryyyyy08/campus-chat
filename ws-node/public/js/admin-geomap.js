@@ -216,54 +216,69 @@ function openZoneModal(zone) {
   const title  = isEdit ? "Edit Zone" : "Add Zone";
 
   const modal = document.createElement("div");
-  modal.id    = "zoneModal";
-  modal.style.cssText =
-    "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;" +
-    "display:flex;align-items:center;justify-content:center;padding:16px";
+  modal.id        = "zoneModal";
+  modal.className = "zone-modal-overlay";
 
   modal.innerHTML = `
-    <div style="background:var(--bg-elevated);border-radius:12px;padding:24px;width:100%;max-width:460px;
-                border:1px solid var(--border-strong);box-shadow:0 20px 60px rgba(0,0,0,0.5)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h3 style="margin:0;font-size:16px">${title}</h3>
-        <button onclick="closeZoneModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;line-height:1">×</button>
+    <div class="zone-modal-card">
+      <div class="zone-modal-header">
+        <h3>${title}</h3>
+        <button class="zone-modal-close" onclick="closeZoneModal()" title="Close">×</button>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div><label class="form-label">Zone Name *</label>
-          <input id="zm_name" class="form-input" value="${esc(zone?.name || '')}" placeholder="e.g. Main Building AP1"></div>
-        <div><label class="form-label">Building *</label>
-          <input id="zm_building" class="form-input" value="${esc(zone?.building || '')}" placeholder="e.g. Main Building"></div>
-        <div><label class="form-label">IP Range (CIDR) *</label>
-          <input id="zm_cidr" class="form-input" value="${esc(zone?.cidr || '')}" placeholder="e.g. 10.0.1.0/24"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div><label class="form-label">Latitude *</label>
-            <input id="zm_lat" class="form-input" type="number" step="any" value="${zone?.lat ?? ''}" placeholder="e.g. 10.3157"></div>
-          <div><label class="form-label">Longitude *</label>
-            <input id="zm_lng" class="form-input" type="number" step="any" value="${zone?.lng ?? ''}" placeholder="e.g. 123.8854"></div>
+      <div class="zone-modal-body">
+        <div class="zone-field">
+          <label class="form-label">Zone Name *</label>
+          <input id="zm_name" class="form-input" value="${esc(zone?.name || '')}" placeholder="e.g. Main Building AP1">
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div><label class="form-label">Radius (metres)</label>
-            <input id="zm_radius" class="form-input" type="number" min="10" value="${zone?.radius_m ?? 80}"></div>
-          <div><label class="form-label">Color</label>
-            <input id="zm_color" type="color" value="${zone?.color ?? '#8B5CF6'}"
-              style="width:100%;height:36px;border-radius:8px;border:1px solid var(--border-strong);background:var(--bg-base);cursor:pointer;padding:2px 4px"></div>
+
+        <div class="zone-field">
+          <label class="form-label">Building *</label>
+          <input id="zm_building" class="form-input" value="${esc(zone?.building || '')}" placeholder="e.g. Main Building">
         </div>
-        <div><label class="form-label">Description</label>
-          <textarea id="zm_desc" class="form-input" rows="2" style="resize:vertical"
-            placeholder="Optional notes">${esc(zone?.description || '')}</textarea></div>
+
+        <div class="zone-field">
+          <label class="form-label">IP Range (CIDR) *</label>
+          <input id="zm_cidr" class="form-input" value="${esc(zone?.cidr || '')}" placeholder="e.g. 192.168.1.0/24">
+        </div>
+
+        <div class="zone-field-row">
+          <div class="zone-field">
+            <label class="form-label">Latitude *</label>
+            <input id="zm_lat" class="form-input" type="number" step="any" value="${zone?.lat ?? ''}" placeholder="e.g. 7.1985">
+          </div>
+          <div class="zone-field">
+            <label class="form-label">Longitude *</label>
+            <input id="zm_lng" class="form-input" type="number" step="any" value="${zone?.lng ?? ''}" placeholder="e.g. 125.630">
+          </div>
+        </div>
+
+        <div class="zone-field-row">
+          <div class="zone-field">
+            <label class="form-label">Radius (metres)</label>
+            <input id="zm_radius" class="form-input" type="number" min="10" value="${zone?.radius_m ?? 80}">
+          </div>
+          <div class="zone-field">
+            <label class="form-label">Zone Color</label>
+            <input id="zm_color" type="color" class="zone-color-input" value="${zone?.color ?? '#8B5CF6'}">
+          </div>
+        </div>
+
+        <div class="zone-field">
+          <label class="form-label">Description</label>
+          <textarea id="zm_desc" class="form-input" rows="2" placeholder="Optional notes">${esc(zone?.description || '')}</textarea>
+        </div>
+
+        <div id="zm_error" class="zone-modal-error"></div>
       </div>
 
-      <div id="zm_error" style="color:var(--error,#f44);font-size:13px;margin-top:8px;display:none"></div>
-
-      <div style="display:flex;gap:8px;margin-top:20px;${isEdit ? 'justify-content:space-between' : 'justify-content:flex-end'}">
-        ${isEdit ? `<button onclick="deleteZone(${zone.id})" class="btn-modal-danger"
-          style="padding:9px 16px;font-size:13px">Delete</button>` : ""}
+      <div class="zone-modal-footer ${isEdit ? 'has-delete' : ''}">
+        ${isEdit ? `<button onclick="deleteZone(${zone.id})" class="btn-modal-danger">Delete Zone</button>` : ""}
         <div style="display:flex;gap:8px">
-          <button onclick="closeZoneModal()" class="btn-modal-secondary"
-            style="padding:9px 16px;font-size:13px">Cancel</button>
-          <button onclick="saveZone(${isEdit ? zone.id : 'null'})" class="btn-modal-primary"
-            style="padding:9px 18px;font-size:13px">${isEdit ? "Save Changes" : "Create Zone"}</button>
+          <button onclick="closeZoneModal()" class="btn-modal-cancel">Cancel</button>
+          <button onclick="saveZone(${isEdit ? zone.id : 'null'})" class="btn-modal-primary">
+            ${isEdit ? "Save Changes" : "Create Zone"}
+          </button>
         </div>
       </div>
     </div>`;
@@ -289,10 +304,13 @@ async function saveZone(id) {
   const errEl = document.getElementById("zm_error");
   const cidrRx = /^\d{1,3}(\.\d{1,3}){3}\/([0-9]|[12]\d|3[012])$/;
 
-  if (!name || !building)        { errEl.textContent = "Name and building are required."; errEl.style.display = ""; return; }
-  if (!cidrRx.test(cidr))        { errEl.textContent = "Invalid CIDR (e.g. 10.0.1.0/24)."; errEl.style.display = ""; return; }
-  if (isNaN(lat) || isNaN(lng))  { errEl.textContent = "Latitude and longitude are required."; errEl.style.display = ""; return; }
-  errEl.style.display = "none";
+  const showErr = msg => { errEl.textContent = msg; errEl.style.display = "block"; };
+  const hideErr = ()  => { errEl.style.display = "none"; };
+
+  if (!name || !building)        { showErr("Name and building are required."); return; }
+  if (!cidrRx.test(cidr))        { showErr("Invalid CIDR (e.g. 192.168.1.0/24)."); return; }
+  if (isNaN(lat) || isNaN(lng))  { showErr("Latitude and longitude are required."); return; }
+  hideErr();
 
   const isEdit  = id !== null;
   const url     = isEdit ? `${API_BASE}/admin/location-zones/${id}` : `${API_BASE}/admin/location-zones`;
@@ -305,7 +323,7 @@ async function saveZone(id) {
       body: JSON.stringify({ name, building, cidr, lat, lng, radius_m, color, description }),
     });
     const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error || "Failed to save."; errEl.style.display = ""; return; }
+    if (!res.ok) { showErr(data.error || "Failed to save."); return; }
     closeZoneModal();
     showToast(isEdit ? "Zone updated." : "Zone created.");
     loadGeomap();

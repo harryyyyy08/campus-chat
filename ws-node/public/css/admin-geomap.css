@@ -115,43 +115,193 @@
   display: block;
 }
 
-/* Zone modal form helpers */
-#zoneModal .form-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+/* ── Zone Modal Overlay ──────────────────────────────────────────────── */
+.zone-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(2px);
 }
-#zoneModal .form-input {
-  width: 100%;
-  padding: 8px 12px;
-  background: var(--bg-base);
+
+.zone-modal-card {
+  background: var(--bg-modal);
   border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.zone-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.zone-modal-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.zone-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.zone-modal-close:hover {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+/* Body */
+.zone-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  max-height: calc(100vh - 180px);
+}
+
+/* Field group */
+.zone-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.zone-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.zone-modal-card .form-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.zone-modal-card .form-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg-base);
+  border: 1.5px solid var(--border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.zone-modal-card .form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.zone-modal-card textarea.form-input {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Color row — side-by-side swatch + radius */
+.zone-color-input {
+  width: 100%;
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-base);
+  cursor: pointer;
+  padding: 3px 5px;
   box-sizing: border-box;
   outline: none;
   transition: border-color 0.15s;
 }
-#zoneModal .form-input:focus {
+.zone-color-input:focus {
   border-color: var(--accent);
 }
 
-/* Danger button for zone delete */
+/* Error */
+.zone-modal-error {
+  font-size: 12px;
+  color: var(--red);
+  padding: 8px 12px;
+  background: var(--red-soft);
+  border-radius: 7px;
+  display: none;
+}
+
+/* Footer */
+.zone-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+.zone-modal-footer.has-delete {
+  justify-content: space-between;
+}
+
+/* Buttons */
+.btn-modal-cancel {
+  background: var(--bg-base);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-modal-cancel:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.btn-modal-primary {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 20px;
+  transition: background 0.15s, opacity 0.15s;
+}
+.btn-modal-primary:hover {
+  background: var(--accent-hover);
+}
 .btn-modal-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--red-soft);
+  color: var(--red);
+  border: 1.5px solid rgba(239, 68, 68, 0.25);
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
+  padding: 9px 16px;
   transition: background 0.15s;
 }
 .btn-modal-danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.18);
 }
