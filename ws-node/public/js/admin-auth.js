@@ -37,6 +37,8 @@
         document.getElementById("adminLogin").classList.add("hidden");
         document.getElementById("adminApp").classList.remove("hidden");
         document.getElementById("adminMyName").textContent = user.full_name || user.username;
+        const _av = document.getElementById("adminAvatar");
+        if (_av) _av.textContent = (user.full_name || user.username).charAt(0).toUpperCase();
 
         const badge = document.getElementById("adminRoleBadge");
         if (myRole === "super_admin") {

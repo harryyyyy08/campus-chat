@@ -122,107 +122,165 @@
 
   <!-- Admin App -->
   <div id="adminApp" class="hidden">
-    <div id="adminNav">
-      <div class="admin-nav-logo">
-        <button class="admin-hamburger" id="adminHamburger" onclick="toggleAdminMenu()" aria-label="Menu">
-          <span></span><span></span><span></span>
-        </button>
-        <span id="adminRoleIcon" style="display:flex;align-items:center;color:var(--accent)"><svg width="16" height="16"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg></span>
-        <span>CampusChat Admin</span>
-        <span id="adminRoleBadge" class="admin-role-badge"></span>
-      </div>
-      <div class="admin-nav-tabs" id="adminNavTabs">
-        <button class="admin-tab active" data-tab="pending" onclick="switchAdminTab(this, 'pending')">
-          Pending Approvals
-          <span id="pendingCount" class="admin-badge hidden">0</span>
-        </button>
-        <button class="admin-tab" data-tab="active" onclick="switchAdminTab(this, 'active')">
-          Active Users
-        </button>
-        <button class="admin-tab" data-tab="disabled" onclick="switchAdminTab(this, 'disabled')">
-          Disabled
-        </button>
-        <!-- Storage tab: super_admin only — shown via JS after login -->
-        <button class="admin-tab hidden" id="chatsTabBtn" data-tab="chats" onclick="switchAdminTab(this, 'chats')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          Chat Monitor
-          <span id="flaggedCount" class="admin-badge hidden">0</span>
-        </button>
-        <button class="admin-tab hidden" id="flaggedTabBtn" data-tab="flagged"
-          onclick="switchAdminTab(this, 'flagged')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-            <line x1="4" y1="22" x2="4" y2="15" />
-          </svg>
-          Flagged
-        </button>
-        <button class="admin-tab" id="resetRequestsTabBtn" data-tab="resetRequests"
-          onclick="switchAdminTab(this, 'resetRequests')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          Password Resets
-          <span id="resetReqCount" class="admin-badge hidden">0</span>
-        </button>
-        <button class="admin-tab" id="announcementsTabBtn" data-tab="announcements"
-          onclick="switchAdminTab(this, 'announcements')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 11l18-5v12L3 14v-3" />
-            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
-          </svg>
-          Announcements
-          <span id="annPendingCount" class="admin-badge hidden">0</span>
-        </button>
-        <button class="admin-tab hidden" id="storageTabBtn" data-tab="storage"
-          onclick="switchAdminTab(this, 'storage')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="12" x2="2" y2="12" />
-            <path
-              d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-            <line x1="6" y1="16" x2="6.01" y2="16" />
-            <line x1="10" y1="16" x2="10.01" y2="16" />
-          </svg>
-          Storage
-        </button>
-      </div>
-      <div class="admin-nav-right">
-        <span id="adminMyName" style="font-size: 13px; color: var(--text-secondary)"></span>
-        <button id="adminThemeBtn" class="icon-btn" title="Toggle theme" onclick="toggleTheme()">
-          <svg id="adminThemeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-        </button>
-        <button class="icon-btn" title="Logout" onclick="adminLogout()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-        </button>
+
+    <!-- ── Left Sidebar ── -->
+    <div id="adminSidebar">
+      <div id="adminNavTabs">
+        <!-- Logo -->
+        <div class="sidebar-logo">
+          <span id="adminRoleIcon" class="sidebar-logo-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </span>
+          <span class="sidebar-logo-text">CampusChat Admin</span>
+        </div>
+
+        <!-- Nav Items -->
+        <div class="sidebar-nav-items">
+
+          <!-- Pending Approvals -->
+          <button class="admin-tab active" data-tab="pending" onclick="switchAdminTab(this, 'pending')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            Pending Approvals
+            <span id="pendingCount" class="admin-badge hidden">0</span>
+          </button>
+
+          <!-- Active Users -->
+          <button class="admin-tab" data-tab="active" onclick="switchAdminTab(this, 'active')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            Active Users
+          </button>
+
+          <!-- Disabled -->
+          <button class="admin-tab" data-tab="disabled" onclick="switchAdminTab(this, 'disabled')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+            Disabled
+          </button>
+
+          <!-- Flagged (super_admin only) -->
+          <button class="admin-tab hidden" id="flaggedTabBtn" data-tab="flagged"
+            onclick="switchAdminTab(this, 'flagged')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+            Flagged
+          </button>
+
+          <!-- Chat Monitor (super_admin only) -->
+          <button class="admin-tab hidden" id="chatsTabBtn" data-tab="chats" onclick="switchAdminTab(this, 'chats')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Chat Monitor
+            <span id="flaggedCount" class="admin-badge hidden">0</span>
+          </button>
+
+          <!-- Password Resets -->
+          <button class="admin-tab" id="resetRequestsTabBtn" data-tab="resetRequests"
+            onclick="switchAdminTab(this, 'resetRequests')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Password Resets
+            <span id="resetReqCount" class="admin-badge hidden">0</span>
+          </button>
+
+          <!-- Announcements -->
+          <button class="admin-tab" id="announcementsTabBtn" data-tab="announcements"
+            onclick="switchAdminTab(this, 'announcements')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 11l18-5v12L3 14v-3" />
+              <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+            </svg>
+            Announcements
+            <span id="annPendingCount" class="admin-badge hidden">0</span>
+          </button>
+
+          <!-- Storage (super_admin only) -->
+          <button class="admin-tab hidden" id="storageTabBtn" data-tab="storage"
+            onclick="switchAdminTab(this, 'storage')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="12" x2="2" y2="12" />
+              <path
+                d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+              <line x1="6" y1="16" x2="6.01" y2="16" />
+              <line x1="10" y1="16" x2="10.01" y2="16" />
+            </svg>
+            Storage
+          </button>
+
+        </div>
       </div>
     </div>
+
+    <!-- ── Main Area ── -->
+    <div id="adminMain">
+
+      <!-- Top Header -->
+      <header id="adminHeader">
+        <div class="header-left">
+          <button class="admin-hamburger" id="adminHamburger" onclick="toggleAdminMenu()" aria-label="Menu">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+        <div class="header-right">
+          <button id="adminThemeBtn" class="icon-btn" title="Toggle theme" onclick="toggleTheme()">
+            <svg id="adminThemeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          </button>
+          <button class="icon-btn" title="Logout" onclick="adminLogout()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+          <div class="header-user">
+            <span id="adminAvatar" class="header-avatar"></span>
+            <div class="header-user-info">
+              <span id="adminMyName" class="header-name"></span>
+              <span id="adminRoleBadge" class="admin-role-badge"></span>
+            </div>
+          </div>
+        </div>
+      </header>
 
     <div id="adminContent">
       <!-- Search + filter bar (hidden on storage tab) -->
@@ -468,7 +526,7 @@
         </div>
       </div>
 
-      <!-- Announcements panel -->
+      <!-- Announcements panel (continued below) -->
       <div id="announcementsPanel" class="hidden">
         <div class="storage-toolbar">
           <div class="admin-search-wrap">
@@ -488,7 +546,8 @@
         </div>
       </div>
     </div>
-  </div>
+    </div><!-- /#adminMain -->
+  </div><!-- /#adminApp -->
 
   <div id="toast"></div>
 
