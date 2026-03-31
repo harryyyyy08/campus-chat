@@ -127,6 +127,10 @@ function buildConversationItem(conv) {
     el.dataset.type = conv.type || "direct";
     el.dataset.cid = conv.conversation_id;
     el.onclick = () => openConversation(conv.conversation_id);
+    el.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      showConvContextMenu(e, conv.conversation_id);
+    });
     list.appendChild(el);
   }
 
@@ -416,5 +420,58 @@ async function declineRequest(reqId) {
     requestsCache = requestsCache.filter(r => r.request_id !== reqId);
     renderRequestsModal();
     loadRequestCount();
+  } catch { showToast("Connection error."); }
+}
+
+// ── Delete conversation ───────────────────────────────────────────
+function showConvContextMenu(e, convId) {
+  document.querySelector(".conv-ctx-menu")?.remove();
+
+  const menu = document.createElement("div");
+  menu.className = "msg-ctx-menu conv-ctx-menu";
+
+  const delBtn = document.createElement("button");
+  delBtn.className = "msg-ctx-btn msg-ctx-delete";
+  delBtn.textContent = "🗑️ Delete conversation";
+  delBtn.onclick = () => {
+    menu.remove();
+    if (confirm("Delete this conversation? This cannot be undone.")) {
+      deleteConversation(convId);
+    }
+  };
+  menu.appendChild(delBtn);
+
+  positionMenu(menu, e);
+
+  const close = (ev) => {
+    if (!menu.contains(ev.target)) { menu.remove(); cleanup(); }
+  };
+  const cleanup = () => {
+    document.removeEventListener("click", close);
+    document.removeEventListener("scroll", cleanup, true);
+  };
+  setTimeout(() => {
+    document.addEventListener("click", close);
+    document.addEventListener("scroll", cleanup, true);
+  }, 0);
+}
+
+async function deleteConversation(convId) {
+  try {
+    const res = await fetch(`${API_BASE}/conversations/${convId}`, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token },
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || "Failed to delete conversation"); return; }
+    conversationsCache = conversationsCache.filter(c => c.conversation_id !== convId);
+    document.getElementById("conv-" + convId)?.remove();
+    if (Number(currentConversation) === convId) {
+      currentConversation = null;
+      const emptyState = document.getElementById("emptyState");
+      const chatContent = document.getElementById("chatContent");
+      if (emptyState) emptyState.style.display = "";
+      if (chatContent) chatContent.classList.add("hidden");
+    }
   } catch { showToast("Connection error."); }
 }

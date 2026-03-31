@@ -194,20 +194,17 @@ io.on("connection", (socket) => {
   socket.join(`user:${userId}`);
   io.emit("presence", { user_id: userId, online: true });
 
-  // Auto-join all conversation rooms on connect
+  // Auto-join all conversation rooms on connect (includes hidden — so messages still arrive)
   (async () => {
     try {
-      const resp = await fetch(`${PHP_API_BASE}/conversations`, {
+      const resp = await fetch(`${PHP_API_BASE}/conversations/member-ids`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await resp.json();
-      if (resp.ok && Array.isArray(data.conversations)) {
-        for (const c of data.conversations)
-          socket.join(`conv:${c.conversation_id}`);
-        socket.emit(
-          "joined_conversations",
-          data.conversations.map((c) => c.conversation_id),
-        );
+      if (resp.ok && Array.isArray(data.conversation_ids)) {
+        for (const cid of data.conversation_ids)
+          socket.join(`conv:${cid}`);
+        socket.emit("joined_conversations", data.conversation_ids);
       } else {
         socket.emit("joined_conversations", []);
       }
@@ -603,6 +600,16 @@ io.on("connection", (socket) => {
     const cid = Number(conversation_id);
     if (!rid) return;
     io.to(`user:${rid}`).emit("request_declined", { conversation_id: cid });
+  });
+
+  // ── conversation_deleted ──────────────────────────────────────
+  // Broadcaster: notify all members to remove the conversation
+  socket.on("conversation_deleted", ({ conversation_id, member_ids }) => {
+    const cid = Number(conversation_id);
+    if (!cid || !Array.isArray(member_ids)) return;
+    member_ids.forEach((uid) => {
+      io.to(`user:${uid}`).emit("conversation_deleted", { conversation_id: cid });
+    });
   });
 
   // ── disconnect ────────────────────────────────────────────────

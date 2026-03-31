@@ -163,8 +163,8 @@ if ($method === "GET" && $path === "/conversations/unread") {
   $claims = require_auth();
   $pdo = db();
   $user_id = (int)$claims["sub"];
-  $stmt = $pdo->prepare("SELECT m.conversation_id, COUNT(m.id) AS unread_count FROM messages m JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ? LEFT JOIN conversation_read_status crs ON crs.conversation_id = m.conversation_id AND crs.user_id = ? WHERE m.sender_id <> ? AND (crs.last_read_msg_id IS NULL OR m.id > crs.last_read_msg_id) GROUP BY m.conversation_id");
-  $stmt->execute([$user_id, $user_id, $user_id]);
+  $stmt = $pdo->prepare("SELECT m.conversation_id, COUNT(m.id) AS unread_count FROM messages m JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ? LEFT JOIN conversation_read_status crs ON crs.conversation_id = m.conversation_id AND crs.user_id = ? LEFT JOIN message_hidden mh ON mh.message_id = m.id AND mh.user_id = ? WHERE m.sender_id <> ? AND (crs.last_read_msg_id IS NULL OR m.id > crs.last_read_msg_id) AND mh.message_id IS NULL GROUP BY m.conversation_id");
+  $stmt->execute([$user_id, $user_id, $user_id, $user_id]);
   $counts = [];
   foreach ($stmt->fetchAll() as $r) $counts[(int)$r["conversation_id"]] = (int)$r["unread_count"];
   json_response(["unread" => $counts]);
@@ -175,8 +175,8 @@ if ($method === "GET" && $path === "/conversations") {
   $claims = require_auth();
   $pdo = db();
   $user_id = (int)$claims["sub"];
-  $stmt = $pdo->prepare("SELECT c.id AS conversation_id, c.type, c.name, COALESCE(c.is_request, 0) AS is_request, MAX(m.created_at) AS last_message_time FROM conversations c JOIN conversation_members cm ON cm.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id WHERE cm.user_id = ? GROUP BY c.id, c.type, c.name ORDER BY last_message_time DESC, c.id DESC");
-  $stmt->execute([$user_id]);
+  $stmt = $pdo->prepare("SELECT c.id AS conversation_id, c.type, c.name, COALESCE(c.is_request, 0) AS is_request, MAX(m.created_at) AS last_message_time FROM conversations c JOIN conversation_members cm ON cm.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id LEFT JOIN conversation_hidden ch ON ch.conversation_id = c.id AND ch.user_id = ? WHERE cm.user_id = ? AND ch.conversation_id IS NULL GROUP BY c.id, c.type, c.name ORDER BY last_message_time DESC, c.id DESC");
+  $stmt->execute([$user_id, $user_id]);
   $convs = $stmt->fetchAll();
   foreach ($convs as &$c) {
     $cid = (int)$c["conversation_id"];
@@ -325,7 +325,7 @@ if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/accept$#',
   try {
     $pdo->prepare("UPDATE conversations SET is_request = 0 WHERE id = ?")->execute([$req["conversation_id"]]);
     $pdo->prepare("UPDATE message_requests SET status = 'accepted', updated_at = NOW() WHERE id = ?")->execute([$req_id]);
-    $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')")->execute([$req["conversation_id"], $user_id]);
+    $pdo->prepare("INSERT IGNORE INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')")->execute([$req["conversation_id"], $user_id]);
     $pdo->commit();
     json_response(["accepted" => true, "conversation_id" => (int)$req["conversation_id"], "requester_id" => (int)$req["requester_id"]]);
   } catch (Exception $e) {
@@ -366,6 +366,84 @@ if ($method === "GET" && $path === "/conversations/requests/count") {
   $stmt = $pdo->prepare("SELECT COUNT(*) FROM message_requests WHERE recipient_id = ? AND status = 'pending'");
   $stmt->execute([$user_id]);
   json_response(["count" => (int)$stmt->fetchColumn()]);
+}
+
+// ── DELETE /conversations/{id} ───────────────────────────────────
+if ($method === "DELETE" && preg_match('#^/conversations/(\d+)$#', $path, $m)) {
+  $claims = require_auth();
+  $pdo = db();
+  $conv_id = (int)$m[1];
+  $user_id = (int)$claims["sub"];
+
+  // Verify caller is a member
+  $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
+  $stmt->execute([$conv_id, $user_id]);
+  if (!$stmt->fetch()) json_response(["error" => "Not a member of this conversation"], 403);
+
+  $pdo->beginTransaction();
+  try {
+    // Mark conversation as hidden for current user only
+    $pdo->prepare("INSERT IGNORE INTO conversation_hidden (conversation_id, user_id) VALUES (?, ?)")->execute([$conv_id, $user_id]);
+    $pdo->prepare("DELETE FROM conversation_read_status WHERE conversation_id = ? AND user_id = ?")->execute([$conv_id, $user_id]);
+
+    // Hide all existing messages for current user (so old messages don't show if convo reappears)
+    $pdo->prepare("
+      INSERT IGNORE INTO message_hidden (message_id, user_id)
+      SELECT id, ? FROM messages WHERE conversation_id = ?
+    ")->execute([$user_id, $conv_id]);
+
+    // Check if all members have hidden this conversation
+    $stmt = $pdo->prepare("
+      SELECT COUNT(*) FROM conversation_members cm
+      LEFT JOIN conversation_hidden ch ON ch.conversation_id = cm.conversation_id AND ch.user_id = cm.user_id
+      WHERE cm.conversation_id = ? AND ch.conversation_id IS NULL
+    ");
+    $stmt->execute([$conv_id]);
+    $visible_remaining = (int)$stmt->fetchColumn();
+
+    // If no one can see it anymore, fully delete
+    if ($visible_remaining === 0) {
+      $pdo->prepare("DELETE FROM message_reactions WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_reads WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_hidden WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_flags WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM messages WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_requests WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM conversation_hidden WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM conversation_members WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM conversations WHERE id = ?")->execute([$conv_id]);
+    }
+
+    $pdo->commit();
+    json_response(["success" => true]);
+  } catch (Exception $e) {
+    $pdo->rollBack();
+    json_response(["error" => $e->getMessage()], 500);
+  }
+}
+
+// ── GET /conversations/member-ids ────────────────────────────────
+// Returns ALL conversation IDs the user belongs to (no hidden filter)
+// Used by WebSocket server to join socket rooms on connect
+if ($method === "GET" && $path === "/conversations/member-ids") {
+  $claims = require_auth();
+  $pdo = db();
+  $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT conversation_id FROM conversation_members WHERE user_id = ?");
+  $stmt->execute([$user_id]);
+  $ids = array_map("intval", $stmt->fetchAll(PDO::FETCH_COLUMN));
+  json_response(["conversation_ids" => $ids]);
+}
+
+// ── DELETE /conversations/{id}/hidden ────────────────────────────
+// Un-hide a conversation for the current user (called when new message arrives)
+if ($method === "DELETE" && preg_match('#^/conversations/(\d+)/hidden$#', $path, $m)) {
+  $claims = require_auth();
+  $pdo = db();
+  $conv_id = (int)$m[1];
+  $user_id = (int)$claims["sub"];
+  $pdo->prepare("DELETE FROM conversation_hidden WHERE conversation_id = ? AND user_id = ?")->execute([$conv_id, $user_id]);
+  json_response(["success" => true]);
 }
 
 // ── GET /conversations/is-request ────────────────────────────────
