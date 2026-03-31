@@ -201,7 +201,7 @@ io.on("connection", (socket) => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "X-Real-IP": socket.handshake.address,
+          "X-Real-IP": socket.handshake.address.replace(/^::ffff:/, ""),
         },
       });
     } catch (_) { /* non-critical */ }
