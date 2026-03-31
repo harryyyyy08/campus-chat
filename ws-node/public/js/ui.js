@@ -94,8 +94,7 @@ async function showAutoAnnouncementModal() {
   } catch {
     return;
   }
-  const tokenSuffix = String(savedToken).slice(-16);
-  const sessionKey = `cc_ann_auto_shown_${savedUser.id || "anon"}_${tokenSuffix}`;
+  const sessionKey = `cc_ann_auto_shown_${savedUser.id || "anon"}`;
   if (sessionStorage.getItem(sessionKey)) return;
 
   try {
@@ -108,6 +107,7 @@ async function showAutoAnnouncementModal() {
     const dept = String(savedUser.department || "").trim();
     const visible = list.filter((a) => {
       if (a.status !== "approved") return false;
+      if (a.is_read) return false;
       if (a.target_type === "all") return true;
       if (a.target_type !== "department") return false;
       return String(a.department || "").trim() === dept;

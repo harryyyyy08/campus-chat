@@ -17,15 +17,6 @@
 // ── GET /departments ── Public (for registration dropdown) ───────
 if ($method === "GET" && $path === "/departments") {
   $pdo = db();
-  // Auto-create departments table if it doesn't exist
-  $pdo->exec("CREATE TABLE IF NOT EXISTS `departments` (
-    `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` varchar(150) NOT NULL,
-    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_dept_name` (`name`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
   $stmt = $pdo->prepare("SELECT id, name FROM departments ORDER BY name ASC");
   $stmt->execute();
   $depts = $stmt->fetchAll();
@@ -41,15 +32,6 @@ if ($method === "GET" && $path === "/admin/departments") {
   $stmt->execute([(int)$claims["sub"]]);
   $my_role = $stmt->fetchColumn();
   if (!is_admin($my_role)) json_response(["error" => "Admin access required"], 403);
-
-  // Auto-create departments table if it doesn't exist
-  $pdo->exec("CREATE TABLE IF NOT EXISTS `departments` (
-    `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` varchar(150) NOT NULL,
-    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_dept_name` (`name`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
   $stmt = $pdo->prepare("SELECT d.id, d.name, d.created_at, COUNT(u.id) AS user_count FROM departments d LEFT JOIN users u ON u.department = d.id GROUP BY d.id, d.name, d.created_at ORDER BY d.name ASC");
   $stmt->execute();
@@ -74,15 +56,6 @@ if ($method === "POST" && $path === "/admin/departments") {
   $name = trim((string)($in["name"] ?? ""));
   if ($name === "") json_response(["error" => "Department name is required"], 400);
   if (strlen($name) > 150) json_response(["error" => "Name too long (max 150 characters)"], 400);
-
-  // Auto-create table
-  $pdo->exec("CREATE TABLE IF NOT EXISTS `departments` (
-    `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` varchar(150) NOT NULL,
-    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_dept_name` (`name`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
   // Check duplicate
   $stmt = $pdo->prepare("SELECT 1 FROM departments WHERE name = ?");
