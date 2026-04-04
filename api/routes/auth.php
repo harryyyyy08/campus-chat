@@ -8,6 +8,7 @@
  * Routes:
  * - POST /login - Authenticate user with username/password, returns JWT token
  * - POST /register - Self-registration for new users (pending admin approval)
+ * - POST /change-password - Update password (Bearer JWT; hashes with password_hash)
  * 
  * Behaviors:
  * - Login: Validates credentials, checks account status, generates JWT
@@ -65,6 +66,42 @@ if ($method === "GET" && $path === "/me") {
   if (!$me) json_response(["error" => "User not found"], 404);
   $me["id"] = (int)$me["id"];
   json_response(["user" => $me]);
+}
+
+// ── POST /change-password ────────────────────────────────────────
+if ($method === "POST" && $path === "/change-password") {
+  $claims = require_auth();
+  $in = json_input();
+  $current = (string)($in["current_password"] ?? "");
+  $new_pw  = (string)($in["new_password"] ?? "");
+  $confirm = (string)($in["confirm_password"] ?? "");
+
+  if ($current === "" || $new_pw === "" || $confirm === "") {
+    json_response(["error" => "All fields are required"], 400);
+  }
+  if ($new_pw !== $confirm) {
+    json_response(["error" => "New password and confirmation do not match"], 400);
+  }
+  if (strlen($new_pw) < 8) {
+    json_response(["error" => "Password must be at least 8 characters"], 400);
+  }
+  if ($new_pw === $current) {
+    json_response(["error" => "New password must be different from your current password"], 400);
+  }
+
+  $pdo = db();
+  $uid = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = ?");
+  $stmt->execute([$uid]);
+  $row = $stmt->fetch();
+  if (!$row) json_response(["error" => "User not found"], 404);
+  if (!password_verify($current, $row["password_hash"])) {
+    json_response(["error" => "Current password is incorrect"], 401);
+  }
+
+  $hash = password_hash($new_pw, PASSWORD_DEFAULT);
+  $pdo->prepare("UPDATE users SET password_hash = ? WHERE id = ?")->execute([$hash, $uid]);
+  json_response(["ok" => true, "message" => "Password updated successfully."]);
 }
 
 // ── GET /users/search ────────────────────────────────────────────
