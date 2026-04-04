@@ -1,0 +1,307 @@
+/* ── Geomap panel ──────────────────────────────────────────────────── */
+
+#geomapPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+#geomapMap {
+  background: var(--bg-base);
+}
+
+/* Tone down OSM tiles in dark theme */
+[data-theme="dark"] .leaflet-tile {
+  filter: brightness(0.78) saturate(0.75);
+}
+[data-theme="dark"] .leaflet-control-attribution {
+  background: rgba(13, 13, 24, 0.75) !important;
+  color: var(--text-muted) !important;
+}
+[data-theme="dark"] .leaflet-control-attribution a {
+  color: var(--accent) !important;
+}
+
+/* Leaflet popup dark-mode tweaks */
+[data-theme="dark"] .leaflet-popup-content-wrapper,
+[data-theme="dark"] .leaflet-popup-tip {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+[data-theme="dark"] .leaflet-popup-content-wrapper {
+  border: 1px solid var(--border-strong);
+}
+
+/* User count bubble on map */
+.geomap-marker-bubble {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+/* Popup internals */
+.geomap-popup-user {
+  padding: 3px 0;
+}
+.geomap-popup-username {
+  color: #999;
+  font-size: 11px;
+}
+.geomap-popup-meta {
+  font-size: 11px;
+  color: #aaa;
+}
+.geomap-popup-hr {
+  margin: 5px 0;
+  border: none;
+  border-top: 1px solid var(--border, #eee);
+}
+
+/* Right-panel user rows */
+.geomap-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  border-radius: var(--radius-sm, 6px);
+  transition: background 0.12s;
+}
+.geomap-user-row:hover {
+  background: var(--bg-sidebar-hover, rgba(139, 92, 246, 0.06));
+}
+
+.geomap-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.geomap-zone-badge {
+  display: inline-block;
+  font-size: 11px;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-top: 3px;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.geomap-unresolved {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 3px;
+  display: block;
+}
+
+/* ── Zone Modal Overlay ──────────────────────────────────────────────── */
+.zone-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+
+.zone-modal-card {
+  background: var(--bg-modal);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.zone-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.zone-modal-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.zone-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.zone-modal-close:hover {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+/* Body */
+.zone-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  max-height: calc(100vh - 180px);
+}
+
+/* Field group */
+.zone-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.zone-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.zone-modal-card .form-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.zone-modal-card .form-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg-base);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.zone-modal-card .form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.zone-modal-card textarea.form-input {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Color row — side-by-side swatch + radius */
+.zone-color-input {
+  width: 100%;
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-base);
+  cursor: pointer;
+  padding: 3px 5px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.zone-color-input:focus {
+  border-color: var(--accent);
+}
+
+/* Error */
+.zone-modal-error {
+  font-size: 12px;
+  color: var(--red);
+  padding: 8px 12px;
+  background: var(--red-soft);
+  border-radius: 7px;
+  display: none;
+}
+
+/* Footer */
+.zone-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+.zone-modal-footer.has-delete {
+  justify-content: space-between;
+}
+
+/* Buttons */
+.btn-modal-cancel {
+  background: var(--bg-base);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-modal-cancel:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.btn-modal-primary {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 20px;
+  transition: background 0.15s, opacity 0.15s;
+}
+.btn-modal-primary:hover {
+  background: var(--accent-hover);
+}
+.btn-modal-danger {
+  background: var(--red-soft);
+  color: var(--red);
+  border: 1.5px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  transition: background 0.15s;
+}
+.btn-modal-danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+}

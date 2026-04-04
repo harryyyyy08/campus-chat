@@ -111,6 +111,7 @@ if ($method === "GET" && $path === "/messages") {
       LEFT JOIN attachments a ON a.id = m.attachment_id
       LEFT JOIN message_hidden mh ON mh.message_id = m.id AND mh.user_id = ?
       WHERE m.conversation_id = ?
+        AND mh.message_id IS NULL
         AND m.created_at >= NOW() - INTERVAL 5 DAY
       ORDER BY m.created_at DESC, m.id DESC LIMIT ?");
     $stmt->bindValue(1, $user_id, PDO::PARAM_INT);

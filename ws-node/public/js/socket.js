@@ -79,7 +79,7 @@ function connectSocket() {
   socket = io(WS_BASE, { auth: { token } });
   socket.on("connect", () => socket.emit("who_is_online"));
 
-  socket.on("new_message", (msg) => {
+  socket.on("new_message", async (msg) => {
     // DEBUG: log attachments received
     console.log(
       "[new_message] attachments:",
@@ -88,6 +88,15 @@ function connectSocket() {
       "attachment:",
       msg.attachment,
     );
+    // If conversation is hidden (deleted for me), un-hide it so it reappears
+    const inCache = conversationsCache.some(c => c.conversation_id === msg.conversation_id);
+    if (!inCache) {
+      await fetch(`${API_BASE}/conversations/${msg.conversation_id}/hidden`, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + token },
+      }).catch(() => {});
+      await loadConversations();
+    }
     if (msg.conversation_id === currentConversation) {
       renderMessage(msg);
       socket.emit("mark_seen", { conversation_id: msg.conversation_id });
@@ -318,6 +327,20 @@ function connectSocket() {
       if (emptyState) emptyState.style.display = "";
       if (chatContent) chatContent.classList.add("hidden");
       showPendingRequestBanner(false);
+    }
+  });
+
+  // ── conversation_deleted ─────────────────────────────────────
+  socket.on("conversation_deleted", ({ conversation_id }) => {
+    const cid = Number(conversation_id);
+    conversationsCache = conversationsCache.filter(c => c.conversation_id !== cid);
+    document.getElementById("conv-" + cid)?.remove();
+    if (Number(currentConversation) === cid) {
+      currentConversation = null;
+      const emptyState = document.getElementById("emptyState");
+      const chatContent = document.getElementById("chatContent");
+      if (emptyState) emptyState.style.display = "";
+      if (chatContent) chatContent.classList.add("hidden");
     }
   });
 

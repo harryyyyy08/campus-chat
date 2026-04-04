@@ -12,7 +12,6 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/login.css" />
-  <link rel="stylesheet" href="vendor/altcha/altcha.css" />
 </head>
 
 <body>
@@ -61,11 +60,6 @@
         </div>
       </div>
 
-      <div class="field-group" style="margin-top: 12px; display: flex; justify-content: center;">
-        <altcha-widget id="loginAltcha" auto="off" hidelogo hidefooter
-          style="display:block;max-width:100%;"></altcha-widget>
-      </div>
-
       <button class="btn-primary" onclick="doLogin()">Sign In</button>
       <p id="loginError"></p>
 
@@ -80,7 +74,6 @@
     </div>
   </div>
 
-  <script type="module" src="vendor/altcha/altcha.js"></script>
   <script>
     // ── Theme ──────────────────────────────────────
     (function () {
@@ -92,41 +85,6 @@
     const _host = window.location.hostname;
     const API_BASE = `http://${_host}/campus-chat/api/index.php`;
     const WS_URL = `http://${_host}:3001`;
-    const LOGIN_ALTCHA_SCOPE = "login";
-
-    function configureAltchaWidget(widgetId, scope) {
-      const widget = document.getElementById(widgetId);
-      if (!widget) return;
-      widget.setAttribute("challengeurl", `${API_BASE}/altcha/challenge?scope=${encodeURIComponent(scope)}`);
-      widget.setAttribute("workerurl", "./worker.js");
-      widget.setAttribute("verifyurl", `${API_BASE}/altcha/verify-code`);
-    }
-
-    async function readAltchaPayload(widgetId) {
-      const widget = document.getElementById(widgetId);
-      if (!widget) return "";
-
-      const readPayload = () => {
-        const hidden = widget.querySelector('input[type="hidden"][name="altcha"]');
-        return hidden ? String(hidden.value || "").trim() : "";
-      };
-
-      let payload = readPayload();
-      if (payload) return payload;
-
-      if (typeof widget.verify === "function") {
-        try {
-          await widget.verify();
-        } catch (_err) {
-          // The widget manages its own error state in UI.
-        }
-        payload = readPayload();
-      }
-      return payload;
-    }
-
-    configureAltchaWidget("loginAltcha", LOGIN_ALTCHA_SCOPE);
-
     // ── Password toggle ────────────────────────────
     document.querySelectorAll(".password-toggle").forEach(btn => {
       const input = document.getElementById(btn.dataset.target);
@@ -163,12 +121,6 @@
         return;
       }
 
-      const altcha = await readAltchaPayload("loginAltcha");
-      if (!altcha) {
-        errEl.textContent = "Please complete the security verification.";
-        return;
-      }
-
       const btn = document.querySelector(".btn-primary");
       btn.disabled = true;
       btn.textContent = "Signing in…";
@@ -177,7 +129,7 @@
         const res = await fetch(`${API_BASE}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password, altcha }),
+          body: JSON.stringify({ username, password }),
         });
         const data = await res.json();
 
