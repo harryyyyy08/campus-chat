@@ -61,6 +61,13 @@ async function initAdminApp(user) {
   initAdminSocket(adminToken); // ← TAWAGAN DITO
 
   await loadUsers();
+
+  // Prefetch reset requests so badge and popup are visible immediately after login.
+  setTimeout(() => {
+    if (typeof loadResetRequests === "function") {
+      loadResetRequests({ showLoginPopup: true });
+    }
+  }, 0);
 }
 
 // ── Admin Socket — LABAS ng initAdminApp ──────

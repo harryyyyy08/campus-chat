@@ -155,7 +155,9 @@ app.get("/api/security-questions/list", async (req, res) => {
   try {
     await forwardPhpJsonRequest(req, res, "/security-questions/list");
   } catch (err) {
-    res.status(502).json({ error: `Security questions proxy error: ${err.message}` });
+    res
+      .status(502)
+      .json({ error: `Security questions proxy error: ${err.message}` });
   }
 });
 
@@ -163,21 +165,19 @@ app.post("/api/security-questions/setup", async (req, res) => {
   try {
     await forwardPhpJsonRequest(req, res, "/security-questions/setup");
   } catch (err) {
-    res.status(502).json({ error: `Security questions setup proxy error: ${err.message}` });
+    res
+      .status(502)
+      .json({ error: `Security questions setup proxy error: ${err.message}` });
   }
 });
 
-app.get("/api/forgot-password/questions", async (req, res) => {
+app.post("/api/forgot-password/questions", async (req, res) => {
   try {
-    const queryIndex = req.originalUrl.indexOf("?");
-    const query = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : "";
-    const upstream = await fetch(`${PHP_API_BASE}/forgot-password/questions${query}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    });
-    await forwardAltchaResponse(upstream, res);
+    await forwardPhpJsonRequest(req, res, "/forgot-password/questions");
   } catch (err) {
-    res.status(502).json({ error: `Forgot password questions proxy error: ${err.message}` });
+    res
+      .status(502)
+      .json({ error: `Forgot password questions proxy error: ${err.message}` });
   }
 });
 
@@ -185,7 +185,9 @@ app.post("/api/forgot-password/verify", async (req, res) => {
   try {
     await forwardPhpJsonRequest(req, res, "/forgot-password/verify");
   } catch (err) {
-    res.status(502).json({ error: `Forgot password verify proxy error: ${err.message}` });
+    res
+      .status(502)
+      .json({ error: `Forgot password verify proxy error: ${err.message}` });
   }
 });
 
@@ -193,7 +195,9 @@ app.post("/api/forgot-password/reset", async (req, res) => {
   try {
     await forwardPhpJsonRequest(req, res, "/forgot-password/reset");
   } catch (err) {
-    res.status(502).json({ error: `Forgot password reset proxy error: ${err.message}` });
+    res
+      .status(502)
+      .json({ error: `Forgot password reset proxy error: ${err.message}` });
   }
 });
 
@@ -201,7 +205,19 @@ app.post("/api/forgot-username", async (req, res) => {
   try {
     await forwardPhpJsonRequest(req, res, "/forgot-username");
   } catch (err) {
-    res.status(502).json({ error: `Forgot username proxy error: ${err.message}` });
+    res
+      .status(502)
+      .json({ error: `Forgot username proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/request-admin-reset", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/request-admin-reset");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Admin reset request proxy error: ${err.message}` });
   }
 });
 

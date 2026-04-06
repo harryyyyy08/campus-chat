@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 06, 2026 at 08:48 AM
+-- Generation Time: Apr 06, 2026 at 02:32 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -223,13 +223,14 @@ CREATE TABLE `conversation_read_status` (
 --
 
 INSERT INTO `conversation_read_status` (`conversation_id`, `user_id`, `last_read_at`, `last_read_msg_id`) VALUES
-(2, 10, '2026-03-30 09:13:49', 85),
-(2, 11, '2026-03-30 08:21:44', 77),
+(2, 10, '2026-04-06 16:10:08', 85),
+(2, 11, '2026-04-06 15:24:56', 85),
 (3, 5, '2026-03-28 14:43:40', 50),
 (3, 12, '2026-03-30 08:22:48', 50),
-(4, 10, '2026-03-28 14:46:43', 49),
-(4, 11, '2026-03-28 14:51:29', 49),
-(4, 12, '2026-03-30 08:22:40', 49),
+(4, 4, '2026-04-06 15:24:15', 86),
+(4, 10, '2026-04-06 16:10:08', 86),
+(4, 11, '2026-04-06 15:24:56', 86),
+(4, 12, '2026-04-06 15:22:00', 86),
 (5, 5, '2026-03-30 09:30:34', 58),
 (5, 14, '2026-03-29 18:13:21', 58),
 (6, 6, '2026-03-28 14:50:16', 28),
@@ -239,9 +240,9 @@ INSERT INTO `conversation_read_status` (`conversation_id`, `user_id`, `last_read
 (9, 14, '2026-03-30 08:23:21', 80),
 (10, 5, '2026-03-28 14:43:30', 46),
 (10, 6, '2026-03-28 14:49:19', 46),
-(11, 10, '2026-03-30 08:24:01', 81),
+(11, 10, '2026-04-06 15:20:55', 81),
 (11, 14, '2026-03-30 08:23:25', 81),
-(13, 11, '2026-03-30 08:23:45', 82),
+(13, 11, '2026-04-06 15:24:55', 82),
 (13, 12, '2026-03-30 09:26:52', 82);
 
 -- --------------------------------------------------------
@@ -375,9 +376,10 @@ INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `attachmen
 (80, 9, 14, 'hello123', NULL, 'sent', 0, NULL, 0, '2026-03-30 08:23:21', '2026-03-30 08:23:21'),
 (81, 11, 14, 'test123', NULL, 'seen', 0, NULL, 0, '2026-03-30 08:23:25', '2026-03-30 08:24:01'),
 (82, 13, 11, 'test123', NULL, 'seen', 0, NULL, 0, '2026-03-30 08:23:44', '2026-03-30 09:26:52'),
-(83, 2, 10, 'testing123', NULL, 'sent', 0, NULL, 0, '2026-03-30 08:24:04', '2026-03-30 08:24:04'),
-(84, 2, 10, 'this is test', NULL, 'sent', 0, NULL, 0, '2026-03-30 09:03:15', '2026-03-30 09:03:15'),
-(85, 2, 10, '123', NULL, 'sent', 0, NULL, 0, '2026-03-30 09:03:17', '2026-03-30 09:03:17');
+(83, 2, 10, 'testing123', NULL, 'seen', 0, NULL, 0, '2026-03-30 08:24:04', '2026-04-06 15:24:53'),
+(84, 2, 10, 'this is test', NULL, 'seen', 0, NULL, 0, '2026-03-30 09:03:15', '2026-04-06 15:24:53'),
+(85, 2, 10, '123', NULL, 'seen', 0, NULL, 0, '2026-03-30 09:03:17', '2026-04-06 15:24:53'),
+(86, 4, 10, 'Hi! Everyone!', NULL, 'delivered', 0, NULL, 0, '2026-04-06 15:21:04', '2026-04-06 15:22:00');
 
 -- --------------------------------------------------------
 
@@ -532,7 +534,17 @@ INSERT INTO `message_reads` (`id`, `message_id`, `user_id`, `read_at`) VALUES
 (87, 77, 10, '2026-03-30 08:24:02'),
 (88, 82, 12, '2026-03-30 09:26:52'),
 (89, 55, 5, '2026-03-30 09:30:34'),
-(90, 58, 5, '2026-03-30 09:30:34');
+(90, 58, 5, '2026-03-30 09:30:34'),
+(91, 86, 12, '2026-04-06 15:22:00'),
+(92, 86, 11, '2026-04-06 15:23:08'),
+(93, 14, 4, '2026-04-06 15:24:15'),
+(94, 16, 4, '2026-04-06 15:24:15'),
+(95, 18, 4, '2026-04-06 15:24:15'),
+(96, 49, 4, '2026-04-06 15:24:15'),
+(97, 86, 4, '2026-04-06 15:24:15'),
+(98, 83, 11, '2026-04-06 15:24:53'),
+(99, 84, 11, '2026-04-06 15:24:53'),
+(100, 85, 11, '2026-04-06 15:24:53');
 
 -- --------------------------------------------------------
 
@@ -581,9 +593,13 @@ CREATE TABLE `password_reset_requests` (
 --
 
 INSERT INTO `password_reset_requests` (`id`, `user_id`, `status`, `reset_method`, `reset_token`, `token_expires_at`, `attempts`, `temp_plain`, `requested_at`, `resolved_at`) VALUES
-(3, 12, 'rejected', 'self_service', 'c2d7c8472acd860824cccfadacba301bee2593e1d3b63af70285cf081bfe594a', '2026-04-06 07:34:19', 0, NULL, '2026-04-06 13:19:19', '2026-04-06 13:21:22'),
-(4, 12, 'completed', 'self_service', 'ec5b2154537fcfe113311bc9f49987c80fc45cde376a1f776dd7e2ef431fdf81', '2026-04-06 07:36:44', 0, NULL, '2026-04-06 13:21:22', '2026-04-06 13:22:03'),
-(5, 10, 'pending', 'self_service', '398d652990210dfffef93ac2e42df9d61c4b7b0ace09a23c9ec545ef4a09d7ef', '2026-04-06 09:02:13', 0, NULL, '2026-04-06 14:47:13', NULL);
+(7, 10, 'rejected', 'self_service', '8cc2f118239009fdbe44930ab5792b4356369d9c0eb350e5ee4f4344236de929', '2026-04-06 14:05:48', 0, NULL, '2026-04-06 19:50:48', '2026-04-06 19:51:21'),
+(8, 10, 'rejected', 'self_service', '8fcf8ad49f5c3ef4f282bc9e1537352b6807c02d542bd771da48dfd780dbba06', '2026-04-06 14:06:21', 0, NULL, '2026-04-06 19:51:21', '2026-04-06 19:51:59'),
+(9, 10, 'rejected', 'self_service', 'bb17bfb64c7b3332cbbc1ceb6c5ad7d66ca596d9b64ce49915c9aca7442bb8d4', '2026-04-06 14:06:59', 0, NULL, '2026-04-06 19:51:59', '2026-04-06 19:52:33'),
+(10, 10, 'rejected', 'self_service', '49e5a97aa89f7f240607a5474e73b24f9772020ed99a8b92fc24f1472b9a4a81', '2026-04-06 14:07:33', 0, NULL, '2026-04-06 19:52:33', '2026-04-06 19:53:11'),
+(11, 10, 'rejected', 'self_service', '1b68458c6a6ed03f028191901f5c7e5ebcbab503bbebe694e95554c62257a6a7', '2026-04-06 14:08:11', 0, NULL, '2026-04-06 19:53:11', '2026-04-06 20:02:33'),
+(12, 10, 'pending', 'self_service', '91d780ae38e190957af75d77470a93a3a4d3efb96e654eff973335ca0a08f14f', '2026-04-06 14:17:33', 0, NULL, '2026-04-06 20:02:33', NULL),
+(13, 10, 'pending', 'admin', NULL, NULL, 0, NULL, '2026-04-06 20:14:06', NULL);
 
 -- --------------------------------------------------------
 
@@ -618,8 +634,8 @@ INSERT INTO `users` (`id`, `username`, `full_name`, `contact_number`, `password_
 (6, 'faculty_jdela', 'John Dela Pena', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'faculty', 3, 0, '2026-03-20 08:05:00', '2026-03-20 08:05:00'),
 (7, 'faculty_apatel', 'Aisha Patel', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'faculty', 1, 0, '2026-03-20 08:06:00', '2026-03-20 08:06:00'),
 (8, 'faculty_cgomez', 'Carlos Gomez', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'faculty', 4, 0, '2026-03-20 08:08:00', '2026-03-20 08:08:00'),
-(9, 'stud_aaron', 'Aaron Lim', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 1, '2026-03-20 08:20:00', '2026-03-20 08:20:00'),
-(10, 'stud_bea', 'Bea Martinez', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 1, '2026-03-20 08:22:00', '2026-04-06 05:09:59'),
+(9, 'stud_aaron', 'Aaron Lim', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 0, '2026-03-20 08:20:00', '2026-04-06 07:09:12'),
+(10, 'stud_bea', 'Bea Martinez', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 0, '2026-03-20 08:22:00', '2026-04-06 07:09:14'),
 (11, 'stud_carlo', 'Carlo Villanueva', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 0, '2026-03-20 08:24:00', '2026-03-20 08:24:00'),
 (12, 'stud_diana', 'Diana Uy', NULL, '$2y$10$k1xJUjopPA0TnW4TMF1d7et6ZsbfJcbTfr1/kJJNTVDRyeW45eiPS', 'active', 'student', 6, 0, '2026-03-20 08:26:00', '2026-04-06 05:22:03'),
 (13, 'stud_elijah', 'Elijah Navarro', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 0, '2026-03-20 08:28:00', '2026-03-20 08:28:00'),
@@ -645,24 +661,46 @@ INSERT INTO `users` (`id`, `username`, `full_name`, `contact_number`, `password_
 CREATE TABLE `user_security_questions` (
   `id` int(10) UNSIGNED NOT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
-  `question_set` tinyint(1) NOT NULL COMMENT '1 or 2',
-  `question_index` tinyint(1) NOT NULL COMMENT '1-5 (which question they picked from the set)',
-  `answer_hash` varchar(255) NOT NULL COMMENT 'bcrypt hash of lowercase answer',
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `q1_index` tinyint(3) UNSIGNED NOT NULL,
+  `q1_answer_hash` varchar(255) NOT NULL,
+  `q2_index` tinyint(3) UNSIGNED NOT NULL,
+  `q2_answer_hash` varchar(255) NOT NULL,
+  `q3_index` tinyint(3) UNSIGNED NOT NULL,
+  `q3_answer_hash` varchar(255) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_security_questions`
 --
 
-INSERT INTO `user_security_questions` (`id`, `user_id`, `question_set`, `question_index`, `answer_hash`, `created_at`, `updated_at`) VALUES
-(1, 10, 1, 1, '$2y$10$y69qSYmcb1EW4cHEGvk7g..zEfj0Wo.QfM7Pr0Llg7Y9SqHBOfPQq', '2026-04-06 12:59:59', '2026-04-06 12:59:59'),
-(2, 10, 2, 1, '$2y$10$k/u9JiWJctkXgX.QfL/et.KDAnviHCD0IEDEzvGoEtBP7jzxpHWbC', '2026-04-06 12:59:59', '2026-04-06 12:59:59'),
-(3, 12, 1, 1, '$2y$10$TZE7VMHdkzRhQnTESrchu.wg7L8Su4bo2LT9vVMTxOI5kcHZ.in/a', '2026-04-06 13:15:12', '2026-04-06 13:15:12'),
-(4, 12, 2, 1, '$2y$10$RwBMMbExpGSYmKCGpxLjluLycinve.FiW4PAzHadNBCl0D0rC5Y1e', '2026-04-06 13:15:12', '2026-04-06 13:15:12'),
-(5, 4, 1, 1, '$2y$10$lf1N.yTpBR.1vKqUpw56Le.TAbOO3qqwcp9VtsT//KPuj3qCuReRi', '2026-04-06 13:27:07', '2026-04-06 13:27:07'),
-(6, 4, 2, 1, '$2y$10$/zevDIgKM9z1cZuN7eXo4eEz1N1NPo.NRcpGIZEn9tyj2eAQJ0lZe', '2026-04-06 13:27:07', '2026-04-06 13:27:07');
+INSERT INTO `user_security_questions` (`id`, `user_id`, `q1_index`, `q1_answer_hash`, `q2_index`, `q2_answer_hash`, `q3_index`, `q3_answer_hash`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(2, 2, 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(3, 3, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(4, 4, 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(5, 5, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(6, 6, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(7, 7, 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(8, 8, 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(9, 9, 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(10, 10, 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(11, 11, 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(12, 12, 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(13, 13, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(14, 14, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(15, 15, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(16, 16, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(17, 17, 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(18, 18, 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(19, 19, 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(20, 20, 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(21, 21, 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(22, 22, 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(23, 23, 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 4, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 5, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(24, 24, 1, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00'),
+(25, 25, 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 2, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', 3, '$2y$10$/L1J0xRF5.DtggUAs4LnGOYOHCYMqqMSpRl./h4xS3xIfgaR7.7b6', '2026-04-06 15:06:00', '2026-04-06 15:06:00');
 
 --
 -- Indexes for dumped tables
@@ -820,7 +858,7 @@ ALTER TABLE `users`
 --
 ALTER TABLE `user_security_questions`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_user_question_set` (`user_id`,`question_set`);
+  ADD UNIQUE KEY `user_id` (`user_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -854,7 +892,7 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
 
 --
 -- AUTO_INCREMENT for table `message_flags`
@@ -872,7 +910,7 @@ ALTER TABLE `message_reactions`
 -- AUTO_INCREMENT for table `message_reads`
 --
 ALTER TABLE `message_reads`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=91;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
 
 --
 -- AUTO_INCREMENT for table `message_requests`
@@ -884,7 +922,7 @@ ALTER TABLE `message_requests`
 -- AUTO_INCREMENT for table `password_reset_requests`
 --
 ALTER TABLE `password_reset_requests`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -896,7 +934,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_security_questions`
 --
 ALTER TABLE `user_security_questions`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- Constraints for dumped tables
@@ -1012,7 +1050,7 @@ ALTER TABLE `users`
 -- Constraints for table `user_security_questions`
 --
 ALTER TABLE `user_security_questions`
-  ADD CONSTRAINT `fk_usq_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `user_security_questions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

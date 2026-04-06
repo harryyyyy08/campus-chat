@@ -13,8 +13,13 @@
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/login.css" />
   <style>
-    .state { display: none; }
-    .state.active { display: block; }
+    .state {
+      display: none;
+    }
+
+    .state.active {
+      display: block;
+    }
 
     .sq-info {
       font-size: 13px;
@@ -65,7 +70,9 @@
       border-radius: 8px;
     }
 
-    .field-group + .field-group { margin-top: 16px; }
+    .field-group+.field-group {
+      margin-top: 16px;
+    }
 
     .sq-divider {
       height: 1px;
@@ -92,7 +99,10 @@
       text-decoration: none;
       margin-top: 16px;
     }
-    .fp-back-link:hover { text-decoration: underline; }
+
+    .fp-back-link:hover {
+      text-decoration: underline;
+    }
 
     .fp-success-icon {
       width: 52px;
@@ -137,6 +147,7 @@
       padding-top: 14px;
       border-top: 1px solid var(--border);
     }
+
     .admin-fallback a {
       color: var(--text-secondary);
       text-decoration: underline;
@@ -165,7 +176,9 @@
       <!-- State 1: Loading -->
       <div id="stateLoading" class="state active">
         <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">
-          <div style="width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;"></div>
+          <div
+            style="width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;">
+          </div>
           Loading security questions…
         </div>
       </div>
@@ -207,11 +220,12 @@
         </div>
 
         <p id="sqError" style="color:var(--error,#ef4444);font-size:13px;margin:12px 0 0;min-height:18px;"></p>
-        <button class="btn-primary" id="btnVerify" onclick="verifyAnswers()" style="margin-top:8px;">Verify Answers</button>
+        <button class="btn-primary" id="btnVerify" onclick="verifyAnswers()" style="margin-top:8px;">Verify
+          Answers</button>
 
         <div class="admin-fallback">
           Forgot your answers?<br>
-          <a href="forgot-password.html">Contact your administrator</a> for help.
+          <a href="request-reset.html">Contact your administrator</a> for help.
         </div>
         <a class="fp-back-link" href="login.html">← Back to Login</a>
       </div>
@@ -253,7 +267,8 @@
         <div class="field-group">
           <label for="confirmPassword">Confirm Password</label>
           <div class="password-field">
-            <input id="confirmPassword" type="password" placeholder="Re-enter new password" autocomplete="new-password" />
+            <input id="confirmPassword" type="password" placeholder="Re-enter new password"
+              autocomplete="new-password" />
             <button type="button" class="password-toggle" aria-label="Show password" data-target="confirmPassword">
               <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -273,7 +288,8 @@
         </div>
 
         <p id="resetError" style="color:var(--error,#ef4444);font-size:13px;margin:12px 0 0;min-height:18px;"></p>
-        <button class="btn-primary" id="btnReset" onclick="resetPassword()" style="margin-top:8px;">Reset Password</button>
+        <button class="btn-primary" id="btnReset" onclick="resetPassword()" style="margin-top:8px;">Reset
+          Password</button>
       </div>
 
       <!-- State 4: Success -->
@@ -290,7 +306,8 @@
           Your password has been updated successfully.<br><br>
           You can now sign in with your new password.
         </div>
-        <a class="btn-primary" href="login.html" style="display:block;text-align:center;text-decoration:none;">Go to Login</a>
+        <a class="btn-primary" href="login.html" style="display:block;text-align:center;text-decoration:none;">Go to
+          Login</a>
       </div>
 
       <!-- State 5: Error -->
@@ -307,7 +324,8 @@
         <div class="fp-success-body" id="stateErrorMsg">
           This reset link is invalid or has expired. Please start the process again.
         </div>
-        <a class="btn-primary" href="forgot-password.html" style="display:block;text-align:center;text-decoration:none;">Try Again</a>
+        <a class="btn-primary" href="forgot-password.html"
+          style="display:block;text-align:center;text-decoration:none;">Try Again</a>
         <a class="fp-back-link" href="login.html">← Back to Login</a>
       </div>
 
@@ -326,6 +344,7 @@
     const REQUEST_API_BASE = window.location.port === "3001"
       ? `${window.location.origin}/api`
       : API_BASE;
+    const FPR_TOKEN_STORAGE_KEY = "cc_fpr_token";
 
     let currentToken = "";
     let resetToken = "";
@@ -358,11 +377,10 @@
       });
     });
 
-    // Get token from URL
-    const params = new URLSearchParams(window.location.search);
-    currentToken = params.get("token") || "";
+    currentToken = (sessionStorage.getItem(FPR_TOKEN_STORAGE_KEY) || "").trim();
 
     if (!currentToken) {
+      document.getElementById("stateErrorMsg").textContent = "Reset session missing or expired. Please start the process again.";
       showState("stateError");
     } else {
       loadQuestions();
@@ -370,10 +388,15 @@
 
     async function loadQuestions() {
       try {
-        const res = await fetch(`${REQUEST_API_BASE}/forgot-password/questions?token=${encodeURIComponent(currentToken)}`);
+        const res = await fetch(`${REQUEST_API_BASE}/forgot-password/questions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: currentToken }),
+        });
         const data = await res.json();
 
         if (!res.ok || data.error) {
+          sessionStorage.removeItem(FPR_TOKEN_STORAGE_KEY);
           document.getElementById("stateErrorMsg").textContent = data.error || "Invalid token.";
           showState("stateError");
           return;
@@ -438,6 +461,7 @@
 
         // Success — show password reset form
         resetToken = data.reset_token;
+        sessionStorage.removeItem(FPR_TOKEN_STORAGE_KEY);
         showState("stateReset");
         document.getElementById("newPassword").focus();
       } catch {

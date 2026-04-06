@@ -344,24 +344,28 @@ if ($method === "POST" && $path === "/altcha/verify-code") {
 
 // ── POST /login ──────────────────────────────────────────────────
 if ($method === "POST" && $path === "/login") {
-  // Rate limiting: max 10 attempts per IP per 15 minutes
-  $ip       = $_SERVER["REMOTE_ADDR"] ?? "unknown";
-  $rl_file  = sys_get_temp_dir() . "/cc_rl_" . md5($ip) . ".json";
+  $ip = $_SERVER["REMOTE_ADDR"] ?? "unknown";
+  $in = json_input();
+  $username = trim((string)($in["username"] ?? ""));
+  $password = (string)($in["password"] ?? "");
+  if ($username === "" || $password === "") json_response(["error" => "username and password required"], 400);
+
+  // Rate limiting: max 10 attempts per username+IP per 15 minutes
+  $rl_key  = strtolower($username) . "|" . $ip;
+  $rl_file = sys_get_temp_dir() . "/cc_rl_login_" . md5($rl_key) . ".json";
   $now      = time();
   $window   = 15 * 60; // 15 minutes
   $max_attempts = 10;
 
-  $rl = file_exists($rl_file) ? json_decode(file_get_contents($rl_file), true) : ["count" => 0, "since" => $now];
+  $rl_raw = file_exists($rl_file) ? json_decode((string)file_get_contents($rl_file), true) : null;
+  $rl = is_array($rl_raw) ? $rl_raw : ["count" => 0, "since" => $now];
+  $rl["count"] = (int)($rl["count"] ?? 0);
+  $rl["since"] = (int)($rl["since"] ?? $now);
   if (($now - $rl["since"]) > $window) $rl = ["count" => 0, "since" => $now]; // reset window
   if ($rl["count"] >= $max_attempts) {
     $retry_after = $window - ($now - $rl["since"]);
     json_response(["error" => "Too many login attempts. Try again in " . ceil($retry_after / 60) . " minute(s)."], 429);
   }
-
-  $in = json_input();
-  $username = trim($in["username"] ?? "");
-  $password = (string)($in["password"] ?? "");
-  if ($username === "" || $password === "") json_response(["error" => "username and password required"], 400);
   require_altcha($in, ["login", "admin-login"]);
 
   $pdo  = db();
@@ -370,7 +374,7 @@ if ($method === "POST" && $path === "/login") {
   $user = $stmt->fetch();
   if (!$user || !password_verify($password, $user["password_hash"])) {
     $rl["count"]++;
-    file_put_contents($rl_file, json_encode($rl));
+    file_put_contents($rl_file, json_encode($rl), LOCK_EX);
     json_response(["error" => "Invalid credentials"], 401);
   }
   if ($user["status"] === "pending")  json_response(["error" => "Your account is pending admin approval"], 403);
@@ -619,11 +623,16 @@ if ($method === "POST" && $path === "/forgot-password") {
   $username = strtolower(trim((string)($in["username"] ?? "")));
   if ($username === "") json_response(["error" => "Username is required"], 400);
 
-  // Rate limit: max 5 requests per username per hour
-  $rl_file = sys_get_temp_dir() . "/cc_fpr_" . md5($username) . ".json";
+  // Rate limit: max 5 requests per username+IP per hour
+  $ip = $_SERVER["REMOTE_ADDR"] ?? "unknown";
+  $rl_key = $username . "|" . $ip;
+  $rl_file = sys_get_temp_dir() . "/cc_fpr_" . md5($rl_key) . ".json";
   $now     = time();
   $window  = 60 * 60;
-  $rl = file_exists($rl_file) ? json_decode(file_get_contents($rl_file), true) : ["count" => 0, "since" => $now];
+  $rl_raw = file_exists($rl_file) ? json_decode((string)file_get_contents($rl_file), true) : null;
+  $rl = is_array($rl_raw) ? $rl_raw : ["count" => 0, "since" => $now];
+  $rl["count"] = (int)($rl["count"] ?? 0);
+  $rl["since"] = (int)($rl["since"] ?? $now);
   if (($now - $rl["since"]) > $window) $rl = ["count" => 0, "since" => $now];
   if ($rl["count"] >= 5) {
     json_response(["error" => "Too many requests. Please try again after 1 hour."], 429);
@@ -635,7 +644,7 @@ if ($method === "POST" && $path === "/forgot-password") {
   $user = $stmt->fetch();
 
   $rl["count"]++;
-  file_put_contents($rl_file, json_encode($rl));
+  file_put_contents($rl_file, json_encode($rl), LOCK_EX);
 
   // Prevent username enumeration — same response shape regardless
   if (!$user || $user["status"] !== "active") {
@@ -672,9 +681,10 @@ if ($method === "POST" && $path === "/forgot-password") {
   }
 }
 
-// ── GET /forgot-password/questions ─────────────────────────────────
-if ($method === "GET" && $path === "/forgot-password/questions") {
-  $token = trim((string)($_GET["token"] ?? ""));
+// ── POST /forgot-password/questions ────────────────────────────────
+if ($method === "POST" && $path === "/forgot-password/questions") {
+  $in = json_input();
+  $token = trim((string)($in["token"] ?? ""));
   if ($token === "") json_response(["error" => "Token is required"], 400);
 
   $pdo  = db();
@@ -823,4 +833,51 @@ if ($method === "POST" && $path === "/forgot-username") {
   }
 
   json_response(["found" => true, "username" => $row["username"]]);
+}
+
+// ── POST /request-admin-reset ─────────────────────────────────────
+// Used when a user forgot their security question answers and needs
+// an admin to manually reset their password.
+if ($method === "POST" && $path === "/request-admin-reset") {
+  $in       = json_input();
+  $username = strtolower(trim((string)($in["username"] ?? "")));
+  if ($username === "") json_response(["error" => "Username is required"], 400);
+
+  // Rate limit: max 5 requests per IP per hour
+  $ip = $_SERVER["REMOTE_ADDR"] ?? "unknown";
+  $rl_key  = "admin_reset|" . $ip;
+  $rl_file = sys_get_temp_dir() . "/cc_arr_" . md5($rl_key) . ".json";
+  $now     = time();
+  $window  = 60 * 60;
+  $rl_raw  = file_exists($rl_file) ? json_decode((string)file_get_contents($rl_file), true) : null;
+  $rl = is_array($rl_raw) ? $rl_raw : ["count" => 0, "since" => $now];
+  $rl["count"] = (int)($rl["count"] ?? 0);
+  $rl["since"] = (int)($rl["since"] ?? $now);
+  if (($now - $rl["since"]) > $window) $rl = ["count" => 0, "since" => $now];
+  if ($rl["count"] >= 5) {
+    json_response(["error" => "Too many requests. Please try again after 1 hour."], 429);
+  }
+
+  $pdo  = db();
+  $stmt = $pdo->prepare("SELECT id, status FROM users WHERE username = ?");
+  $stmt->execute([$username]);
+  $user = $stmt->fetch();
+
+  $rl["count"]++;
+  file_put_contents($rl_file, json_encode($rl), LOCK_EX);
+
+  // Always return success to prevent username enumeration
+  if (!$user || $user["status"] !== "active") {
+    json_response(["submitted" => true, "message" => "If this account exists, a reset request has been submitted. Please contact your administrator."]);
+  }
+
+  // Check if there's already a pending admin reset request for this user
+  $stmt = $pdo->prepare("SELECT id FROM password_reset_requests WHERE user_id = ? AND status = 'pending' AND reset_method = 'admin'");
+  $stmt->execute([(int)$user["id"]]);
+  if (!$stmt->fetch()) {
+    $pdo->prepare("INSERT INTO password_reset_requests (user_id, reset_method) VALUES (?, 'admin')")
+      ->execute([(int)$user["id"]]);
+  }
+
+  json_response(["submitted" => true, "message" => "Request submitted. Please contact your administrator to verify your identity."]);
 }
