@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 30, 2026 at 03:37 AM
+-- Generation Time: Apr 06, 2026 at 08:48 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -73,7 +73,8 @@ INSERT INTO `announcement_reads` (`announcement_id`, `user_id`, `read_at`) VALUE
 (1, 11, '2026-03-28 14:49:48'),
 (1, 12, '2026-03-30 09:27:01'),
 (2, 5, '2026-03-30 09:30:44'),
-(2, 10, '2026-03-30 09:28:39');
+(2, 10, '2026-03-30 09:28:39'),
+(2, 12, '2026-04-06 12:25:45');
 
 -- --------------------------------------------------------
 
@@ -133,27 +134,14 @@ INSERT INTO `conversations` (`id`, `type`, `name`, `is_request`, `created_at`, `
 -- --------------------------------------------------------
 
 --
--- Table structure for table `departments`
+-- Table structure for table `conversation_hidden`
 --
 
-CREATE TABLE `departments` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `name` varchar(150) NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+CREATE TABLE `conversation_hidden` (
+  `conversation_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `hidden_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `departments`
---
-
-INSERT INTO `departments` (`id`, `name`, `created_at`) VALUES
-(1, 'Business', '2026-03-20 07:00:00'),
-(2, 'Computer Science', '2026-03-20 07:00:00'),
-(3, 'Engineering', '2026-03-20 07:00:00'),
-(4, 'Humanities', '2026-03-20 07:00:00'),
-(5, 'Information Technology', '2026-03-20 07:00:00'),
-(6, 'Mathematics', '2026-03-20 07:00:00'),
-(7, 'Registrar', '2026-03-20 07:00:00');
 
 -- --------------------------------------------------------
 
@@ -259,14 +247,27 @@ INSERT INTO `conversation_read_status` (`conversation_id`, `user_id`, `last_read
 -- --------------------------------------------------------
 
 --
--- Table structure for table `conversation_hidden`
+-- Table structure for table `departments`
 --
 
-CREATE TABLE `conversation_hidden` (
-  `conversation_id` int(10) UNSIGNED NOT NULL,
-  `user_id` int(10) UNSIGNED NOT NULL,
-  `hidden_at` datetime NOT NULL DEFAULT current_timestamp()
+CREATE TABLE `departments` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `departments`
+--
+
+INSERT INTO `departments` (`id`, `name`, `created_at`) VALUES
+(1, 'Business', '2026-03-20 07:00:00'),
+(2, 'Computer Science', '2026-03-20 07:00:00'),
+(3, 'Engineering', '2026-03-20 07:00:00'),
+(4, 'Humanities', '2026-03-20 07:00:00'),
+(5, 'Information Technology', '2026-03-20 07:00:00'),
+(6, 'Mathematics', '2026-03-20 07:00:00'),
+(7, 'Registrar', '2026-03-20 07:00:00');
 
 -- --------------------------------------------------------
 
@@ -554,8 +555,7 @@ CREATE TABLE `message_requests` (
 --
 
 INSERT INTO `message_requests` (`id`, `conversation_id`, `requester_id`, `recipient_id`, `status`, `created_at`, `updated_at`) VALUES
-(1, 11, 14, 10, 'accepted', '2026-03-29 18:12:36', '2026-03-29 18:15:56'),
-(3, 13, 11, 12, 'accepted', '2026-03-30 08:21:56', '2026-03-30 08:22:50');
+(1, 11, 14, 10, 'accepted', '2026-03-29 18:12:36', '2026-03-29 18:15:56');
 
 -- --------------------------------------------------------
 
@@ -567,6 +567,10 @@ CREATE TABLE `password_reset_requests` (
   `id` int(10) UNSIGNED NOT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
   `status` enum('pending','completed','rejected') NOT NULL DEFAULT 'pending',
+  `reset_method` enum('admin','self_service') NOT NULL DEFAULT 'admin',
+  `reset_token` varchar(64) DEFAULT NULL,
+  `token_expires_at` datetime DEFAULT NULL,
+  `attempts` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `temp_plain` varchar(32) DEFAULT NULL,
   `requested_at` datetime NOT NULL DEFAULT current_timestamp(),
   `resolved_at` datetime DEFAULT NULL
@@ -576,31 +580,10 @@ CREATE TABLE `password_reset_requests` (
 -- Dumping data for table `password_reset_requests`
 --
 
-INSERT INTO `password_reset_requests` (`id`, `user_id`, `status`, `temp_plain`, `requested_at`, `resolved_at`) VALUES
-(1, 10, 'completed', '9HzRKIU1', '2026-03-30 09:10:53', '2026-03-30 09:12:25');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `location_zones`
---
-
-CREATE TABLE `location_zones` (
-  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(120) NOT NULL,
-  `building` varchar(120) NOT NULL,
-  `cidr` varchar(43) NOT NULL,
-  `lat` decimal(10,7) NOT NULL,
-  `lng` decimal(10,7) NOT NULL,
-  `radius_m` int(10) UNSIGNED NOT NULL DEFAULT 80,
-  `color` varchar(7) NOT NULL DEFAULT '#8B5CF6',
-  `description` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_location_zones_cidr` (`cidr`),
-  KEY `idx_location_zones_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `password_reset_requests` (`id`, `user_id`, `status`, `reset_method`, `reset_token`, `token_expires_at`, `attempts`, `temp_plain`, `requested_at`, `resolved_at`) VALUES
+(3, 12, 'rejected', 'self_service', 'c2d7c8472acd860824cccfadacba301bee2593e1d3b63af70285cf081bfe594a', '2026-04-06 07:34:19', 0, NULL, '2026-04-06 13:19:19', '2026-04-06 13:21:22'),
+(4, 12, 'completed', 'self_service', 'ec5b2154537fcfe113311bc9f49987c80fc45cde376a1f776dd7e2ef431fdf81', '2026-04-06 07:36:44', 0, NULL, '2026-04-06 13:21:22', '2026-04-06 13:22:03'),
+(5, 10, 'pending', 'self_service', '398d652990210dfffef93ac2e42df9d61c4b7b0ace09a23c9ec545ef4a09d7ef', '2026-04-06 09:02:13', 0, NULL, '2026-04-06 14:47:13', NULL);
 
 -- --------------------------------------------------------
 
@@ -618,8 +601,6 @@ CREATE TABLE `users` (
   `role` enum('student','faculty','admin','super_admin') NOT NULL DEFAULT 'student',
   `department` int(10) UNSIGNED DEFAULT NULL,
   `force_password_change` tinyint(1) NOT NULL DEFAULT 0,
-  `last_ip` varchar(45) DEFAULT NULL,
-  `last_seen_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -638,9 +619,9 @@ INSERT INTO `users` (`id`, `username`, `full_name`, `contact_number`, `password_
 (7, 'faculty_apatel', 'Aisha Patel', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'faculty', 1, 0, '2026-03-20 08:06:00', '2026-03-20 08:06:00'),
 (8, 'faculty_cgomez', 'Carlos Gomez', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'faculty', 4, 0, '2026-03-20 08:08:00', '2026-03-20 08:08:00'),
 (9, 'stud_aaron', 'Aaron Lim', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 1, '2026-03-20 08:20:00', '2026-03-20 08:20:00'),
-(10, 'stud_bea', 'Bea Martinez', NULL, '$2y$10$ZYo1t.JRDia7YVTm9vET8urViryp4R8N/DeyEl6c2ZndwqmQ7HW5y', 'active', 'student', 2, 0, '2026-03-20 08:22:00', '2026-03-30 01:13:47'),
+(10, 'stud_bea', 'Bea Martinez', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 1, '2026-03-20 08:22:00', '2026-04-06 05:09:59'),
 (11, 'stud_carlo', 'Carlo Villanueva', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 0, '2026-03-20 08:24:00', '2026-03-20 08:24:00'),
-(12, 'stud_diana', 'Diana Uy', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 6, 0, '2026-03-20 08:26:00', '2026-03-20 08:26:00'),
+(12, 'stud_diana', 'Diana Uy', NULL, '$2y$10$k1xJUjopPA0TnW4TMF1d7et6ZsbfJcbTfr1/kJJNTVDRyeW45eiPS', 'active', 'student', 6, 0, '2026-03-20 08:26:00', '2026-04-06 05:22:03'),
 (13, 'stud_elijah', 'Elijah Navarro', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 2, 0, '2026-03-20 08:28:00', '2026-03-20 08:28:00'),
 (14, 'stud_faith', 'Faith Ramos', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 6, 0, '2026-03-20 08:30:00', '2026-03-20 08:30:00'),
 (15, 'stud_gino', 'Gino Torres', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 6, 0, '2026-03-20 08:32:00', '2026-03-20 08:32:00'),
@@ -654,6 +635,34 @@ INSERT INTO `users` (`id`, `username`, `full_name`, `contact_number`, `password_
 (23, 'stud_omar', 'Omar Sy', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 4, 0, '2026-03-20 08:48:00', '2026-03-20 08:48:00'),
 (24, 'stud_paula', 'Paula Mendoza', NULL, '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 4, 0, '2026-03-20 08:50:00', '2026-03-20 08:50:00'),
 (25, 'stud_quentin', 'Quentin Tan', '09927956964', '$2y$10$ZOMTRWcOPMVJl1u3kaLf8O.fyUjIBirmscrab.b13XJc4qe/huzeC', 'active', 'student', 4, 0, '2026-03-20 08:52:00', '2026-03-30 01:23:50');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_security_questions`
+--
+
+CREATE TABLE `user_security_questions` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `question_set` tinyint(1) NOT NULL COMMENT '1 or 2',
+  `question_index` tinyint(1) NOT NULL COMMENT '1-5 (which question they picked from the set)',
+  `answer_hash` varchar(255) NOT NULL COMMENT 'bcrypt hash of lowercase answer',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `user_security_questions`
+--
+
+INSERT INTO `user_security_questions` (`id`, `user_id`, `question_set`, `question_index`, `answer_hash`, `created_at`, `updated_at`) VALUES
+(1, 10, 1, 1, '$2y$10$y69qSYmcb1EW4cHEGvk7g..zEfj0Wo.QfM7Pr0Llg7Y9SqHBOfPQq', '2026-04-06 12:59:59', '2026-04-06 12:59:59'),
+(2, 10, 2, 1, '$2y$10$k/u9JiWJctkXgX.QfL/et.KDAnviHCD0IEDEzvGoEtBP7jzxpHWbC', '2026-04-06 12:59:59', '2026-04-06 12:59:59'),
+(3, 12, 1, 1, '$2y$10$TZE7VMHdkzRhQnTESrchu.wg7L8Su4bo2LT9vVMTxOI5kcHZ.in/a', '2026-04-06 13:15:12', '2026-04-06 13:15:12'),
+(4, 12, 2, 1, '$2y$10$RwBMMbExpGSYmKCGpxLjluLycinve.FiW4PAzHadNBCl0D0rC5Y1e', '2026-04-06 13:15:12', '2026-04-06 13:15:12'),
+(5, 4, 1, 1, '$2y$10$lf1N.yTpBR.1vKqUpw56Le.TAbOO3qqwcp9VtsT//KPuj3qCuReRi', '2026-04-06 13:27:07', '2026-04-06 13:27:07'),
+(6, 4, 2, 1, '$2y$10$/zevDIgKM9z1cZuN7eXo4eEz1N1NPo.NRcpGIZEn9tyj2eAQJ0lZe', '2026-04-06 13:27:07', '2026-04-06 13:27:07');
 
 --
 -- Indexes for dumped tables
@@ -698,11 +707,11 @@ ALTER TABLE `conversations`
   ADD KEY `idx_conversations_is_request` (`is_request`);
 
 --
--- Indexes for table `departments`
+-- Indexes for table `conversation_hidden`
 --
-ALTER TABLE `departments`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_dept_name` (`name`);
+ALTER TABLE `conversation_hidden`
+  ADD PRIMARY KEY (`conversation_id`,`user_id`),
+  ADD KEY `idx_ch_user` (`user_id`);
 
 --
 -- Indexes for table `conversation_members`
@@ -713,19 +722,19 @@ ALTER TABLE `conversation_members`
   ADD KEY `idx_cm_role` (`role`);
 
 --
--- Indexes for table `conversation_hidden`
---
-ALTER TABLE `conversation_hidden`
-  ADD PRIMARY KEY (`conversation_id`,`user_id`),
-  ADD KEY `idx_conversation_hidden_user` (`user_id`);
-
---
 -- Indexes for table `conversation_read_status`
 --
 ALTER TABLE `conversation_read_status`
   ADD PRIMARY KEY (`conversation_id`,`user_id`),
   ADD KEY `idx_crs_user` (`user_id`),
   ADD KEY `idx_crs_last_read_msg` (`last_read_msg_id`);
+
+--
+-- Indexes for table `departments`
+--
+ALTER TABLE `departments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_dept_name` (`name`);
 
 --
 -- Indexes for table `messages`
@@ -793,7 +802,8 @@ ALTER TABLE `message_requests`
 ALTER TABLE `password_reset_requests`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_prr_user_status` (`user_id`,`status`),
-  ADD KEY `idx_prr_status_requested` (`status`,`requested_at`);
+  ADD KEY `idx_prr_status_requested` (`status`,`requested_at`),
+  ADD KEY `idx_prr_token` (`reset_token`);
 
 --
 -- Indexes for table `users`
@@ -804,6 +814,13 @@ ALTER TABLE `users`
   ADD KEY `idx_users_status` (`status`),
   ADD KEY `idx_users_role` (`role`),
   ADD KEY `idx_users_department` (`department`);
+
+--
+-- Indexes for table `user_security_questions`
+--
+ALTER TABLE `user_security_questions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_user_question_set` (`user_id`,`question_set`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -867,13 +884,19 @@ ALTER TABLE `message_requests`
 -- AUTO_INCREMENT for table `password_reset_requests`
 --
 ALTER TABLE `password_reset_requests`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+
+--
+-- AUTO_INCREMENT for table `user_security_questions`
+--
+ALTER TABLE `user_security_questions`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Constraints for dumped tables
@@ -902,18 +925,18 @@ ALTER TABLE `attachments`
   ADD CONSTRAINT `fk_attachments_uploader` FOREIGN KEY (`uploader_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `conversation_members`
---
-ALTER TABLE `conversation_members`
-  ADD CONSTRAINT `fk_cm_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_cm_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `conversation_hidden`
 --
 ALTER TABLE `conversation_hidden`
   ADD CONSTRAINT `fk_ch_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_ch_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `conversation_members`
+--
+ALTER TABLE `conversation_members`
+  ADD CONSTRAINT `fk_cm_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_cm_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `conversation_read_status`
@@ -984,6 +1007,12 @@ ALTER TABLE `password_reset_requests`
 --
 ALTER TABLE `users`
   ADD CONSTRAINT `fk_users_department` FOREIGN KEY (`department`) REFERENCES `departments` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `user_security_questions`
+--
+ALTER TABLE `user_security_questions`
+  ADD CONSTRAINT `fk_usq_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

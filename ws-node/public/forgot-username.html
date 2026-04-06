@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusChat — Forgot Username</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="vendor/altcha/altcha.css" />
+  <style>
+    .state { display: none; }
+    .state.active { display: block; }
+
+    .fp-info {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .fp-success-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: #8b5cf6;
+    }
+
+    .fp-success-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .fp-success-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.65;
+      margin-bottom: 24px;
+    }
+
+    .fp-back-link {
+      display: block;
+      text-align: center;
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      margin-top: 16px;
+    }
+    .fp-back-link:hover { text-decoration: underline; }
+
+    .username-reveal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 16px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .username-reveal-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .username-reveal-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+
+    .field-group + .field-group { margin-top: 16px; }
+
+    .field-group select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--anim);
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b5cf6' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+
+    .field-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .field-group select option {
+      background: var(--bg-modal);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loginWrap">
+    <div class="login-card">
+
+      <!-- Logo -->
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </div>
+        <div>
+          <div class="login-logo-text">Campus<span>Chat</span></div>
+          <div class="login-subtitle">INTRANET MESSAGING</div>
+        </div>
+      </div>
+
+      <!-- State 1: Input -->
+      <div id="stateInput" class="state active">
+        <h2 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0 0 6px;">Forgot Username</h2>
+        <p class="fp-info">Enter your full name and department to find your account.</p>
+
+        <div class="field-group">
+          <label for="fuFullName">Full Name</label>
+          <input id="fuFullName" type="text" placeholder="Enter your full name" autocomplete="name" />
+        </div>
+
+        <div class="field-group">
+          <label for="fuDepartment">Department</label>
+          <select id="fuDepartment">
+            <option value="">— Select your department —</option>
+          </select>
+        </div>
+
+        <div class="field-group" style="margin-top: 12px; display: flex; justify-content: center;">
+          <altcha-widget id="fuAltcha" auto="off" hidelogo hidefooter
+            style="display:block;max-width:100%;"></altcha-widget>
+        </div>
+
+        <p id="fuError" style="color:var(--error,#ef4444);font-size:13px;margin:0 0 12px;min-height:18px;"></p>
+        <button class="btn-primary" id="btnFind" onclick="findUsername()">Find My Username</button>
+
+        <p class="login-footer-text" style="margin-top:12px;">
+          <a href="forgot-password.html" style="color:var(--accent);font-size:13px;">Forgot your password instead?</a>
+        </p>
+        <p class="login-footer-text" style="margin-top:4px;">
+          <a href="login.html" style="color:var(--text-muted);font-size:12px;">← Back to Login</a>
+        </p>
+      </div>
+
+      <!-- State 2: Found -->
+      <div id="stateFound" class="state">
+        <div class="fp-success-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <div class="fp-success-title">Account Found!</div>
+        <div class="fp-success-body">Your username is:</div>
+
+        <div class="username-reveal">
+          <div class="username-reveal-label">Username</div>
+          <div class="username-reveal-value" id="foundUsername"></div>
+        </div>
+
+        <a class="btn-primary" href="login.html"
+          style="display:block;text-align:center;text-decoration:none;">Go to Login</a>
+        <p class="login-footer-text" style="margin-top:12px;">
+          <a href="forgot-password.html" style="color:var(--accent);font-size:13px;">Need to reset your password too?</a>
+        </p>
+      </div>
+
+      <!-- State 3: Not Found -->
+      <div id="stateNotFound" class="state">
+        <div class="fp-success-icon" style="background:rgba(234,179,8,0.12);color:#eab308;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <div class="fp-success-title">No Account Found</div>
+        <div class="fp-success-body" id="notFoundMsg">
+          No matching account was found with that name and department.<br><br>
+          Please contact your administrator for help.
+        </div>
+        <button class="btn-primary" onclick="resetForm()" style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-strong);">Try Again</button>
+        <a class="fp-back-link" href="login.html">← Back to Login</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="vendor/altcha/altcha.js"></script>
+  <script>
+    (function () {
+      const t = localStorage.getItem("cc_theme") || "light";
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+
+    const _host = window.location.hostname || "localhost";
+    const _protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const API_BASE = `${_protocol}//${_host}/campus-chat/api/index.php`;
+    const REQUEST_API_BASE = window.location.port === "3001"
+      ? `${window.location.origin}/api`
+      : API_BASE;
+    const ALTCHA_API_BASE = REQUEST_API_BASE;
+    const ALTCHA_VERIFY_CALL_TIMEOUT_MS = 20000;
+
+    function showState(id) {
+      document.querySelectorAll(".state").forEach(el => el.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function resetForm() {
+      document.getElementById("fuFullName").value = "";
+      document.getElementById("fuError").textContent = "";
+      showState("stateInput");
+    }
+
+    // ALTCHA setup
+    function configureAltchaWidget(widgetId, scope) {
+      const widget = document.getElementById(widgetId);
+      if (!widget) return;
+      widget.setAttribute("challengeurl", `${ALTCHA_API_BASE}/altcha/challenge?scope=${encodeURIComponent(scope)}`);
+      widget.setAttribute("workerurl", new URL("vendor/altcha/worker.js", window.location.href).href);
+      widget.setAttribute("verifyurl", `${ALTCHA_API_BASE}/altcha/verify-code`);
+    }
+
+    async function readAltchaPayload(widgetId) {
+      const widget = document.getElementById(widgetId);
+      if (!widget) return "";
+      const readPayload = () => {
+        const hidden = widget.querySelector('input[type="hidden"][name="altcha"]');
+        return hidden ? String(hidden.value || "").trim() : "";
+      };
+      let payload = readPayload();
+      if (payload) return payload;
+      if (typeof widget.verify === "function") {
+        try {
+          await Promise.race([
+            widget.verify(),
+            new Promise((_, reject) => {
+              setTimeout(() => reject(new Error("ALTCHA verify timeout")), ALTCHA_VERIFY_CALL_TIMEOUT_MS);
+            }),
+          ]);
+        } catch (_err) { }
+        payload = readPayload();
+      }
+      return payload;
+    }
+
+    configureAltchaWidget("fuAltcha", "forgot-username");
+
+    // Load departments
+    async function loadDepartments() {
+      try {
+        const res = await fetch(`${REQUEST_API_BASE}/departments`);
+        const data = await res.json();
+        const sel = document.getElementById("fuDepartment");
+        const depts = data.departments || data || [];
+        for (const d of depts) {
+          const opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent = d.name;
+          sel.appendChild(opt);
+        }
+      } catch { }
+    }
+    loadDepartments();
+
+    // Enter key
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter" && document.getElementById("stateInput").classList.contains("active")) {
+        findUsername();
+      }
+    });
+
+    async function findUsername() {
+      const fullName = document.getElementById("fuFullName").value.trim();
+      const deptId = document.getElementById("fuDepartment").value;
+      const errEl = document.getElementById("fuError");
+      errEl.textContent = "";
+
+      if (!fullName) { errEl.textContent = "Please enter your full name."; return; }
+      if (!deptId) { errEl.textContent = "Please select your department."; return; }
+
+      const altcha = await readAltchaPayload("fuAltcha");
+      if (!altcha) { errEl.textContent = "Please complete the security verification."; return; }
+
+      const btn = document.getElementById("btnFind");
+      btn.disabled = true;
+      btn.textContent = "Searching…";
+
+      try {
+        const res = await fetch(`${REQUEST_API_BASE}/forgot-username`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            full_name: fullName,
+            department_id: parseInt(deptId),
+            altcha,
+          }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          errEl.textContent = data.error;
+          return;
+        }
+
+        if (data.found && data.username) {
+          document.getElementById("foundUsername").textContent = data.username;
+          showState("stateFound");
+        } else {
+          document.getElementById("notFoundMsg").innerHTML =
+            (data.message || "No matching account found.") + "<br><br>Please contact your administrator for help.";
+          showState("stateNotFound");
+        }
+      } catch {
+        errEl.textContent = "Connection error. Is the server running?";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Find My Username";
+      }
+    }
+  </script>
+</body>
+
+</html>
