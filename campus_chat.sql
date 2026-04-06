@@ -259,6 +259,18 @@ INSERT INTO `conversation_read_status` (`conversation_id`, `user_id`, `last_read
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `conversation_hidden`
+--
+
+CREATE TABLE `conversation_hidden` (
+  `conversation_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `hidden_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `messages`
 --
 
@@ -570,6 +582,29 @@ INSERT INTO `password_reset_requests` (`id`, `user_id`, `status`, `temp_plain`, 
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `location_zones`
+--
+
+CREATE TABLE `location_zones` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(120) NOT NULL,
+  `building` varchar(120) NOT NULL,
+  `cidr` varchar(43) NOT NULL,
+  `lat` decimal(10,7) NOT NULL,
+  `lng` decimal(10,7) NOT NULL,
+  `radius_m` int(10) UNSIGNED NOT NULL DEFAULT 80,
+  `color` varchar(7) NOT NULL DEFAULT '#8B5CF6',
+  `description` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_location_zones_cidr` (`cidr`),
+  KEY `idx_location_zones_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -583,6 +618,8 @@ CREATE TABLE `users` (
   `role` enum('student','faculty','admin','super_admin') NOT NULL DEFAULT 'student',
   `department` int(10) UNSIGNED DEFAULT NULL,
   `force_password_change` tinyint(1) NOT NULL DEFAULT 0,
+  `last_ip` varchar(45) DEFAULT NULL,
+  `last_seen_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -674,6 +711,13 @@ ALTER TABLE `conversation_members`
   ADD PRIMARY KEY (`conversation_id`,`user_id`),
   ADD KEY `idx_cm_user` (`user_id`),
   ADD KEY `idx_cm_role` (`role`);
+
+--
+-- Indexes for table `conversation_hidden`
+--
+ALTER TABLE `conversation_hidden`
+  ADD PRIMARY KEY (`conversation_id`,`user_id`),
+  ADD KEY `idx_conversation_hidden_user` (`user_id`);
 
 --
 -- Indexes for table `conversation_read_status`
@@ -863,6 +907,13 @@ ALTER TABLE `attachments`
 ALTER TABLE `conversation_members`
   ADD CONSTRAINT `fk_cm_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_cm_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `conversation_hidden`
+--
+ALTER TABLE `conversation_hidden`
+  ADD CONSTRAINT `fk_ch_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_ch_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `conversation_read_status`

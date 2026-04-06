@@ -262,16 +262,28 @@ if ($method === "GET" && $path === "/altcha/challenge") {
     json_response(["error" => "Not found"], 404);
   }
 
+  if ((string)$settings["hmac_key"] === "") {
+    json_response(["error" => "Security verification unavailable"], 503);
+  }
+
   $scope = strtolower(trim((string)($_GET["scope"] ?? "auth")));
   $scope = preg_replace('/[^a-z0-9_-]/', '', $scope);
   if ($scope === "") $scope = "auth";
 
   $expires = (string)(time() + (int)$settings["ttl_seconds"]);
+  $code = altcha_generate_code(4);
+  $codeSignature = altcha_code_signature((string)$settings["hmac_key"], $code, $scope, $expires);
 
   $challenge = altcha_create_challenge($settings, [
     "scope"   => $scope,
     "expires" => $expires,
+    "code_sig" => $codeSignature,
   ]);
+
+  $challenge["codeChallenge"] = [
+    "image" => altcha_code_image_data_uri($code),
+    "length" => 4,
+  ];
 
   header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
   json_response($challenge);
@@ -367,9 +379,19 @@ if ($method === "POST" && $path === "/login") {
   // Reset rate limit counter on successful login
   @unlink($rl_file);
 
-  // Record last IP and last seen for geomapping
-  db()->prepare("UPDATE users SET last_ip = ?, last_seen_at = NOW() WHERE id = ?")
+  // Record login metadata, but stay compatible with older schemas.
+  // Some deployments do not yet have last_ip / last_seen_at columns.
+  try {
+    db()->prepare("UPDATE users SET last_ip = ?, last_seen_at = NOW() WHERE id = ?")
       ->execute([$ip, (int)$user["id"]]);
+  } catch (Throwable $e) {
+    try {
+      db()->prepare("UPDATE users SET last_seen_at = NOW() WHERE id = ?")
+        ->execute([(int)$user["id"]]);
+    } catch (Throwable $_) {
+      // Ignore metadata write errors so successful login is not blocked.
+    }
+  }
 
   $now = time();
   $token = jwt_sign([

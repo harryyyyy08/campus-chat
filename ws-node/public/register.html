@@ -321,16 +321,22 @@
       document.documentElement.setAttribute("data-theme", t);
     })();
 
-    const _host = window.location.hostname;
-    const API_BASE = `http://${_host}/campus-chat/api/index.php`;
+    const _host = window.location.hostname || "localhost";
+    const _protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const API_BASE = `${_protocol}//${_host}/campus-chat/api/index.php`;
+    const REQUEST_API_BASE = window.location.port === "3001"
+      ? `${window.location.origin}/api`
+      : API_BASE;
+    const ALTCHA_API_BASE = REQUEST_API_BASE;
     const REGISTER_ALTCHA_SCOPE = "register";
+    const ALTCHA_VERIFY_CALL_TIMEOUT_MS = 20000;
 
     function configureAltchaWidget(widgetId, scope) {
       const widget = document.getElementById(widgetId);
       if (!widget) return;
-      widget.setAttribute("challengeurl", `${API_BASE}/altcha/challenge?scope=${encodeURIComponent(scope)}`);
-      widget.setAttribute("workerurl", "./worker.js");
-      widget.setAttribute("verifyurl", `${API_BASE}/altcha/verify-code`);
+      widget.setAttribute("challengeurl", `${ALTCHA_API_BASE}/altcha/challenge?scope=${encodeURIComponent(scope)}`);
+      widget.setAttribute("workerurl", new URL("vendor/altcha/worker.js", window.location.href).href);
+      widget.setAttribute("verifyurl", `${ALTCHA_API_BASE}/altcha/verify-code`);
     }
 
     async function readAltchaPayload(widgetId) {
@@ -347,7 +353,12 @@
 
       if (typeof widget.verify === "function") {
         try {
-          await widget.verify();
+          await Promise.race([
+            widget.verify(),
+            new Promise((_, reject) => {
+              setTimeout(() => reject(new Error("ALTCHA verify timeout")), ALTCHA_VERIFY_CALL_TIMEOUT_MS);
+            }),
+          ]);
         } catch (_err) {
           // The widget manages its own error state in UI.
         }
@@ -361,7 +372,7 @@
     // ── Load departments into dropdown ──────────────
     (async function loadDepartments() {
       try {
-        const res = await fetch(`${API_BASE}/departments`);
+        const res = await fetch(`${REQUEST_API_BASE}/departments`);
         const data = await res.json();
         if (res.ok && data.departments) {
           const sel = document.getElementById("reg_department");
@@ -494,7 +505,7 @@
       syncRegisterSubmitState(true);
 
       try {
-        const res = await fetch(`${API_BASE}/register`, {
+        const res = await fetch(`${REQUEST_API_BASE}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ full_name, username, password, role, department_id, altcha }),

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Location / Geomapping Routes
  *
@@ -24,12 +25,13 @@ if ($method === "POST" && $path === "/internal/update-ip") {
   // Trust X-Real-IP only when the caller is localhost (forwarded by Node)
   $ip = $_SERVER["HTTP_X_REAL_IP"] ?? $_SERVER["REMOTE_ADDR"] ?? "unknown";
   db()->prepare("UPDATE users SET last_ip = ?, last_seen_at = NOW() WHERE id = ?")
-      ->execute([$ip, $uid]);
+    ->execute([$ip, $uid]);
   json_response(["ok" => true]);
 }
 
 // ── Helper: assert super_admin ────────────────────────────────────────
-function assert_super_admin(): array {
+function assert_super_admin(): array
+{
   $claims = require_auth();
   $pdo    = db();
   $stmt   = $pdo->prepare("SELECT role FROM users WHERE id = ?");
@@ -42,12 +44,14 @@ function assert_super_admin(): array {
 }
 
 // ── Helper: validate CIDR string ──────────────────────────────────────
-function valid_cidr(string $cidr): bool {
+function valid_cidr(string $cidr): bool
+{
   return (bool)preg_match('/^\d{1,3}(\.\d{1,3}){3}\/([0-9]|[12]\d|3[012])$/', $cidr);
 }
 
 // ── Helper: cast zone row types ───────────────────────────────────────
-function cast_zone(array $z): array {
+function cast_zone(array $z): array
+{
   $z["id"]       = (int)$z["id"];
   $z["lat"]      = (float)$z["lat"];
   $z["lng"]      = (float)$z["lng"];
@@ -118,8 +122,8 @@ if ($method === "PUT" && preg_match('#^/admin/location-zones/(\d+)$#', $path, $m
   $radius_m    = isset($in["radius_m"])   ? max(10, (int)$in["radius_m"]) : (int)$zone["radius_m"];
   $color       = trim($in["color"]       ?? $zone["color"]);
   $description = array_key_exists("description", $in)
-                   ? (trim($in["description"]) ?: null)
-                   : $zone["description"];
+    ? (trim($in["description"]) ?: null)
+    : $zone["description"];
 
   if (!$name || !$building) json_response(["error" => "name and building are required"], 400);
   if (!valid_cidr($cidr))   json_response(["error" => "Invalid CIDR format"], 400);
@@ -157,7 +161,8 @@ if ($method === "GET" && $path === "/admin/geomap") {
   $pdo = db();
 
   // Load all zones
-  $zones = array_map("cast_zone",
+  $zones = array_map(
+    "cast_zone",
     $pdo->query("SELECT * FROM location_zones ORDER BY name ASC")->fetchAll()
   );
 
