@@ -874,8 +874,13 @@ async function deleteOldMessages() {
     }
 
     const deleted = Number(data.deleted ?? 0);
-    if (deleted > 0 || !isProd || verboseCleanup) {
+    const resetRejected = Number(data.reset_rejected ?? 0);
+    const resetDeleted = Number(data.reset_deleted ?? 0);
+    if (deleted > 0 || resetRejected > 0 || resetDeleted > 0 || !isProd || verboseCleanup) {
       console.log(`[cleanup] Deleted ${deleted} old messages.`);
+      if (resetRejected > 0 || resetDeleted > 0) {
+        console.log(`[cleanup] Password resets: ${resetRejected} auto-rejected, ${resetDeleted} old rows deleted.`);
+      }
     }
     if (Array.isArray(data.skipped_tables) && data.skipped_tables.length) {
       console.warn(

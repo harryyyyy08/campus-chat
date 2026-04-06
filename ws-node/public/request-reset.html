@@ -197,6 +197,28 @@
           style="display:block;text-align:center;text-decoration:none;">Back to Login</a>
       </div>
 
+      <!-- State 3: Already Pending -->
+      <div id="statePending" class="state">
+        <div class="fp-success-icon" style="background:rgba(234,179,8,0.12);color:#eab308;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="fp-success-title" style="color:var(--text-primary);">Request Already Pending</div>
+        <div class="fp-success-body">
+          You already submitted a password reset request <strong id="pendingAgo"></strong>.<br><br>
+          Your request is waiting for administrator approval. Please <strong>contact your administrator in person or via phone</strong> to verify your identity and speed up the process.
+        </div>
+        <div class="rr-callout" style="text-align:left;">
+          <strong>⚠️ Note:</strong> Requests that are not acted upon will automatically expire after <strong>7 days</strong>. If your request expires, you can submit a new one.
+        </div>
+        <a class="btn-primary" href="login.html"
+          style="display:block;text-align:center;text-decoration:none;">Back to Login</a>
+        <a class="fp-back-link" href="forgot-password.html">← Try Forgot Password again</a>
+      </div>
+
     </div>
   </div>
 
@@ -216,6 +238,21 @@
     function showState(id) {
       document.querySelectorAll(".state").forEach(el => el.classList.remove("active"));
       document.getElementById(id).classList.add("active");
+    }
+
+    function formatTimeAgo(dateStr) {
+      const dt = new Date(dateStr);
+      if (Number.isNaN(dt.getTime())) return "some time ago";
+      const now = new Date();
+      const diffMs = now - dt;
+      const diffMin = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays >= 1) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+      if (diffHours >= 1) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+      if (diffMin >= 1) return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`;
+      return "just now";
     }
 
     document.addEventListener("keydown", e => {
@@ -248,6 +285,13 @@
 
         if (data.error) {
           errEl.textContent = data.error;
+          return;
+        }
+
+        if (data.already_pending) {
+          const agoText = data.requested_at ? formatTimeAgo(data.requested_at) : "some time ago";
+          document.getElementById("pendingAgo").textContent = agoText;
+          showState("statePending");
           return;
         }
 

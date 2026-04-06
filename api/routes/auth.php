@@ -872,12 +872,20 @@ if ($method === "POST" && $path === "/request-admin-reset") {
   }
 
   // Check if there's already a pending admin reset request for this user
-  $stmt = $pdo->prepare("SELECT id FROM password_reset_requests WHERE user_id = ? AND status = 'pending' AND reset_method = 'admin'");
+  $stmt = $pdo->prepare("SELECT id, requested_at FROM password_reset_requests WHERE user_id = ? AND status = 'pending' AND reset_method = 'admin'");
   $stmt->execute([(int)$user["id"]]);
-  if (!$stmt->fetch()) {
-    $pdo->prepare("INSERT INTO password_reset_requests (user_id, reset_method) VALUES (?, 'admin')")
-      ->execute([(int)$user["id"]]);
+  $existing = $stmt->fetch();
+  if ($existing) {
+    json_response([
+      "submitted" => true,
+      "already_pending" => true,
+      "requested_at" => $existing["requested_at"],
+      "message" => "You already have a pending reset request. Please contact your administrator in person to verify your identity."
+    ]);
   }
+
+  $pdo->prepare("INSERT INTO password_reset_requests (user_id, reset_method) VALUES (?, 'admin')")
+    ->execute([(int)$user["id"]]);
 
   json_response(["submitted" => true, "message" => "Request submitted. Please contact your administrator to verify your identity."]);
 }

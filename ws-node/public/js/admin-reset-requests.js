@@ -62,13 +62,17 @@ function renderResetRequests() {
       const requestedAt = r.requested_at
         ? formatRequestedAt(r.requested_at)
         : "";
+      const ageBadge = getAgeBadge(r.requested_at);
 
       return `
       <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div style="flex:1;min-width:180px;">
           <div style="font-size:14px;font-weight:600;color:var(--text-primary);">${escHtml(r.full_name)}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">@${escHtml(r.username)} &middot; ${escHtml(r.user_role || "")}${r.department ? " &middot; " + escHtml(r.department) : ""}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Requested: ${requestedAt}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span>Requested: ${requestedAt}</span>
+            ${ageBadge}
+          </div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
           <button onclick="approveResetRequest(${r.id})" style="padding:8px 16px;border-radius:8px;border:none;background:var(--accent,#16a34a);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Approve</button>
@@ -78,6 +82,32 @@ function renderResetRequests() {
     `;
     })
     .join("");
+}
+
+function getAgeBadge(requestedAt) {
+  if (!requestedAt) return "";
+  const dt = new Date(requestedAt);
+  if (Number.isNaN(dt.getTime())) return "";
+
+  const now = new Date();
+  const diffMs = now - dt;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  let label, style;
+
+  if (diffDays >= 5) {
+    label = `${diffDays}d ago — expiring soon`;
+    style = "background:rgba(234,179,8,0.15);color:#b45309;border:1px solid rgba(234,179,8,0.3);";
+  } else if (diffDays >= 1) {
+    label = `${diffDays}d ago`;
+    style = "background:var(--accent-soft,rgba(139,92,246,0.08));color:var(--text-secondary);border:1px solid var(--border);";
+  } else {
+    label = diffHours > 0 ? `${diffHours}h ago` : "Just now";
+    style = "background:rgba(34,197,94,0.1);color:#16a34a;border:1px solid rgba(34,197,94,0.25);";
+  }
+
+  return `<span style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;${style}">${label}</span>`;
 }
 
 function formatRequestedAt(value) {

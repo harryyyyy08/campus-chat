@@ -408,5 +408,36 @@ if ($method === "POST" && $path === "/messages/cleanup") {
   $stmt->execute();
   $deleted = $stmt->rowCount();
 
-  json_response(["ok" => true, "deleted" => $deleted, "skipped_tables" => $skipped_tables]);
+  // ── Password reset requests cleanup ────────────────────────────
+  // Auto-reject pending reset requests older than 1 month (stale/abandoned)
+  $reset_rejected = 0;
+  $reset_deleted = 0;
+  try {
+    $stmt = $pdo->prepare("
+      UPDATE password_reset_requests
+      SET status = 'rejected', resolved_at = NOW()
+      WHERE status = 'pending'
+        AND requested_at < NOW() - INTERVAL 1 MONTH
+    ");
+    $stmt->execute();
+    $reset_rejected = $stmt->rowCount();
+
+    // Delete all resolved (completed/rejected) reset requests older than 1 month
+    $stmt = $pdo->prepare("
+      DELETE FROM password_reset_requests
+      WHERE status IN ('completed', 'rejected')
+        AND resolved_at < NOW() - INTERVAL 1 MONTH
+    ");
+    $stmt->execute();
+    $reset_deleted = $stmt->rowCount();
+  } catch (PDOException $e) {
+    $mysqlErrno = (int)($e->errorInfo[1] ?? 0);
+    $sqlState = (string)$e->getCode();
+    if ($mysqlErrno === 1146 || $sqlState === "42S02") {
+      $skipped_tables[] = "password_reset_requests";
+    }
+    // Non-fatal — continue
+  }
+
+  json_response(["ok" => true, "deleted" => $deleted, "reset_rejected" => $reset_rejected, "reset_deleted" => $reset_deleted, "skipped_tables" => $skipped_tables]);
 }
