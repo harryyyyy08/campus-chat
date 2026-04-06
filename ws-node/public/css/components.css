@@ -94,6 +94,40 @@
   color: var(--text-muted);
 }
 
+.settings-modal-box {
+  max-width: 440px;
+}
+
+.settings-section-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.settings-section-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0 0 18px;
+}
+
+.modal-feedback {
+  font-size: 12px;
+  line-height: 1.45;
+  min-height: 18px;
+  margin: 4px 0 12px;
+}
+
+.modal-feedback--error {
+  color: var(--red);
+}
+
+.modal-feedback--success {
+  color: var(--green);
+}
+
 .modal-actions {
   display: flex;
   gap: 8px;

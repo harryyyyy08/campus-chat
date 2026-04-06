@@ -451,6 +451,7 @@
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   background: var(--bg-sidebar);
 }
