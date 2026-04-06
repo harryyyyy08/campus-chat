@@ -70,12 +70,37 @@
       <p id="loginError"></p>
 
       <p class="login-footer-text">
-        <a href="forgot-password.html">Forgot your password?</a>
+        <a href="forgot-password.html">Forgot username/password?</a>
       </p>
       <p class="login-footer-text">
         Don't have an account?
         <a href="register.html">Register here</a>
       </p>
+
+      <div class="login-theme-toggle" role="group" aria-label="Theme toggle">
+        <button type="button" class="theme-toggle-btn" id="loginThemeLightBtn" onclick="setLoginTheme('light')"
+          aria-label="Switch to light theme" title="Light theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        </button>
+        <button type="button" class="theme-toggle-btn" id="loginThemeDarkBtn" onclick="setLoginTheme('dark')"
+          aria-label="Switch to dark theme" title="Dark theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      </div>
 
     </div>
   </div>
@@ -83,23 +108,48 @@
   <script type="module" src="vendor/altcha/altcha.js"></script>
   <script>
     // ── Theme ──────────────────────────────────────
+    function updateLoginThemeButtons(theme) {
+      const lightBtn = document.getElementById("loginThemeLightBtn");
+      const darkBtn = document.getElementById("loginThemeDarkBtn");
+      if (!lightBtn || !darkBtn) return;
+
+      lightBtn.classList.toggle("is-active", theme === "light");
+      darkBtn.classList.toggle("is-active", theme === "dark");
+      lightBtn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+      darkBtn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+    }
+
+    function setLoginTheme(theme) {
+      const nextTheme = theme === "dark" ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", nextTheme);
+      localStorage.setItem("cc_theme", nextTheme);
+      updateLoginThemeButtons(nextTheme);
+    }
+
     (function () {
       const t = localStorage.getItem("cc_theme") || "light";
-      document.documentElement.setAttribute("data-theme", t);
+      setLoginTheme(t);
     })();
 
     // ── Config ─────────────────────────────────────
-    const _host = window.location.hostname;
-    const API_BASE = `http://${_host}/campus-chat/api/index.php`;
-    const WS_URL = `http://${_host}:3001`;
+    const _host = window.location.hostname || "localhost";
+    const _protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const API_BASE = `${_protocol}//${_host}/campus-chat/api/index.php`;
+    const REQUEST_API_BASE = window.location.port === "3001"
+      ? `${window.location.origin}/api`
+      : API_BASE;
+    const ALTCHA_API_BASE = REQUEST_API_BASE;
+    const WS_URL = `${_protocol}//${_host}:3001`;
     const LOGIN_ALTCHA_SCOPE = "login";
+    const ALTCHA_VERIFY_CALL_TIMEOUT_MS = 20000;
+    const LOGIN_REQUEST_TIMEOUT_MS = 20000;
 
     function configureAltchaWidget(widgetId, scope) {
       const widget = document.getElementById(widgetId);
       if (!widget) return;
-      widget.setAttribute("challengeurl", `${API_BASE}/altcha/challenge?scope=${encodeURIComponent(scope)}`);
-      widget.setAttribute("workerurl", "./worker.js");
-      widget.setAttribute("verifyurl", `${API_BASE}/altcha/verify-code`);
+      widget.setAttribute("challengeurl", `${ALTCHA_API_BASE}/altcha/challenge?scope=${encodeURIComponent(scope)}`);
+      widget.setAttribute("workerurl", new URL("vendor/altcha/worker.js", window.location.href).href);
+      widget.setAttribute("verifyurl", `${ALTCHA_API_BASE}/altcha/verify-code`);
     }
 
     async function readAltchaPayload(widgetId) {
@@ -116,9 +166,14 @@
 
       if (typeof widget.verify === "function") {
         try {
-          await widget.verify();
+          await Promise.race([
+            widget.verify(),
+            new Promise((_, reject) => {
+              setTimeout(() => reject(new Error("ALTCHA verify timeout")), ALTCHA_VERIFY_CALL_TIMEOUT_MS);
+            }),
+          ]);
         } catch (_err) {
-          // The widget manages its own error state in UI.
+          // The widget manages its own error state.
         }
         payload = readPayload();
       }
@@ -174,11 +229,16 @@
       btn.textContent = "Signing in…";
 
       try {
-        const res = await fetch(`${API_BASE}/login`, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), LOGIN_REQUEST_TIMEOUT_MS);
+
+        const res = await fetch(`${REQUEST_API_BASE}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password, altcha }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
         const data = await res.json();
 
         if (!res.ok) {
@@ -191,11 +251,21 @@
         localStorage.setItem("cc_user", JSON.stringify(data.user));
         localStorage.setItem("cc_ws_url", data.ws_url || WS_URL);
 
-        // Redirect — force password change if flagged
-        window.location.href = data.force_change ? "change-password.html" : "index.html";
+        // Redirect — force security setup takes priority, then password change
+        if (data.force_security_setup) {
+          window.location.href = "setup-security.html";
+        } else if (data.force_change) {
+          window.location.href = "change-password.html";
+        } else {
+          window.location.href = "index.html";
+        }
 
       } catch (err) {
-        errEl.textContent = "Connection error. Is the server running?";
+        if (err?.name === "AbortError") {
+          errEl.textContent = "Login request timed out. Please try again.";
+        } else {
+          errEl.textContent = "Connection error. Is the server running?";
+        }
       } finally {
         btn.disabled = false;
         btn.textContent = "Sign In";

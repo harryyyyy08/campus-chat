@@ -47,7 +47,10 @@ header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
 
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") { http_response_code(204); exit; }
+if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
+  http_response_code(204);
+  exit;
+}
 
 $cfg    = require __DIR__ . "/config.php";
 $method = $_SERVER["REQUEST_METHOD"];
@@ -59,10 +62,20 @@ if ($path === '') $path = '/';
 define('UPLOAD_DIR',       __DIR__ . '/../uploads/');
 define('UPLOAD_MAX_BYTES', 100 * 1024 * 1024); // 100MB para sa videos
 define('ALLOWED_MIME', [
-  'image/jpeg','image/png','image/gif','image/webp',
-  'video/mp4','video/webm','video/quicktime','video/x-msvideo',
-  'audio/webm','audio/ogg','audio/mp4','audio/mpeg',
-  'application/pdf','application/msword',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'audio/webm',
+  'audio/ogg',
+  'audio/mp4',
+  'audio/mpeg',
+  'application/pdf',
+  'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -72,10 +85,12 @@ define('ALLOWED_MIME', [
 
 if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
 
-function is_admin(string $role): bool {
+function is_admin(string $role): bool
+{
   return in_array($role, ['admin', 'super_admin']);
 }
-function is_super_admin(string $role): bool {
+function is_super_admin(string $role): bool
+{
   return $role === 'super_admin';
 }
 
@@ -85,6 +100,7 @@ require_once __DIR__ . "/routes/conversations.php";
 require_once __DIR__ . "/routes/messages.php";
 require_once __DIR__ . "/routes/uploads.php";
 require_once __DIR__ . "/routes/departments.php";
+require_once __DIR__ . "/routes/location.php";
 require_once __DIR__ . "/routes/admin.php";
 require_once __DIR__ . "/routes/announcements.php";
 

@@ -1,7 +1,9 @@
 /* ════════════════════════════════════════════
-   CampusChat — admin.css
+   CampusChat — admin-layout.css
+   Sidebar layout design
    ════════════════════════════════════════════ */
 
+/* ── Login page ── */
 #adminLogin {
   display: flex;
   align-items: center;
@@ -22,68 +24,82 @@
   min-height: 18px;
 }
 
-/* ── App shell ── */
+/* ════════════════════════════════════════════
+   APP SHELL — sidebar + main
+   ════════════════════════════════════════════ */
 #adminApp {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
+  overflow: hidden;
   background: var(--bg-base);
 }
 
-/* ── Nav ── */
-#adminNav {
+/* ════════════════════════════════════════════
+   SIDEBAR
+   ════════════════════════════════════════════ */
+#adminSidebar {
+  width: 250px;
+  flex-shrink: 0;
+  height: 100vh;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* adminNavTabs is the full sidebar content (also the mobile drawer) */
+#adminNavTabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Sidebar Logo ── */
+.sidebar-logo {
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  height: 56px;
-  background: var(--bg-sidebar);
+  gap: 10px;
+  padding: 20px 18px 18px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  gap: 0;
 }
 
-.admin-nav-logo {
+.sidebar-logo-icon {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-right: 24px;
-  letter-spacing: -0.3px;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
-/* Role badge next to logo */
-.admin-role-badge {
-  font-size: 10px;
+.sidebar-logo-text {
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent-soft);
-}
-.admin-role-badge.super {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
 }
 
-.admin-nav-tabs {
+/* ── Sidebar Nav Items ── */
+.sidebar-nav-items {
   display: flex;
-  gap: 4px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
   flex: 1;
 }
 
+/* ── Tab Buttons (sidebar style) ── */
 .admin-tab {
-  padding: 7px 14px;
+  width: 100%;
+  padding: 10px 14px;
   background: none;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
@@ -91,22 +107,42 @@
   transition: all var(--anim);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  text-align: left;
+  position: relative;
 }
+
+.admin-tab svg {
+  flex-shrink: 0;
+  opacity: 0.65;
+  transition: opacity var(--anim);
+}
+
 .admin-tab:hover {
   color: var(--text-primary);
   background: var(--bg-sidebar-hover);
 }
+
+.admin-tab:hover svg {
+  opacity: 1;
+}
+
 .admin-tab.active {
   color: var(--accent);
   background: var(--accent-soft);
   border-color: transparent;
 }
+
+.admin-tab.active svg {
+  opacity: 1;
+}
+
 .admin-tab:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
+/* Badge inside tab button */
 .admin-badge {
   background: var(--red);
   color: #fff;
@@ -117,16 +153,105 @@
   border-radius: 99px;
   min-width: 18px;
   text-align: center;
+  margin-left: auto;
 }
 
-.admin-nav-right {
+/* ════════════════════════════════════════════
+   MAIN AREA
+   ════════════════════════════════════════════ */
+#adminMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Top Header ── */
+#adminHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 64px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.header-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0;
 }
 
-/* ── Content ── */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* User profile section in header */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 14px;
+  margin-left: 4px;
+  border-left: 1px solid var(--border);
+}
+
+.header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 2px solid var(--accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.header-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1;
+}
+
+.header-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Role badge */
+.admin-role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-soft);
+  width: fit-content;
+}
+
+.admin-role-badge.super {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* ── Content area ── */
 #adminContent {
   flex: 1;
   overflow-y: auto;
@@ -136,7 +261,9 @@
   gap: 16px;
 }
 
-/* ── Toolbar ── */
+/* ════════════════════════════════════════════
+   TOOLBAR (search + buttons above table)
+   ════════════════════════════════════════════ */
 .admin-toolbar {
   display: flex;
   align-items: center;
@@ -148,6 +275,7 @@
   flex: 1;
   max-width: 360px;
 }
+
 .admin-search-wrap svg {
   position: absolute;
   left: 12px;
@@ -156,6 +284,7 @@
   color: var(--text-muted);
   pointer-events: none;
 }
+
 #adminSearch {
   width: 100%;
   background: var(--bg-input);
@@ -168,27 +297,35 @@
   outline: none;
   transition: border-color var(--anim);
 }
+
 #adminSearch:focus {
   border-color: var(--accent);
 }
+
 #adminSearch::placeholder {
   color: var(--text-muted);
 }
 
-/* ── User table ── */
+/* ════════════════════════════════════════════
+   USER TABLE
+   ════════════════════════════════════════════ */
 #userTableWrap {
-  padding: 16px;
-  overflow-y: auto;
-  height: calc(100vh - 120px);
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
+
 #userTable {
   width: 100%;
   border-collapse: collapse;
 }
+
 #userTable thead tr {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(139, 92, 246, 0.04);
   border-bottom: 1px solid var(--border);
 }
+
 #userTable th {
   padding: 10px 16px;
   text-align: left;
@@ -198,6 +335,7 @@
   text-transform: uppercase;
   color: var(--text-muted);
 }
+
 #userTable td {
   padding: 12px 16px;
   font-size: 13px;
@@ -205,12 +343,15 @@
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
+
 #userTable tbody tr:last-child td {
   border-bottom: none;
 }
+
 #userTable tbody tr:hover td {
   background: var(--bg-sidebar-hover);
 }
+
 .table-empty {
   text-align: center;
   color: var(--text-muted);
@@ -223,6 +364,7 @@
   align-items: center;
   gap: 10px;
 }
+
 .user-avatar-sm {
   width: 30px;
   height: 30px;
@@ -238,6 +380,7 @@
   flex-shrink: 0;
   text-transform: uppercase;
 }
+
 .mono {
   font-family: var(--font-mono);
   font-size: 12px;
@@ -263,14 +406,16 @@
   background-repeat: no-repeat;
   background-position: right 8px center;
 }
+
 .role-select:focus {
   border-color: var(--accent);
 }
+
 .role-select option {
   background: var(--bg-modal);
 }
 
-/* ── Role badge display (normal admin: read-only) ── */
+/* ── Role badge display (read-only) ── */
 .role-badge-display {
   display: inline-block;
   font-size: 11px;
@@ -281,11 +426,13 @@
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
+
 .role-badge-display.admin {
   background: var(--accent-soft);
   color: var(--accent);
   border-color: rgba(139, 92, 246, 0.2);
 }
+
 .role-badge-display.super {
   background: rgba(245, 158, 11, 0.12);
   color: #f59e0b;
@@ -297,6 +444,7 @@
   display: flex;
   gap: 6px;
 }
+
 .action-btn {
   padding: 5px 12px;
   border-radius: var(--radius-sm);
@@ -307,30 +455,37 @@
   cursor: pointer;
   transition: all var(--anim);
 }
+
 .action-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
 .action-btn.approve {
   background: rgba(139, 92, 246, 0.15);
   color: #A78BFA;
 }
+
 .action-btn.approve:hover:not(:disabled) {
   background: #8B5CF6;
   color: #fff;
 }
+
 .action-btn.reject {
   background: rgba(239, 68, 68, 0.12);
   color: var(--red);
 }
+
 .action-btn.reject:hover:not(:disabled) {
   background: var(--red);
   color: #fff;
 }
+
 .action-btn.disable {
   background: var(--bg-sidebar-hover);
   color: var(--text-secondary);
 }
+
 .action-btn.disable:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.12);
   color: var(--red);
@@ -353,6 +508,7 @@
   border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
+
 .admin-hamburger span {
   display: block;
   width: 20px;
@@ -362,6 +518,7 @@
   transition: all 0.25s ease;
   transform-origin: center;
 }
+
 .admin-hamburger:hover span { background: var(--text-primary); }
 .admin-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .admin-hamburger.open span:nth-child(2) { opacity: 0; }
@@ -374,9 +531,10 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 199;
 }
+
 .admin-nav-overlay.active { display: block; }
 
 /* ════════════════════════════════════════════
@@ -391,13 +549,16 @@
   flex-direction: column;
   overflow: hidden;
 }
+
 .monitor-msg-modal.hidden { display: none; }
+
 .monitor-msg-modal-inner {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
+
 .monitor-msg-modal-header {
   display: flex;
   align-items: center;
@@ -406,6 +567,7 @@
   background: var(--bg-sidebar);
   flex-shrink: 0;
 }
+
 .monitor-msg-back {
   background: none;
   border: none;
@@ -418,14 +580,16 @@
   border-radius: var(--radius-sm);
   transition: background var(--anim);
 }
+
 .monitor-msg-back:hover { background: var(--accent-soft); }
+
 .monitor-msg-modal-pane {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-/* Make inner pane fill modal */
+
 .monitor-msg-modal-pane .monitor-msg-header { flex-shrink: 0; }
 .monitor-msg-modal-pane .monitor-msg-list { flex: 1; overflow-y: auto; }
 
@@ -436,25 +600,21 @@
   body { height: auto; min-height: 100vh; }
 
   #adminApp {
+    flex-direction: column;
     height: auto;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    overflow: visible;
   }
 
-  /* Nav bar — single row with hamburger */
-  #adminNav {
-    flex-direction: row;
-    align-items: center;
-    height: 52px;
-    padding: 0 12px;
-    gap: 8px;
-    position: relative;
+  /* Sidebar hidden — slides in as drawer */
+  #adminSidebar {
+    position: static;
+    width: auto;
+    height: auto;
+    border-right: none;
+    overflow: visible;
   }
 
-  .admin-hamburger { display: flex; }
-
-  /* Tabs hidden by default — slide in as drawer */
   #adminNavTabs {
     position: fixed;
     top: 0;
@@ -466,35 +626,35 @@
     z-index: 200;
     display: flex;
     flex-direction: column;
-    padding: 60px 12px 24px;
-    gap: 4px;
-    transition: left 0.25s ease;
     overflow-y: auto;
+    transition: left 0.25s ease;
   }
+
   #adminNavTabs.mobile-open { left: 0; }
 
   .admin-tab {
     width: 100%;
-    text-align: left;
     padding: 10px 14px;
     border-radius: var(--radius-md);
     font-size: 13px;
-    border-bottom: none;
-  }
-  .admin-tab.active {
-    background: var(--accent-soft);
-    color: var(--accent);
   }
 
-  /* Nav right — stays in top bar */
-  .admin-nav-right {
-    position: static;
-    margin-left: auto;
-    gap: 4px;
+  /* Main */
+  #adminMain {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
-  #adminMyName { display: none; }
 
-  /* Content */
+  #adminHeader {
+    height: 52px;
+    padding: 0 12px;
+  }
+
+  .admin-hamburger { display: flex; }
+
+  .header-name { display: none; }
+
   #adminContent {
     padding: 12px;
     flex: 1;
@@ -505,6 +665,7 @@
     flex-wrap: wrap;
     gap: 8px;
   }
+
   .admin-search-wrap { flex: 1; min-width: 0; }
 
   /* Tables */
@@ -512,6 +673,7 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
   #userTable  { min-width: 560px; }
   #staleTable { min-width: 600px; }
 
@@ -519,7 +681,7 @@
   .storage-stats { grid-template-columns: repeat(2, 1fr); }
   .storage-toolbar { flex-wrap: wrap; gap: 8px; }
 
-  /* Chat monitor — conv list full width, no side pane */
+  /* Chat monitor */
   .monitor-layout {
     display: flex !important;
     flex-direction: column;
@@ -527,13 +689,14 @@
     min-height: unset !important;
     gap: 0;
   }
+
   .monitor-conv-list {
     width: 100% !important;
     max-height: unset !important;
     height: auto;
     border-right: none !important;
   }
-  /* Hide desktop msg pane on mobile — use modal instead */
+
   .monitor-msg-pane { display: none; }
 
   .monitor-search-bar { flex-wrap: wrap; gap: 8px; }
@@ -546,4 +709,5 @@
 @media (max-width: 480px) {
   .storage-stats { grid-template-columns: 1fr; }
   .admin-tab { font-size: 12px; padding: 9px 12px; }
+  .header-user-info { display: none; }
 }

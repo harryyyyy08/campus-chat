@@ -12,8 +12,16 @@
   min-height: 100vh;
   padding: 32px 16px;
   background:
-    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(139, 92, 246, 0.14) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(167, 139, 250, 0.10) 0%, transparent 55%),
+    radial-gradient(
+      ellipse 90% 70% at 10% -5%,
+      rgba(139, 92, 246, 0.14) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 70% 60% at 90% 110%,
+      rgba(167, 139, 250, 0.1) 0%,
+      transparent 55%
+    ),
     var(--bg-base);
 }
 
@@ -42,7 +50,7 @@
 .login-logo-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -73,9 +81,6 @@
 }
 
 /* ── Fields ── */
-.field-group {
-  margin-bottom: 16px;
-}
 
 .field-group label {
   display: block;
@@ -129,9 +134,13 @@
 }
 
 /* ── Password field ── */
-.password-field { position: relative; }
+.password-field {
+  position: relative;
+}
 
-.password-field input { padding-right: 46px; }
+.password-field input {
+  padding-right: 46px;
+}
 
 .password-toggle {
   position: absolute;
@@ -150,12 +159,26 @@
   opacity: 0.7;
 }
 
-.password-toggle:hover              { color: var(--accent); opacity: 1; }
-.password-toggle:focus-visible      { outline: 2px solid var(--accent); outline-offset: 2px; }
-.password-toggle svg                { display: block; }
-.password-toggle .icon-off          { display: none; }
-.password-toggle.is-visible .icon-on  { display: none; }
-.password-toggle.is-visible .icon-off { display: block; }
+.password-toggle:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+.password-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.password-toggle svg {
+  display: block;
+}
+.password-toggle .icon-off {
+  display: none;
+}
+.password-toggle.is-visible .icon-on {
+  display: none;
+}
+.password-toggle.is-visible .icon-off {
+  display: block;
+}
 
 /* ── Select ── */
 .field-select {
@@ -212,7 +235,9 @@
   box-shadow: 0 6px 20px var(--accent-glow);
 }
 
-.btn-primary:active  { transform: scale(0.98); }
+.btn-primary:active {
+  transform: scale(0.98);
+}
 .btn-primary:disabled {
   opacity: 0.65;
   cursor: not-allowed;
@@ -247,6 +272,54 @@
   text-decoration: underline;
 }
 
+.login-theme-toggle {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.theme-toggle-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--anim),
+    color var(--anim),
+    border-color var(--anim),
+    box-shadow var(--anim);
+}
+
+.theme-toggle-btn svg {
+  display: block;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.theme-toggle-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
 /* ── Admin panel login ── */
 #adminLogin {
   display: flex;
@@ -254,8 +327,16 @@
   justify-content: center;
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 90% 70% at 10% -5%,  rgba(139, 92, 246, 0.14) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 60% at 90% 110%, rgba(167, 139, 250, 0.10) 0%, transparent 55%),
+    radial-gradient(
+      ellipse 90% 70% at 10% -5%,
+      rgba(139, 92, 246, 0.14) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 70% 60% at 90% 110%,
+      rgba(167, 139, 250, 0.1) 0%,
+      transparent 55%
+    ),
     var(--bg-base);
   padding: 24px;
 }

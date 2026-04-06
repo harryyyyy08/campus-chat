@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusChat — Verify Identity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <style>
+    .state {
+      display: none;
+    }
+
+    .state.active {
+      display: block;
+    }
+
+    .sq-info {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .sq-greeting {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .sq-question-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sq-question-label .sq-q-num {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sq-question-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      padding: 10px 14px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .field-group+.field-group {
+      margin-top: 16px;
+    }
+
+    .sq-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 18px 0;
+    }
+
+    .attempts-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(234, 179, 8, 0.12);
+      color: #eab308;
+      margin-bottom: 16px;
+    }
+
+    .fp-back-link {
+      display: block;
+      text-align: center;
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      margin-top: 16px;
+    }
+
+    .fp-back-link:hover {
+      text-decoration: underline;
+    }
+
+    .fp-success-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(34, 197, 94, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: #22c55e;
+    }
+
+    .fp-success-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .fp-success-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.65;
+      margin-bottom: 24px;
+    }
+
+    .answer-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      opacity: 0.7;
+    }
+
+    .admin-fallback {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .admin-fallback a {
+      color: var(--text-secondary);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loginWrap">
+    <div class="login-card" style="max-width: 420px;">
+
+      <!-- Logo -->
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </div>
+        <div>
+          <div class="login-logo-text">Campus<span>Chat</span></div>
+          <div class="login-subtitle">INTRANET MESSAGING</div>
+        </div>
+      </div>
+
+      <!-- State 1: Loading -->
+      <div id="stateLoading" class="state active">
+        <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">
+          <div
+            style="width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;">
+          </div>
+          Loading security questions…
+        </div>
+      </div>
+
+      <!-- State 2: Answer Questions -->
+      <div id="stateQuestions" class="state">
+        <div class="sq-greeting" id="sqGreeting"></div>
+        <p class="sq-info">Answer your security questions to reset your password.</p>
+        <span class="attempts-badge" id="attemptsInfo"></span>
+
+        <!-- Q1 -->
+        <div class="sq-question-label"><span class="sq-q-num">1</span> Question 1</div>
+        <div class="sq-question-text" id="q1Text"></div>
+        <div class="field-group">
+          <label for="ans1">Your Answer</label>
+          <input id="ans1" type="text" placeholder="Type your answer" autocomplete="off" />
+          <div class="answer-hint">Answers are case-insensitive</div>
+        </div>
+
+        <div class="sq-divider"></div>
+
+        <!-- Q2 -->
+        <div class="sq-question-label"><span class="sq-q-num">2</span> Question 2</div>
+        <div class="sq-question-text" id="q2Text"></div>
+        <div class="field-group">
+          <label for="ans2">Your Answer</label>
+          <input id="ans2" type="text" placeholder="Type your answer" autocomplete="off" />
+          <div class="answer-hint">Answers are case-insensitive</div>
+        </div>
+        <div class="sq-divider"></div>
+
+        <!-- Q3 -->
+        <div class="sq-question-label"><span class="sq-q-num">3</span> Question 3</div>
+        <div class="sq-question-text" id="q3Text"></div>
+        <div class="field-group">
+          <label for="ans3">Your Answer</label>
+          <input id="ans3" type="text" placeholder="Type your answer" autocomplete="off" />
+          <div class="answer-hint">Answers are case-insensitive</div>
+        </div>
+
+        <p id="sqError" style="color:var(--error,#ef4444);font-size:13px;margin:12px 0 0;min-height:18px;"></p>
+        <button class="btn-primary" id="btnVerify" onclick="verifyAnswers()" style="margin-top:8px;">Verify
+          Answers</button>
+
+        <div class="admin-fallback">
+          Forgot your answers?<br>
+          <a href="request-reset.html">Contact your administrator</a> for help.
+        </div>
+        <a class="fp-back-link" href="login.html">← Back to Login</a>
+      </div>
+
+      <!-- State 3: Set New Password -->
+      <div id="stateReset" class="state">
+        <div class="fp-success-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        </div>
+        <div class="fp-success-title">Identity Verified!</div>
+        <p class="sq-info" style="text-align:center;">Set your new password below.</p>
+
+        <div class="field-group">
+          <label for="newPassword">New Password</label>
+          <div class="password-field">
+            <input id="newPassword" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" />
+            <button type="button" class="password-toggle" aria-label="Show password" data-target="newPassword">
+              <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94" />
+                <path d="M1 1l22 22" />
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24" />
+                <path d="M23 12s-1.67 3.11-4.59 5.59" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="password-field">
+            <input id="confirmPassword" type="password" placeholder="Re-enter new password"
+              autocomplete="new-password" />
+            <button type="button" class="password-toggle" aria-label="Show password" data-target="confirmPassword">
+              <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94" />
+                <path d="M1 1l22 22" />
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24" />
+                <path d="M23 12s-1.67 3.11-4.59 5.59" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <p id="resetError" style="color:var(--error,#ef4444);font-size:13px;margin:12px 0 0;min-height:18px;"></p>
+        <button class="btn-primary" id="btnReset" onclick="resetPassword()" style="margin-top:8px;">Reset
+          Password</button>
+      </div>
+
+      <!-- State 4: Success -->
+      <div id="stateSuccess" class="state">
+        <div class="fp-success-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        </div>
+        <div class="fp-success-title">Password Reset!</div>
+        <div class="fp-success-body">
+          Your password has been updated successfully.<br><br>
+          You can now sign in with your new password.
+        </div>
+        <a class="btn-primary" href="login.html" style="display:block;text-align:center;text-decoration:none;">Go to
+          Login</a>
+      </div>
+
+      <!-- State 5: Error -->
+      <div id="stateError" class="state">
+        <div class="fp-success-icon" style="background:rgba(239,68,68,0.12);color:#ef4444;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        </div>
+        <div class="fp-success-title" style="color:var(--error,#ef4444);">Session Expired</div>
+        <div class="fp-success-body" id="stateErrorMsg">
+          This reset link is invalid or has expired. Please start the process again.
+        </div>
+        <a class="btn-primary" href="forgot-password.html"
+          style="display:block;text-align:center;text-decoration:none;">Try Again</a>
+        <a class="fp-back-link" href="login.html">← Back to Login</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const t = localStorage.getItem("cc_theme") || "light";
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+
+    const _host = window.location.hostname || "localhost";
+    const _protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const API_BASE = `${_protocol}//${_host}/campus-chat/api/index.php`;
+    const REQUEST_API_BASE = window.location.port === "3001"
+      ? `${window.location.origin}/api`
+      : API_BASE;
+    const FPR_TOKEN_STORAGE_KEY = "cc_fpr_token";
+
+    let currentToken = "";
+    let resetToken = "";
+
+    function showState(id) {
+      document.querySelectorAll(".state").forEach(el => el.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    // Auto-lowercase
+    document.getElementById("ans1").addEventListener("input", function () {
+      this.value = this.value.toLowerCase();
+    });
+    document.getElementById("ans2").addEventListener("input", function () {
+      this.value = this.value.toLowerCase();
+    });
+    document.getElementById("ans3").addEventListener("input", function () {
+      this.value = this.value.toLowerCase();
+    });
+
+    // Password toggles
+    document.querySelectorAll(".password-toggle").forEach(btn => {
+      const input = document.getElementById(btn.dataset.target);
+      if (!input) return;
+      btn.addEventListener("click", () => {
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        btn.classList.toggle("is-visible", show);
+        btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+      });
+    });
+
+    currentToken = (sessionStorage.getItem(FPR_TOKEN_STORAGE_KEY) || "").trim();
+
+    if (!currentToken) {
+      document.getElementById("stateErrorMsg").textContent = "Reset session missing or expired. Please start the process again.";
+      showState("stateError");
+    } else {
+      loadQuestions();
+    }
+
+    async function loadQuestions() {
+      try {
+        const res = await fetch(`${REQUEST_API_BASE}/forgot-password/questions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: currentToken }),
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          sessionStorage.removeItem(FPR_TOKEN_STORAGE_KEY);
+          document.getElementById("stateErrorMsg").textContent = data.error || "Invalid token.";
+          showState("stateError");
+          return;
+        }
+
+        document.getElementById("sqGreeting").textContent = `Hi, ${data.display_name}!`;
+        document.getElementById("attemptsInfo").textContent = `${data.attempts_left} attempt(s) remaining`;
+
+        if (data.questions.length >= 1) {
+          document.getElementById("q1Text").textContent = data.questions[0].question;
+        }
+        if (data.questions.length >= 2) {
+          document.getElementById("q2Text").textContent = data.questions[1].question;
+        }
+        if (data.questions.length >= 3) {
+          document.getElementById("q3Text").textContent = data.questions[2].question;
+        }
+
+        showState("stateQuestions");
+        document.getElementById("ans1").focus();
+      } catch {
+        document.getElementById("stateErrorMsg").textContent = "Connection error. Is the server running?";
+        showState("stateError");
+      }
+    }
+
+    async function verifyAnswers() {
+      const ans1 = document.getElementById("ans1").value.trim().toLowerCase();
+      const ans2 = document.getElementById("ans2").value.trim().toLowerCase();
+      const ans3 = document.getElementById("ans3").value.trim().toLowerCase();
+      const errEl = document.getElementById("sqError");
+      errEl.textContent = "";
+
+      if (!ans1 || !ans2 || !ans3) {
+        errEl.textContent = "Please answer all questions.";
+        return;
+      }
+
+      const btn = document.getElementById("btnVerify");
+      btn.disabled = true;
+      btn.textContent = "Verifying…";
+
+      try {
+        const res = await fetch(`${REQUEST_API_BASE}/forgot-password/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: currentToken, answer1: ans1, answer2: ans2, answer3: ans3 }),
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          errEl.textContent = data.error || "Verification failed.";
+          if (data.attempts_left !== undefined) {
+            document.getElementById("attemptsInfo").textContent = `${data.attempts_left} attempt(s) remaining`;
+            if (data.attempts_left <= 0) {
+              document.getElementById("stateErrorMsg").textContent = data.error;
+              showState("stateError");
+            }
+          }
+          return;
+        }
+
+        // Success — show password reset form
+        resetToken = data.reset_token;
+        sessionStorage.removeItem(FPR_TOKEN_STORAGE_KEY);
+        showState("stateReset");
+        document.getElementById("newPassword").focus();
+      } catch {
+        errEl.textContent = "Connection error. Is the server running?";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Verify Answers";
+      }
+    }
+
+    async function resetPassword() {
+      const newPass = document.getElementById("newPassword").value;
+      const confirm = document.getElementById("confirmPassword").value;
+      const errEl = document.getElementById("resetError");
+      errEl.textContent = "";
+
+      if (newPass.length < 8) {
+        errEl.textContent = "Password must be at least 8 characters.";
+        return;
+      }
+      if (newPass !== confirm) {
+        errEl.textContent = "Passwords do not match.";
+        return;
+      }
+
+      const btn = document.getElementById("btnReset");
+      btn.disabled = true;
+      btn.textContent = "Resetting…";
+
+      try {
+        const res = await fetch(`${REQUEST_API_BASE}/forgot-password/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reset_token: resetToken,
+            new_password: newPass,
+            confirm_password: confirm,
+          }),
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          errEl.textContent = data.error || "Reset failed.";
+          return;
+        }
+
+        showState("stateSuccess");
+      } catch {
+        errEl.textContent = "Connection error. Is the server running?";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Reset Password";
+      }
+    }
+
+    // Enter key handling
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      if (document.getElementById("stateQuestions").classList.contains("active")) {
+        verifyAnswers();
+      } else if (document.getElementById("stateReset").classList.contains("active")) {
+        resetPassword();
+      }
+    });
+  </script>
+</body>
+
+</html>
