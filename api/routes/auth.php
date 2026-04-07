@@ -341,7 +341,6 @@ if ($method === "POST" && $path === "/altcha/verify-code") {
     "payload" => $payload,
   ]);
 }
-
 // ── POST /login ──────────────────────────────────────────────────
 if ($method === "POST" && $path === "/login") {
   $ip = $_SERVER["REMOTE_ADDR"] ?? "unknown";
@@ -505,7 +504,6 @@ if ($method === "GET" && $path === "/users/search") {
 if ($method === "POST" && $path === "/register") {
   $pdo = db();
   $in = json_input();
-  require_altcha($in, ["register"]);
   $full_name  = trim((string)($in["full_name"]  ?? ""));
   $username   = strtolower(trim((string)($in["username"] ?? "")));
   $password   = (string)($in["password"]   ?? "");
@@ -619,7 +617,6 @@ if ($method === "POST" && $path === "/security-questions/setup") {
 // ── POST /forgot-password ─────────────────────────────────────────
 if ($method === "POST" && $path === "/forgot-password") {
   $in       = json_input();
-  require_altcha($in, ["forgot-password"]);
   $username = strtolower(trim((string)($in["username"] ?? "")));
   if ($username === "") json_response(["error" => "Username is required"], 400);
 

@@ -105,7 +105,6 @@ app.post("/api/altcha/verify-code", async (req, res) => {
     });
   }
 });
-
 app.post("/api/login", async (req, res) => {
   try {
     await forwardPhpJsonRequest(req, res, "/login");

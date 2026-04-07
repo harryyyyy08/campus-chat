@@ -108,7 +108,6 @@
         <altcha-widget id="registerAltcha" auto="off" hidelogo hidefooter
           style="display:block;max-width:100%;"></altcha-widget>
       </div>
-
       <div class="reg-terms" id="registerTerms">
         <div class="reg-terms-check">
           <input id="reg_terms_accept" type="checkbox" />
@@ -119,6 +118,7 @@
         </div>
       </div>
 
+      <button id="regSubmitBtn" class="btn-primary" onclick="submitRegistration()" disabled>Submit Registration</button>
       <button id="regSubmitBtn" class="btn-primary" onclick="submitRegistration()" disabled>Submit Registration</button>
       <p id="regError"></p>
 
@@ -501,7 +501,6 @@
         errEl.textContent = "Please complete the security verification.";
         return;
       }
-
       syncRegisterSubmitState(true);
 
       try {
