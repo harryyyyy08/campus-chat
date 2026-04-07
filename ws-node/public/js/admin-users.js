@@ -63,7 +63,6 @@ async function readAdminAltchaPayload() {
   }
   return payload;
 }
-
 async function adminLogin() {
   const username = document.getElementById("adminUsername").value.trim();
   const password = document.getElementById("adminPassword").value;
