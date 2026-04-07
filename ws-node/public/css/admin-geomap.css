@@ -24,17 +24,17 @@
 }
 
 /* Leaflet popup dark-mode tweaks */
-[data-theme="dark"] .leaflet-popup-content-wrapper,
-[data-theme="dark"] .leaflet-popup-tip {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
 [data-theme="dark"] .leaflet-popup-content-wrapper {
-  border: 1px solid var(--border-strong);
+  background: #1e1e35;
+  color: var(--text-primary);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+  border: 1.5px solid rgba(167, 139, 250, 0.35);
+}
+[data-theme="dark"] .leaflet-popup-tip {
+  background: #1e1e35;
 }
 
-/* User count bubble on map */
+/* User count bubble on map (legacy, kept for zone popups) */
 .geomap-marker-bubble {
   width: 30px;
   height: 30px;
@@ -50,22 +50,58 @@
   cursor: pointer;
 }
 
+/* Individual user pin marker */
+.geomap-user-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.geomap-user-pin:hover {
+  transform: scale(1.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+}
+
 /* Popup internals */
 .geomap-popup-user {
   padding: 3px 0;
 }
 .geomap-popup-username {
-  color: #999;
+  color: var(--text-secondary, #888);
   font-size: 11px;
 }
 .geomap-popup-meta {
   font-size: 11px;
-  color: #aaa;
+  color: var(--text-secondary, #888);
 }
 .geomap-popup-hr {
   margin: 5px 0;
   border: none;
-  border-top: 1px solid var(--border, #eee);
+  border-top: 1px solid var(--border, #e5e5e5);
+}
+
+/* code tag inside popups (CIDR display) */
+.leaflet-popup-content code {
+  background: var(--bg-base, #f3f4f6);
+  color: var(--text-primary, #111);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+}
+[data-theme="dark"] .leaflet-popup-content code {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 
 /* Right-panel user rows */
