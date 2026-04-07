@@ -211,8 +211,13 @@ if ($method === "GET" && $path === "/conversations") {
         $c["request_status"] = $rdata["status"];
         // Recipient is not in conversation_members yet — inject their info so the title renders correctly
         $rstmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE id = ?");
-        $rstmt->execute([(int)$rdata["recipient_id"]]); $recipient = $rstmt->fetch();
-        if ($recipient) { $recipient["id"] = (int)$recipient["id"]; $recipient["role"] = "member"; $c["members"][] = $recipient; }
+        $rstmt->execute([(int)$rdata["recipient_id"]]);
+        $recipient = $rstmt->fetch();
+        if ($recipient) {
+          $recipient["id"] = (int)$recipient["id"];
+          $recipient["role"] = "member";
+          $c["members"][] = $recipient;
+        }
       }
     }
   }
@@ -267,9 +272,8 @@ if ($method === "POST" && $path === "/conversations/request") {
   try {
     $pdo->prepare("INSERT INTO conversations (type, is_request) VALUES ('direct', 1)")->execute();
     $cid = (int)$pdo->lastInsertId();
-    $ins = $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')");
-    $ins->execute([$cid, $me_id]);
-    $ins->execute([$cid, $other_id]);
+    $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')")->execute([$cid, $me_id]);
+    // Recipient is NOT added here — they join conversation_members only upon acceptance
 
     if ($req) {
       $pdo->prepare("UPDATE message_requests SET conversation_id = ?, status = 'pending', updated_at = NOW() WHERE id = ?")->execute([$cid, $req["id"]]);
@@ -281,7 +285,7 @@ if ($method === "POST" && $path === "/conversations/request") {
 
     $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, body, status) VALUES (?, ?, ?, 'sent')")->execute([$cid, $me_id, $body]);
     $pdo->commit();
-    json_response(["request_id" => $req_id, "conversation_id" => $cid, "sent" => true], 201);
+    json_response(["request_id" => $req_id, "conversation_id" => $cid, "recipient_id" => $other_id, "sent" => true], 201);
   } catch (Exception $e) {
     $pdo->rollBack();
     json_response(["error" => $e->getMessage()], 500);
@@ -351,7 +355,7 @@ if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/decline$#'
     $pdo->prepare("DELETE FROM messages WHERE conversation_id = ?")->execute([$req["conversation_id"]]);
     $pdo->prepare("DELETE FROM conversations WHERE id = ?")->execute([$req["conversation_id"]]);
     $pdo->commit();
-    json_response(["declined" => true]);
+    json_response(["declined" => true, "requester_id" => (int)$req["requester_id"], "conversation_id" => (int)$req["conversation_id"]]);
   } catch (Exception $e) {
     $pdo->rollBack();
     json_response(["error" => $e->getMessage()], 500);

@@ -103,7 +103,22 @@
         </select>
       </div>
 
-      <button class="btn-primary" onclick="submitRegistration()">Submit Registration</button>
+      <div class="field-group" style="margin-top: 12px; display: flex; justify-content: center;">
+        <altcha-widget id="registerAltcha" auto="off" hidelogo hidefooter
+          style="display:block;max-width:100%;"></altcha-widget>
+      </div>
+
+      <div class="reg-terms" id="registerTerms">
+        <div class="reg-terms-check">
+          <input id="reg_terms_accept" type="checkbox" />
+          <div class="reg-terms-text">
+            <label for="reg_terms_accept">I have read and agree to the </label>
+            <button type="button" id="openTermsModal" class="terms-link">Terms and Conditions</button>.
+          </div>
+        </div>
+      </div>
+
+      <button id="regSubmitBtn" class="btn-primary" onclick="submitRegistration()" disabled>Submit Registration</button>
       <p id="regError"></p>
 
       <p class="login-footer-text">
@@ -128,6 +143,29 @@
 
   </div>
 
+  <div id="termsModal" class="terms-modal hidden" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
+    <div class="terms-modal-card">
+      <div class="terms-modal-header">
+        <h2 id="termsModalTitle">Terms and Conditions</h2>
+        <button type="button" id="closeTermsModal" class="terms-close" aria-label="Close terms modal">&times;</button>
+      </div>
+      <div class="terms-modal-body">
+        <ul class="terms-modal-list">
+          <li>This system is for official campus communication only. Do not use it for illegal, abusive, or harmful
+            activity.</li>
+          <li>Your account activity, conversations, and uploaded attachments may be reviewed by authorized
+            administrators for security, policy enforcement, and incident response.</li>
+          <li>Admin functions include monitoring reports, message and attachment audits, and account actions when
+            needed for investigations and platform safety.</li>
+          <li>Do not share your password or impersonate another user. You are responsible for actions made through your
+            account.</li>
+          <li>Accounts that violate school policy or system rules may be suspended, restricted, or removed without prior
+            notice.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <style>
     .reg-success-icon {
       font-size: 48px;
@@ -147,6 +185,131 @@
       line-height: 1.6;
       margin-bottom: 24px;
     }
+
+    .reg-terms {
+      margin-top: 0px;
+      margin-bottom: 0px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-alt);
+      padding: 12px;
+    }
+
+    .reg-terms-check {
+
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .reg-terms-check input {
+      margin-top: 2px;
+      flex: 0 0 auto;
+    }
+
+    .reg-terms-text {
+      font-size: 12px;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .reg-terms-text label {
+      cursor: pointer;
+    }
+
+    .terms-link {
+      border: 0;
+      background: transparent;
+      color: var(--brand-600);
+      text-decoration: underline;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+    }
+
+    .terms-link:hover {
+      color: var(--brand-700);
+    }
+
+    .terms-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(8, 12, 22, 0.76);
+      backdrop-filter: blur(2px);
+    }
+
+    .terms-modal-card {
+      width: min(100%, 540px);
+      max-height: min(86vh, 620px);
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      box-shadow: 0 22px 54px rgba(16, 24, 40, 0.24);
+      display: flex;
+      flex-direction: column;
+    }
+
+    html[data-theme="dark"] .terms-modal-card {
+      background: #0f172a;
+    }
+
+    .terms-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .terms-modal-header h2 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+
+    .terms-close {
+      border: 0;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      width: 28px;
+      height: 28px;
+    }
+
+    .terms-close:hover {
+      color: var(--text-primary);
+    }
+
+    .terms-modal-body {
+      padding: 14px 16px 16px;
+      overflow: auto;
+    }
+
+    .terms-modal-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .terms-modal-list li+li {
+      margin-top: 8px;
+    }
   </style>
 
   <script>
@@ -156,12 +319,59 @@
       document.documentElement.setAttribute("data-theme", t);
     })();
 
-    const _host = window.location.hostname;
-    const API_BASE = `http://${_host}/campus-chat/api/index.php`;
+    const _host = window.location.hostname || "localhost";
+    const _protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const API_BASE = `${_protocol}//${_host}/campus-chat/api/index.php`;
+    const REQUEST_API_BASE = window.location.port === "3001"
+      ? `${window.location.origin}/api`
+      : API_BASE;
+    const ALTCHA_API_BASE = REQUEST_API_BASE;
+    const REGISTER_ALTCHA_SCOPE = "register";
+    const ALTCHA_VERIFY_CALL_TIMEOUT_MS = 20000;
+
+    function configureAltchaWidget(widgetId, scope) {
+      const widget = document.getElementById(widgetId);
+      if (!widget) return;
+      widget.setAttribute("challengeurl", `${ALTCHA_API_BASE}/altcha/challenge?scope=${encodeURIComponent(scope)}`);
+      widget.setAttribute("workerurl", new URL("vendor/altcha/worker.js", window.location.href).href);
+      widget.setAttribute("verifyurl", `${ALTCHA_API_BASE}/altcha/verify-code`);
+    }
+
+    async function readAltchaPayload(widgetId) {
+      const widget = document.getElementById(widgetId);
+      if (!widget) return "";
+
+      const readPayload = () => {
+        const hidden = widget.querySelector('input[type="hidden"][name="altcha"]');
+        return hidden ? String(hidden.value || "").trim() : "";
+      };
+
+      let payload = readPayload();
+      if (payload) return payload;
+
+      if (typeof widget.verify === "function") {
+        try {
+          await Promise.race([
+            widget.verify(),
+            new Promise((_, reject) => {
+              setTimeout(() => reject(new Error("ALTCHA verify timeout")), ALTCHA_VERIFY_CALL_TIMEOUT_MS);
+            }),
+          ]);
+        } catch (_err) {
+          // The widget manages its own error state in UI.
+        }
+        payload = readPayload();
+      }
+      return payload;
+    }
+
+    configureAltchaWidget("registerAltcha", REGISTER_ALTCHA_SCOPE);
+
+
     // ── Load departments into dropdown ──────────────
     (async function loadDepartments() {
       try {
-        const res = await fetch(`${API_BASE}/departments`);
+        const res = await fetch(`${REQUEST_API_BASE}/departments`);
         const data = await res.json();
         if (res.ok && data.departments) {
           const sel = document.getElementById("reg_department");
@@ -189,10 +399,62 @@
       });
     });
 
+    const termsCheckbox = document.getElementById("reg_terms_accept");
+    const registerSubmitBtn = document.getElementById("regSubmitBtn");
+    const termsModal = document.getElementById("termsModal");
+    const openTermsModalBtn = document.getElementById("openTermsModal");
+    const closeTermsModalBtn = document.getElementById("closeTermsModal");
+
+    function openTermsModal() {
+      if (!termsModal) return;
+      termsModal.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeTermsModal() {
+      if (!termsModal) return;
+      termsModal.classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+
+    openTermsModalBtn?.addEventListener("click", openTermsModal);
+    closeTermsModalBtn?.addEventListener("click", closeTermsModal);
+    termsModal?.addEventListener("click", e => {
+      if (e.target === termsModal) closeTermsModal();
+    });
+
     // ── Enter key ──────────────────────────────────
     document.addEventListener("keydown", e => {
-      if (e.key === "Enter") submitRegistration();
+      if (e.key === "Escape" && termsModal && !termsModal.classList.contains("hidden")) {
+        closeTermsModal();
+        return;
+      }
+
+      if (e.key !== "Enter") return;
+      if (termsModal && !termsModal.classList.contains("hidden")) return;
+      const submitBtn = document.getElementById("regSubmitBtn");
+      if (submitBtn?.disabled) return;
+      submitRegistration();
     });
+
+    function syncRegisterSubmitState(isSubmitting = false) {
+      if (!registerSubmitBtn) return;
+
+      if (isSubmitting) {
+        registerSubmitBtn.disabled = true;
+        registerSubmitBtn.textContent = "Submitting…";
+        return;
+      }
+
+      registerSubmitBtn.disabled = !termsCheckbox?.checked;
+      registerSubmitBtn.textContent = "Submit Registration";
+    }
+
+    termsCheckbox?.addEventListener("change", () => {
+      syncRegisterSubmitState(false);
+    });
+
+    syncRegisterSubmitState(false);
 
     // ── Username input sanitize (live) ─────────────
     const usernameInput = document.getElementById("reg_username");
@@ -221,6 +483,7 @@
       const role = document.getElementById("reg_role").value;
       const department_id = Number(document.getElementById("reg_department").value || 0);
       const errEl = document.getElementById("regError");
+      const termsAccepted = Boolean(termsCheckbox?.checked);
       errEl.textContent = "";
 
       if (!full_name) { errEl.textContent = "Full name is required."; return; }
@@ -230,12 +493,18 @@
       if (username.length < 3) { errEl.textContent = "Username must be at least 3 characters."; return; }
       if (password.length < 8) { errEl.textContent = "Password must be at least 8 characters."; return; }
       if (password !== password2) { errEl.textContent = "Passwords do not match."; return; }
+      if (!termsAccepted) { errEl.textContent = "Please accept the Terms and Conditions before registering."; return; }
 
-      const btn = document.querySelector(".btn-primary");
-      btn.disabled = true; btn.textContent = "Submitting…";
+      const altcha = await readAltchaPayload("registerAltcha");
+      if (!altcha) {
+        errEl.textContent = "Please complete the security verification.";
+        return;
+      }
+
+      syncRegisterSubmitState(true);
 
       try {
-        const res = await fetch(`${API_BASE}/register`, {
+        const res = await fetch(`${REQUEST_API_BASE}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ full_name, username, password, role, department_id }),
@@ -247,7 +516,7 @@
       } catch (err) {
         errEl.textContent = "Connection error. Is the server running?";
       } finally {
-        btn.disabled = false; btn.textContent = "Submit Registration";
+        syncRegisterSubmitState(false);
       }
     }
   </script>

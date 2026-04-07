@@ -7,7 +7,7 @@ if ($method === "GET" && $path === "/admin/reset-requests") {
   $stmt->execute([(int)$claims["sub"]]);
   $my_role = $stmt->fetchColumn();
   if (!is_admin($my_role)) json_response(["error" => "Admin access required"], 403);
-  $stmt = $pdo->prepare("SELECT r.id, r.user_id, r.requested_at, r.status, u.username, u.full_name, d.name AS department, u.role AS user_role FROM password_reset_requests r JOIN users u ON u.id = r.user_id LEFT JOIN departments d ON d.id = u.department WHERE r.status = 'pending' ORDER BY r.requested_at ASC");
+  $stmt = $pdo->prepare("SELECT r.id, r.user_id, r.requested_at, r.status, r.reset_method, u.username, u.full_name, d.name AS department, u.role AS user_role FROM password_reset_requests r JOIN users u ON u.id = r.user_id LEFT JOIN departments d ON d.id = u.department WHERE r.status = 'pending' AND r.reset_method = 'admin' AND r.requested_at >= NOW() - INTERVAL 7 DAY ORDER BY r.requested_at ASC");
   $stmt->execute();
   $rows = $stmt->fetchAll();
   foreach ($rows as &$r) {

@@ -25,6 +25,202 @@ const io = new Server(server, {
   },
 });
 
+app.use(express.json({ limit: "128kb" }));
+
+async function forwardAltchaResponse(upstreamResponse, res) {
+  const contentType =
+    upstreamResponse.headers.get("content-type") ||
+    "application/json; charset=utf-8";
+  const cacheControl = upstreamResponse.headers.get("cache-control");
+
+  res.status(upstreamResponse.status);
+  res.setHeader("Content-Type", contentType);
+  if (cacheControl) {
+    res.setHeader("Cache-Control", cacheControl);
+  }
+
+  const body = await upstreamResponse.text();
+  res.send(body);
+}
+
+async function forwardPhpJsonRequest(req, res, phpPath) {
+  const headers = {
+    Accept: "application/json",
+  };
+
+  const authHeader = req.headers.authorization;
+  if (typeof authHeader === "string" && authHeader.trim() !== "") {
+    headers.Authorization = authHeader;
+  }
+
+  const method = String(req.method || "GET").toUpperCase();
+  const options = {
+    method,
+    headers,
+  };
+
+  if (!["GET", "HEAD"].includes(method)) {
+    headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(req.body || {});
+  }
+
+  const upstream = await fetch(`${PHP_API_BASE}${phpPath}`, options);
+  await forwardAltchaResponse(upstream, res);
+}
+
+// Same-origin proxy for ALTCHA on Node pages (e.g. localhost:3001) to avoid browser-specific
+// cross-origin issues while keeping PHP as the source of truth for challenge/verification.
+app.get("/api/altcha/challenge", async (req, res) => {
+  try {
+    const queryIndex = req.originalUrl.indexOf("?");
+    const query = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : "";
+    const upstream = await fetch(`${PHP_API_BASE}/altcha/challenge${query}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    await forwardAltchaResponse(upstream, res);
+  } catch (err) {
+    res.status(502).json({
+      verified: false,
+      reason: `ALTCHA challenge proxy error: ${err.message}`,
+    });
+  }
+});
+
+app.post("/api/altcha/verify-code", async (req, res) => {
+  try {
+    const upstream = await fetch(`${PHP_API_BASE}/altcha/verify-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(req.body || {}),
+    });
+    await forwardAltchaResponse(upstream, res);
+  } catch (err) {
+    res.status(502).json({
+      verified: false,
+      reason: `ALTCHA verify proxy error: ${err.message}`,
+    });
+  }
+});
+
+app.post("/api/login", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/login");
+  } catch (err) {
+    res.status(502).json({ error: `Login proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/register", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/register");
+  } catch (err) {
+    res.status(502).json({ error: `Register proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/forgot-password", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/forgot-password");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Forgot-password proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/change-password", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/change-password");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Change-password proxy error: ${err.message}` });
+  }
+});
+
+app.get("/api/departments", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/departments");
+  } catch (err) {
+    res.status(502).json({ error: `Departments proxy error: ${err.message}` });
+  }
+});
+
+// Security questions endpoints
+app.get("/api/security-questions/list", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/security-questions/list");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Security questions proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/security-questions/setup", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/security-questions/setup");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Security questions setup proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/forgot-password/questions", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/forgot-password/questions");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Forgot password questions proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/forgot-password/verify", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/forgot-password/verify");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Forgot password verify proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/forgot-password/reset", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/forgot-password/reset");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Forgot password reset proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/forgot-username", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/forgot-username");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Forgot username proxy error: ${err.message}` });
+  }
+});
+
+app.post("/api/request-admin-reset", async (req, res) => {
+  try {
+    await forwardPhpJsonRequest(req, res, "/request-admin-reset");
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Admin reset request proxy error: ${err.message}` });
+  }
+});
+
 // Serve static files from the campus-chat web root
 // so localhost:3001 also works (not just localhost/campus-chat)
 const path = require("path");
@@ -204,7 +400,9 @@ io.on("connection", (socket) => {
           "X-Real-IP": socket.handshake.address.replace(/^::ffff:/, ""),
         },
       });
-    } catch (_) { /* non-critical */ }
+    } catch (_) {
+      /* non-critical */
+    }
   })();
 
   // Auto-join all conversation rooms on connect (includes hidden — so messages still arrive)
@@ -215,8 +413,7 @@ io.on("connection", (socket) => {
       });
       const data = await resp.json();
       if (resp.ok && Array.isArray(data.conversation_ids)) {
-        for (const cid of data.conversation_ids)
-          socket.join(`conv:${cid}`);
+        for (const cid of data.conversation_ids) socket.join(`conv:${cid}`);
         socket.emit("joined_conversations", data.conversation_ids);
       } else {
         socket.emit("joined_conversations", []);
@@ -580,19 +777,22 @@ io.on("connection", (socket) => {
 
   // ── message_request_sent ─────────────────────────────────────
   // Notify recipient that someone sent them a request
-  socket.on("message_request_sent", async ({ conversation_id, request_id, recipient_id }) => {
-    const cid = Number(conversation_id);
-    const rid = Number(recipient_id);
-    if (!cid || !rid) return;
-    // Join sender to the pending conversation room
-    socket.join(`conv:${cid}`);
-    // Notify via user room — always reliable regardless of when recipient connected
-    io.to(`user:${rid}`).emit("new_message_request", {
-      request_id,
-      from_name: socket.user.username,
-      conversation_id: cid,
-    });
-  });
+  socket.on(
+    "message_request_sent",
+    async ({ conversation_id, request_id, recipient_id }) => {
+      const cid = Number(conversation_id);
+      const rid = Number(recipient_id);
+      if (!cid || !rid) return;
+      // Join sender to the pending conversation room
+      socket.join(`conv:${cid}`);
+      // Notify via user room — always reliable regardless of when recipient connected
+      io.to(`user:${rid}`).emit("new_message_request", {
+        request_id,
+        from_name: socket.user.username,
+        conversation_id: cid,
+      });
+    },
+  );
 
   // ── request_accepted ──────────────────────────────────────────
   // Recipient accepted — notify sender
@@ -600,8 +800,8 @@ io.on("connection", (socket) => {
     const cid = Number(conversation_id);
     const rid = Number(requester_id);
     if (!cid || !rid) return;
-    joinUserToRoom(rid, `conv:${cid}`);  // join requester (Carl) to conv room
-    socket.join(`conv:${cid}`);          // join acceptor (Jaymark) to conv room
+    joinUserToRoom(rid, `conv:${cid}`); // join requester (Carl) to conv room
+    socket.join(`conv:${cid}`); // join acceptor (Jaymark) to conv room
     // Notify sender their request was accepted
     io.to(`user:${rid}`).emit("request_accepted", { conversation_id: cid });
   });
@@ -621,7 +821,9 @@ io.on("connection", (socket) => {
     const cid = Number(conversation_id);
     if (!cid || !Array.isArray(member_ids)) return;
     member_ids.forEach((uid) => {
-      io.to(`user:${uid}`).emit("conversation_deleted", { conversation_id: cid });
+      io.to(`user:${uid}`).emit("conversation_deleted", {
+        conversation_id: cid,
+      });
     });
   });
 
@@ -672,8 +874,13 @@ async function deleteOldMessages() {
     }
 
     const deleted = Number(data.deleted ?? 0);
-    if (deleted > 0 || !isProd || verboseCleanup) {
+    const resetRejected = Number(data.reset_rejected ?? 0);
+    const resetDeleted = Number(data.reset_deleted ?? 0);
+    if (deleted > 0 || resetRejected > 0 || resetDeleted > 0 || !isProd || verboseCleanup) {
       console.log(`[cleanup] Deleted ${deleted} old messages.`);
+      if (resetRejected > 0 || resetDeleted > 0) {
+        console.log(`[cleanup] Password resets: ${resetRejected} auto-rejected, ${resetDeleted} old rows deleted.`);
+      }
     }
     if (Array.isArray(data.skipped_tables) && data.skipped_tables.length) {
       console.warn(
