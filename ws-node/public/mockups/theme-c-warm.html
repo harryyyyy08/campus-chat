@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup C — Warm Campus | CampusChat Design Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: #1C0F05;
+      color: #FDF6F0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* PREVIEW SHELL */
+    .preview-header { text-align: center; margin-bottom: 32px; }
+    .preview-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(249,115,22,0.15);
+      border: 1px solid rgba(249,115,22,0.3);
+      color: #FB923C;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 6px 16px; border-radius: 999px; margin-bottom: 16px;
+    }
+    .preview-title { font-size: 32px; font-weight: 800; letter-spacing: -0.04em; }
+    .preview-desc { font-size: 15px; color: #78350F; margin-top: 8px; }
+
+    .screens-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; }
+    .screen-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #78350F; margin-bottom: 12px; }
+    .screen-frame { border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+
+    /* WARM CAMPUS DESIGN */
+    :root {
+      --w-accent:     #EA580C;
+      --w-accent-lt:  #F97316;
+      --w-accent-dk:  #C2410C;
+      --w-glow:       rgba(234,88,12,0.25);
+      --w-amber:      #F59E0B;
+      --w-yellow:     #FCD34D;
+      --w-bg:         #FFFBF7;
+      --w-sidebar:    #FFFFFF;
+      --w-sidebar-hv: #FFF7ED;
+      --w-active:     #FFF1E0;
+      --w-chat:       #FFFBF7;
+      --w-border:     #FDE8D2;
+      --w-border-s:   #FDBA74;
+      --w-text-1:     #1C0F05;
+      --w-text-2:     #78350F;
+      --w-text-3:     #B45309;
+      --w-bubble-in:  #FFFFFF;
+      --w-bubble-out: #EA580C;
+      --w-green:      #16A34A;
+    }
+
+    /* LOGIN */
+    .w-login-page {
+      min-height: 540px;
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 40%, #FEF3C7 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 24px; position: relative; overflow: hidden;
+    }
+    .w-login-page::before {
+      content: ''; position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(249,115,22,0.2) 0%, transparent 70%);
+    }
+    .w-login-page::after {
+      content: ''; position: absolute;
+      bottom: -60px; left: -60px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%);
+    }
+    .w-login-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%; max-width: 390px;
+      box-shadow: 0 20px 60px rgba(234,88,12,0.12), 0 4px 16px rgba(0,0,0,0.06);
+      border: 1px solid #FDE8D2;
+      position: relative; z-index: 1;
+    }
+    .w-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
+    .w-logo-icon {
+      width: 48px; height: 48px; border-radius: 16px;
+      background: linear-gradient(135deg, #FB923C, #EA580C);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      box-shadow: 0 4px 16px rgba(234,88,12,0.35);
+      position: relative; overflow: hidden;
+    }
+    .w-logo-icon::after {
+      content: ''; position: absolute;
+      top: -10px; right: -10px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+    }
+    .w-logo-text { font-size: 24px; font-weight: 800; color: #1C0F05; letter-spacing: -0.04em; }
+    .w-logo-text span { color: #EA580C; }
+    .w-logo-sub { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #B45309; text-transform: uppercase; margin-top: 2px; }
+    .w-field { margin-bottom: 16px; }
+    .w-label { font-size: 13px; font-weight: 700; color: #78350F; margin-bottom: 6px; display: block; }
+    .w-input {
+      width: 100%; padding: 12px 16px;
+      border: 2px solid #FDE8D2; border-radius: 12px;
+      font-size: 14px; color: #1C0F05;
+      font-family: inherit; outline: none;
+      background: #FFFBF7; transition: 0.15s;
+    }
+    .w-input::placeholder { color: #D97706; opacity: 0.5; }
+    .w-input:focus { border-color: #FB923C; background: #fff; box-shadow: 0 0 0 3px rgba(249,115,22,0.12); }
+    .w-btn {
+      width: 100%; padding: 13px;
+      border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #FB923C, #EA580C);
+      color: #fff; font-size: 14px; font-weight: 800;
+      font-family: inherit; cursor: pointer; margin-top: 8px;
+      box-shadow: 0 4px 18px rgba(234,88,12,0.4);
+      letter-spacing: 0.02em;
+    }
+    .w-footer-text { text-align: center; font-size: 13px; color: #B45309; margin-top: 20px; }
+    .w-footer-text a { color: #EA580C; font-weight: 700; }
+
+    /* CHAT APP */
+    .w-app { display: flex; height: 600px; background: var(--w-chat); }
+
+    .w-sidebar {
+      width: 280px; background: var(--w-sidebar);
+      border-right: 2px solid var(--w-border);
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .w-sidebar-header { padding: 16px 14px 12px; border-bottom: 2px solid var(--w-border); }
+    .w-sidebar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .w-sidebar-brand { display: flex; align-items: center; gap: 10px; }
+    .w-sidebar-icon {
+      width: 30px; height: 30px; border-radius: 9px;
+      background: linear-gradient(135deg, #FB923C, #EA580C);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      box-shadow: 0 2px 8px rgba(234,88,12,0.3);
+    }
+    .w-sidebar-title { font-size: 17px; font-weight: 800; color: var(--w-text-1); letter-spacing: -0.03em; }
+
+    .w-actions { display: flex; gap: 2px; }
+    .w-icon-btn {
+      width: 30px; height: 30px; border-radius: 8px; border: none;
+      background: transparent; color: var(--w-text-3); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: 0.12s;
+    }
+    .w-icon-btn:hover { background: #FFF7ED; color: var(--w-accent); }
+    .w-icon-btn.accent { background: #FFF7ED; color: var(--w-accent-lt); }
+
+    .w-search {
+      display: flex; align-items: center;
+      background: #FFF7ED; border: 2px solid var(--w-border);
+      border-radius: 999px; padding: 0 14px; gap: 8px;
+    }
+    .w-search input {
+      border: none; background: transparent; outline: none;
+      font-size: 13px; color: var(--w-text-1); width: 100%; padding: 8px 0;
+      font-family: inherit;
+    }
+    .w-search input::placeholder { color: var(--w-text-3); opacity: 0.7; }
+    .w-search svg { color: var(--w-text-3); flex-shrink: 0; }
+    .w-search:focus-within { border-color: #FB923C; box-shadow: 0 0 0 3px rgba(249,115,22,0.1); }
+
+    .w-tabs { display: flex; padding: 10px 14px 0; border-bottom: 2px solid var(--w-border); gap: 4px; }
+    .w-tab {
+      flex: 1; padding: 7px 8px; background: none; border: none;
+      border-radius: 999px; font-size: 12px; font-weight: 700;
+      color: var(--w-text-3); cursor: pointer; margin-bottom: 8px; font-family: inherit;
+    }
+    .w-tab.active { background: linear-gradient(135deg, #FB923C, #EA580C); color: #fff; }
+
+    .w-online-strip {
+      display: flex; gap: 12px; padding: 10px 14px;
+      border-bottom: 2px solid var(--w-border);
+      overflow-x: auto; min-height: 66px; align-items: center;
+    }
+    .w-online-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .w-avatar-wrap { position: relative; }
+    .w-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, #FB923C, #EA580C);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase;
+    }
+    .w-avatar.p2 { background: linear-gradient(135deg, #34D399, #16A34A); }
+    .w-avatar.p3 { background: linear-gradient(135deg, #60A5FA, #2563EB); }
+    .w-avatar.grp { background: linear-gradient(135deg, #FCD34D, #D97706); }
+    .w-online-dot {
+      position: absolute; bottom: 1px; right: 1px;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--w-green); border: 2px solid #fff;
+    }
+    .w-online-name { font-size: 10px; color: var(--w-text-3); max-width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .w-conv-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 3px; }
+    .w-conv {
+      padding: 10px 10px 10px 12px; border-radius: 14px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; transition: 0.12s; position: relative;
+    }
+    .w-conv:hover { background: var(--w-sidebar-hv); }
+    .w-conv.active { background: var(--w-active); }
+    .w-conv.active::before {
+      content: ''; position: absolute;
+      left: 0; top: 20%; height: 60%; width: 3px;
+      background: var(--w-accent); border-radius: 0 3px 3px 0;
+    }
+    .w-conv-info { flex: 1; min-width: 0; }
+    .w-conv-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+    .w-conv-name { font-size: 14px; font-weight: 700; color: var(--w-text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .w-conv-time { font-size: 11px; color: var(--w-text-3); flex-shrink: 0; }
+    .w-conv-preview { font-size: 12.5px; color: var(--w-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .w-conv-preview.unread { color: var(--w-text-1); font-weight: 600; }
+    .w-badge {
+      background: var(--w-accent); color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 999px;
+      min-width: 18px; text-align: center;
+    }
+
+    .w-footer {
+      padding: 10px 12px; border-top: 2px solid var(--w-border);
+      display: flex; align-items: center; gap: 8px;
+      background: #FFF7ED;
+    }
+    .w-my-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #FB923C, #EA580C);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .w-my-name { font-size: 13px; font-weight: 700; color: var(--w-text-1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .w-my-status { font-size: 11px; color: var(--w-green); font-weight: 700; }
+
+    /* CHAT AREA */
+    .w-chat { flex: 1; display: flex; flex-direction: column; }
+    .w-chat-header {
+      padding: 14px 20px; background: #FFFFFF;
+      border-bottom: 2px solid var(--w-border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .w-chat-name { font-size: 15px; font-weight: 800; color: var(--w-text-1); }
+    .w-chat-status { font-size: 12px; color: var(--w-green); font-weight: 700; }
+    .w-chat-actions { margin-left: auto; display: flex; gap: 4px; }
+
+    .w-messages {
+      flex: 1; padding: 20px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 12px;
+      background: linear-gradient(180deg, #FFF7ED 0%, #FFFBF7 100%);
+    }
+    .w-msg { display: flex; gap: 10px; }
+    .w-msg.out { flex-direction: row-reverse; }
+    .w-msg-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+      flex-shrink: 0; align-self: flex-end;
+    }
+    .w-bubble {
+      max-width: 68%; padding: 11px 15px; border-radius: 18px;
+      font-size: 14px; line-height: 1.55; color: var(--w-text-1);
+      background: #FFFFFF;
+      box-shadow: 0 1px 6px rgba(234,88,12,0.08);
+      border: 1.5px solid var(--w-border);
+    }
+    .w-bubble.in { border-bottom-left-radius: 4px; }
+    .w-bubble.out {
+      background: linear-gradient(135deg, #FB923C, #EA580C);
+      color: #fff; border: none;
+      box-shadow: 0 4px 16px rgba(234,88,12,0.35);
+      border-bottom-right-radius: 4px;
+    }
+    .w-msg-time { font-size: 11px; color: var(--w-text-3); margin-top: 4px; text-align: right; }
+    .w-msg-time.in { text-align: left; margin-left: 42px; }
+
+    .w-typing { padding: 0 20px 8px; font-size: 12px; color: var(--w-text-3); font-style: italic; height: 24px; }
+
+    .w-input-bar {
+      padding: 12px 16px;
+      background: #FFFFFF;
+      border-top: 2px solid var(--w-border);
+      display: flex; align-items: flex-end; gap: 10px;
+    }
+    .w-input-tools { display: flex; gap: 2px; }
+    .w-tool-btn {
+      width: 34px; height: 34px; border-radius: 8px; border: none;
+      background: transparent; color: var(--w-text-3);
+      cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.12s;
+    }
+    .w-tool-btn:hover { color: var(--w-accent); background: #FFF7ED; }
+    .w-textarea-wrap { flex: 1; }
+    .w-textarea {
+      width: 100%; border: 2px solid var(--w-border); border-radius: 14px;
+      padding: 9px 14px; font-size: 14px; color: var(--w-text-1);
+      font-family: inherit; resize: none; outline: none;
+      background: #FFFBF7; line-height: 1.5;
+    }
+    .w-textarea::placeholder { color: var(--w-text-3); opacity: 0.6; }
+    .w-textarea:focus { border-color: #FB923C; box-shadow: 0 0 0 3px rgba(249,115,22,0.1); background: #fff; }
+    .w-send-btn {
+      width: 40px; height: 40px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, #FB923C, #EA580C);
+      color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(234,88,12,0.4); flex-shrink: 0;
+    }
+
+    /* INFO */
+    .palette-section { max-width: 1400px; margin: 24px auto 0; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+    .palette-label { font-size: 12px; color: #78350F; font-weight: 600; }
+    .palette-swatches { display: flex; gap: 8px; }
+    .swatch { width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); }
+    .feature-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+    .feature-tag { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #B45309; font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 999px; }
+    .nav-links { text-align: center; margin-top: 32px; }
+    .nav-link { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #78350F; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 10px; text-decoration: none; margin: 0 6px; transition: background 0.15s; }
+    .nav-link:hover { background: rgba(255,255,255,0.08); color: #FDF6F0; }
+    .nav-link.active-theme { background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.4); color: #FB923C; }
+    .date-chip { font-size: 11px; color: var(--w-text-3); background: rgba(253,232,210,0.5); border: 1px solid var(--w-border); padding: 3px 10px; border-radius: 999px; margin: 0 auto 8px; display: block; width: fit-content; }
+  </style>
+</head>
+<body>
+
+  <div class="preview-header">
+    <div class="preview-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      Theme C of 3
+    </div>
+    <div class="preview-title">Warm Campus</div>
+    <div class="preview-desc">Friendly orange warmth — Notion × Beehiiv aesthetic for students</div>
+  </div>
+
+  <div class="screens-grid">
+    <!-- LOGIN -->
+    <div>
+      <div class="screen-label">Login Page</div>
+      <div class="screen-frame">
+        <div class="w-login-page">
+          <div class="w-login-card">
+            <div class="w-logo">
+              <div class="w-logo-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div>
+                <div class="w-logo-text">Campus<span>Chat</span></div>
+                <div class="w-logo-sub">Intranet Messaging</div>
+              </div>
+            </div>
+            <div class="w-field">
+              <label class="w-label">Username</label>
+              <input class="w-input" type="text" placeholder="Enter your username" />
+            </div>
+            <div class="w-field">
+              <label class="w-label">Password</label>
+              <input class="w-input" type="password" placeholder="••••••••" />
+            </div>
+            <button class="w-btn">Sign In</button>
+            <p class="w-footer-text">Don't have an account? <a href="#">Register here</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div>
+      <div class="screen-label">Chat Interface</div>
+      <div class="screen-frame">
+        <div class="w-app">
+          <div class="w-sidebar">
+            <div class="w-sidebar-header">
+              <div class="w-sidebar-top">
+                <div class="w-sidebar-brand">
+                  <div class="w-sidebar-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <span class="w-sidebar-title">Messages</span>
+                </div>
+                <div class="w-actions">
+                  <div class="w-icon-btn accent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                  <div class="w-icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                </div>
+              </div>
+              <div class="w-search">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input placeholder="Search conversations…" />
+              </div>
+            </div>
+            <div class="w-tabs">
+              <button class="w-tab active">All</button>
+              <button class="w-tab">Direct</button>
+              <button class="w-tab">Groups</button>
+            </div>
+            <div class="w-online-strip">
+              <div class="w-online-item">
+                <div class="w-avatar-wrap"><div class="w-avatar">JD</div><div class="w-online-dot"></div></div>
+                <span class="w-online-name">Juan</span>
+              </div>
+              <div class="w-online-item">
+                <div class="w-avatar-wrap"><div class="w-avatar p2">MR</div><div class="w-online-dot"></div></div>
+                <span class="w-online-name">Maria</span>
+              </div>
+              <div class="w-online-item">
+                <div class="w-avatar-wrap"><div class="w-avatar p3">KL</div><div class="w-online-dot"></div></div>
+                <span class="w-online-name">Karl</span>
+              </div>
+            </div>
+            <div class="w-conv-list">
+              <div class="w-conv active">
+                <div class="w-avatar" style="width:44px;height:44px;font-size:15px;flex-shrink:0;position:relative">JD<div class="w-online-dot" style="width:11px;height:11px;border-width:2.5px"></div></div>
+                <div class="w-conv-info">
+                  <div class="w-conv-row"><span class="w-conv-name">Juan Dela Cruz</span><span class="w-conv-time">2m</span></div>
+                  <div class="w-conv-preview unread">Hey, check mo na yung file!</div>
+                </div>
+                <div class="w-badge">3</div>
+              </div>
+              <div class="w-conv">
+                <div class="w-avatar grp" style="width:44px;height:44px;font-size:18px;flex-shrink:0">👥</div>
+                <div class="w-conv-info">
+                  <div class="w-conv-row"><span class="w-conv-name">BSIT 3-A</span><span class="w-conv-time">1h</span></div>
+                  <div class="w-conv-preview">Maria: Saan na ang lecture notes?</div>
+                </div>
+              </div>
+              <div class="w-conv">
+                <div class="w-avatar p2" style="width:44px;height:44px;font-size:15px;flex-shrink:0">MR</div>
+                <div class="w-conv-info">
+                  <div class="w-conv-row"><span class="w-conv-name">Maria Reyes</span><span class="w-conv-time">3h</span></div>
+                  <div class="w-conv-preview">OK sige, bukas na lang</div>
+                </div>
+              </div>
+              <div class="w-conv">
+                <div class="w-avatar p3" style="width:44px;height:44px;font-size:15px;flex-shrink:0">KL</div>
+                <div class="w-conv-info">
+                  <div class="w-conv-row"><span class="w-conv-name">Karl Lim</span><span class="w-conv-time">Yst</span></div>
+                  <div class="w-conv-preview">Thanks for the help!</div>
+                </div>
+              </div>
+              <div class="w-conv">
+                <div class="w-avatar grp" style="width:44px;height:44px;font-size:18px;flex-shrink:0">📢</div>
+                <div class="w-conv-info">
+                  <div class="w-conv-row"><span class="w-conv-name">Faculty Lounge</span><span class="w-conv-time">Yst</span></div>
+                  <div class="w-conv-preview">Prof: Class suspended bukas</div>
+                </div>
+              </div>
+            </div>
+            <div class="w-footer">
+              <div class="w-my-avatar">ME</div>
+              <div style="flex:1;min-width:0">
+                <div class="w-my-name">My Account</div>
+                <div class="w-my-status">● Online</div>
+              </div>
+              <div class="w-icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+              <div class="w-icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg></div>
+            </div>
+          </div>
+
+          <div class="w-chat">
+            <div class="w-chat-header">
+              <div class="w-avatar" style="width:38px;height:38px;font-size:13px;flex-shrink:0;position:relative">JD<div class="w-online-dot" style="width:10px;height:10px;border-width:2px"></div></div>
+              <div>
+                <div class="w-chat-name">Juan Dela Cruz</div>
+                <div class="w-chat-status">● Active now</div>
+              </div>
+              <div class="w-chat-actions">
+                <div class="w-icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="w-icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+              </div>
+            </div>
+            <div class="w-messages">
+              <div class="date-chip">Today</div>
+              <div class="w-msg">
+                <div class="w-msg-avatar" style="background:linear-gradient(135deg,#FB923C,#EA580C)">JD</div>
+                <div>
+                  <div class="w-bubble in">Kumusta na? May tanong ako sa assignment natin</div>
+                  <div class="w-msg-time in">10:24 AM</div>
+                </div>
+              </div>
+              <div class="w-msg out">
+                <div class="w-msg-avatar" style="background:linear-gradient(135deg,#34D399,#16A34A)">ME</div>
+                <div>
+                  <div class="w-bubble out">Oo! Sige tanong mo 😊</div>
+                  <div class="w-msg-time">10:25 AM ✓✓</div>
+                </div>
+              </div>
+              <div class="w-msg">
+                <div class="w-msg-avatar" style="background:linear-gradient(135deg,#FB923C,#EA580C)">JD</div>
+                <div>
+                  <div class="w-bubble in">Hey, check mo na yung file na pinadala ko! May important na changes doon</div>
+                  <div class="w-msg-time in">10:26 AM</div>
+                </div>
+              </div>
+              <div class="w-msg out">
+                <div class="w-msg-avatar" style="background:linear-gradient(135deg,#34D399,#16A34A)">ME</div>
+                <div>
+                  <div class="w-bubble out">Sige titingnan ko ngayon 👍</div>
+                  <div class="w-msg-time">10:27 AM ✓✓</div>
+                </div>
+              </div>
+            </div>
+            <div class="w-typing">Juan is typing…</div>
+            <div class="w-input-bar">
+              <div class="w-input-tools">
+                <div class="w-tool-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+                <div class="w-tool-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+                <div class="w-tool-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>
+              </div>
+              <div class="w-textarea-wrap">
+                <textarea class="w-textarea" rows="1" placeholder="Message Juan…"></textarea>
+              </div>
+              <div class="w-send-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="palette-section">
+    <span class="palette-label">Color Palette</span>
+    <div class="palette-swatches">
+      <div class="swatch" style="background:#EA580C" title="Primary Orange"></div>
+      <div class="swatch" style="background:#FB923C" title="Light Orange"></div>
+      <div class="swatch" style="background:#F59E0B" title="Amber"></div>
+      <div class="swatch" style="background:#FFF7ED" title="Cream BG"></div>
+      <div class="swatch" style="background:#FFF1E0" title="Active BG"></div>
+      <div class="swatch" style="background:#FFFFFF" title="White"></div>
+      <div class="swatch" style="background:#1C0F05" title="Dark Text"></div>
+      <div class="swatch" style="background:#16A34A" title="Online Green"></div>
+    </div>
+  </div>
+  <div class="feature-tags">
+    <span class="feature-tag">✦ Warm cream backgrounds</span>
+    <span class="feature-tag">✦ Orange gradient bubbles</span>
+    <span class="feature-tag">✦ DM Sans font</span>
+    <span class="feature-tag">✦ Pill-shaped search bar</span>
+    <span class="feature-tag">✦ Gradient active tabs</span>
+    <span class="feature-tag">✦ Rounded corners throughout</span>
+    <span class="feature-tag">✦ Friendly campus feel</span>
+  </div>
+
+  <div class="nav-links">
+    <a class="nav-link" href="theme-a-azure.html">Theme A: Azure Pro</a>
+    <a class="nav-link" href="theme-b-violet.html">Theme B: Violet Dusk</a>
+    <a class="nav-link active-theme" href="theme-c-warm.html">Theme C: Warm Campus</a>
+  </div>
+
+</body>
+</html>

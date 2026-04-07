@@ -68,44 +68,6 @@ async function forwardPhpJsonRequest(req, res, phpPath) {
   await forwardAltchaResponse(upstream, res);
 }
 
-// Same-origin proxy for ALTCHA on Node pages (e.g. localhost:3001) to avoid browser-specific
-// cross-origin issues while keeping PHP as the source of truth for challenge/verification.
-app.get("/api/altcha/challenge", async (req, res) => {
-  try {
-    const queryIndex = req.originalUrl.indexOf("?");
-    const query = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : "";
-    const upstream = await fetch(`${PHP_API_BASE}/altcha/challenge${query}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    });
-    await forwardAltchaResponse(upstream, res);
-  } catch (err) {
-    res.status(502).json({
-      verified: false,
-      reason: `ALTCHA challenge proxy error: ${err.message}`,
-    });
-  }
-});
-
-app.post("/api/altcha/verify-code", async (req, res) => {
-  try {
-    const upstream = await fetch(`${PHP_API_BASE}/altcha/verify-code`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(req.body || {}),
-    });
-    await forwardAltchaResponse(upstream, res);
-  } catch (err) {
-    res.status(502).json({
-      verified: false,
-      reason: `ALTCHA verify proxy error: ${err.message}`,
-    });
-  }
-});
-
 app.post("/api/login", async (req, res) => {
   try {
     await forwardPhpJsonRequest(req, res, "/login");

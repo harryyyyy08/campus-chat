@@ -1,69 +1,11 @@
 // ── Login ──────────────────────────────────────────────
-const ADMIN_ALTCHA_SCOPE = "admin-login";
-const ADMIN_ALTCHA_HOST = window.location.hostname || "localhost";
-const ADMIN_ALTCHA_PROTOCOL =
-  window.location.protocol === "https:" ? "https:" : "http:";
-const ADMIN_ALTCHA_API_BASE = `${ADMIN_ALTCHA_PROTOCOL}//${ADMIN_ALTCHA_HOST}/campus-chat/api/index.php`;
-const ADMIN_ALTCHA_PROXY_BASE =
+const _adminHost = window.location.hostname || "localhost";
+const _adminProtocol = window.location.protocol === "https:" ? "https:" : "http:";
+const ADMIN_API_BASE = `${_adminProtocol}//${_adminHost}/campus-chat/api/index.php`;
+const ADMIN_PROXY_BASE =
   window.location.port === "3001"
     ? `${window.location.origin}/api`
-    : ADMIN_ALTCHA_API_BASE;
-const ADMIN_ALTCHA_VERIFY_CALL_TIMEOUT_MS = 20000;
-
-function configureAdminAltchaWidget() {
-  const widget = document.getElementById("adminLoginAltcha");
-  if (!widget) return;
-  widget.setAttribute(
-    "challengeurl",
-    `${ADMIN_ALTCHA_PROXY_BASE}/altcha/challenge?scope=${encodeURIComponent(ADMIN_ALTCHA_SCOPE)}`,
-  );
-  widget.setAttribute(
-    "workerurl",
-    new URL("vendor/altcha/worker.js", window.location.href).href,
-  );
-  widget.setAttribute(
-    "verifyurl",
-    `${ADMIN_ALTCHA_PROXY_BASE}/altcha/verify-code`,
-  );
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", configureAdminAltchaWidget);
-} else {
-  configureAdminAltchaWidget();
-}
-
-async function readAdminAltchaPayload() {
-  const widget = document.getElementById("adminLoginAltcha");
-  if (!widget) return "";
-
-  const readPayload = () => {
-    const hidden = widget.querySelector('input[type="hidden"][name="altcha"]');
-    return hidden ? String(hidden.value || "").trim() : "";
-  };
-
-  let payload = readPayload();
-  if (payload) return payload;
-
-  if (typeof widget.verify === "function") {
-    try {
-      await Promise.race([
-        widget.verify(),
-        new Promise((_, reject) => {
-          setTimeout(
-            () => reject(new Error("ALTCHA verify timeout")),
-            ADMIN_ALTCHA_VERIFY_CALL_TIMEOUT_MS,
-          );
-        }),
-      ]);
-    } catch (_err) {
-      // The widget renders error state by itself.
-    }
-    payload = readPayload();
-  }
-  return payload;
-}
-
+    : ADMIN_API_BASE;
 
 async function adminLogin() {
   const username = document.getElementById("adminUsername").value.trim();
@@ -77,7 +19,7 @@ async function adminLogin() {
   }
 
   try {
-    const res = await fetch(`${ADMIN_ALTCHA_PROXY_BASE}/login`, {
+    const res = await fetch(`${ADMIN_PROXY_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
