@@ -1,27 +1,4 @@
 // ── Login ──────────────────────────────────────────────
-async function readAdminAltchaPayload() {
-  const widget = document.getElementById("adminLoginAltcha");
-  if (!widget) return "";
-
-  const readPayload = () => {
-    const hidden = widget.querySelector('input[type="hidden"][name="altcha"]');
-    return hidden ? String(hidden.value || "").trim() : "";
-  };
-
-  let payload = readPayload();
-  if (payload) return payload;
-
-  if (typeof widget.verify === "function") {
-    try {
-      await widget.verify();
-    } catch (_err) {
-      // The widget renders error state by itself.
-    }
-    payload = readPayload();
-  }
-  return payload;
-}
-
 async function adminLogin() {
   const username = document.getElementById("adminUsername").value.trim();
   const password = document.getElementById("adminPassword").value;
@@ -33,17 +10,11 @@ async function adminLogin() {
     return;
   }
 
-  const altcha = await readAdminAltchaPayload();
-  if (!altcha) {
-    errEl.textContent = "Please complete the security verification.";
-    return;
-  }
-
   try {
     const res = await fetch(`${API_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, altcha }),
+      body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (!res.ok) {
