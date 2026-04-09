@@ -5,6 +5,7 @@ let leafletLoaded  = false;
 let geomapMap      = null;   // Leaflet map instance
 let zoneCircles    = [];     // Leaflet Circle layers
 let userMarkers    = [];     // Leaflet Marker layers
+let userMarkerMap  = {};     // { [userId]: L.Marker } for sidebar click-to-focus
 let allGeomapData  = null;   // { zones, users }
 
 // ── Lazy-load Leaflet from local vendor folder ────────────────────────
@@ -88,6 +89,7 @@ function initOrResetMap(zones) {
   userMarkers.forEach(m => m.remove());
   zoneCircles = [];
   userMarkers = [];
+  userMarkerMap = {};
 
   if (!geomapMap) {
     geomapMap = L.map("geomapMap");
@@ -120,11 +122,11 @@ function drawZoneCircles(zones) {
     })
     .bindPopup(
       `<strong>${esc(z.name)}</strong><br>` +
-      `${esc(z.building)}<br>` +
-      `<code style="font-size:11px">${esc(z.cidr)}</code>` +
-      (z.description ? `<br><span style="font-size:11px;color:#999">${esc(z.description)}</span>` : "") +
+      `<span style="font-size:12px;color:var(--text-secondary,#888)">${esc(z.building)}</span><br>` +
+      `<code>${esc(z.cidr)}</code>` +
+      (z.description ? `<br><span style="font-size:11px;color:var(--text-secondary,#888)">${esc(z.description)}</span>` : "") +
       `<br><br><a href="#" onclick="openZoneModal(geomapZoneById(${z.id}));return false"` +
-      ` style="font-size:12px">Edit zone</a>`
+      ` style="font-size:12px;color:var(--accent,#8B5CF6)">Edit zone</a>`
     )
     .addTo(geomapMap);
     zoneCircles.push(circle);
@@ -135,39 +137,64 @@ function geomapZoneById(id) {
   return (allGeomapData?.zones || []).find(z => z.id === id) || null;
 }
 
-// ── Draw user count markers per zone ──────────────────────────────────
+// ── Draw individual user pin markers ──────────────────────────────────
 function drawUserMarkers(users, zones) {
+  const zoneMap = Object.fromEntries(zones.map(z => [z.id, z]));
+
+  // Group users by zone to calculate circular offsets
   const byZone = {};
   users.forEach(u => {
     if (u.zone_id) (byZone[u.zone_id] = byZone[u.zone_id] || []).push(u);
   });
 
-  zones.forEach(z => {
-    const zUsers = byZone[z.id] || [];
-    if (!zUsers.length) return;
+  Object.entries(byZone).forEach(([zoneId, zUsers]) => {
+    const zone = zoneMap[zoneId];
+    if (!zone) return;
 
-    const icon = L.divIcon({
-      className: "",
-      html: `<div class="geomap-marker-bubble" style="background:${z.color}">${zUsers.length}</div>`,
-      iconSize:   [30, 30],
-      iconAnchor: [15, 15],
-    });
+    const N = zUsers.length;
+    // Spread pins in a ring at 35% of zone radius, capped at 25 m
+    const offsetDist = N > 1 ? Math.min(zone.radius_m * 0.35, 25) : 0;
+    const baseLat = parseFloat(zone.lat);
+    const baseLng = parseFloat(zone.lng);
 
-    const popupHtml = zUsers.map(u =>
-      `<div class="geomap-popup-user">` +
-        `<strong>${esc(u.full_name)}</strong>` +
-        `<span class="geomap-popup-username"> @${esc(u.username)}</span>` +
+    zUsers.forEach((u, i) => {
+      const angle = (2 * Math.PI * i) / N;
+      const dLat  = offsetDist > 0 ? (offsetDist / 111320) * Math.cos(angle) : 0;
+      const dLng  = offsetDist > 0
+        ? (offsetDist / (111320 * Math.cos(baseLat * Math.PI / 180))) * Math.sin(angle)
+        : 0;
+
+      const pinLat = baseLat + dLat;
+      const pinLng = baseLng + dLng;
+      const initials = (u.full_name || u.username).charAt(0).toUpperCase();
+      const color    = zone.color;
+      const timeAgo  = u.last_seen_at ? fmtRelTime(u.last_seen_at) : "—";
+
+      const icon = L.divIcon({
+        className: "",
+        html: `<div class="geomap-user-pin" style="background:${color};border-color:${color}">${initials}</div>`,
+        iconSize:   [28, 28],
+        iconAnchor: [14, 14],
+      });
+
+      const popup =
+        `<div style="min-width:160px">` +
+        `<strong style="color:var(--text-primary,#111)">${esc(u.full_name)}</strong>` +
+        `<div class="geomap-popup-username" style="margin-bottom:4px">@${esc(u.username)}</div>` +
         `<div class="geomap-popup-meta">${esc(u.department || u.role)}</div>` +
-      `</div>`
-    ).join(`<hr class="geomap-popup-hr">`);
+        `<div class="geomap-popup-meta" style="margin-top:2px">` +
+          `<span style="border-color:${color}40;color:${color};background:${color}15;display:inline-block;font-size:10px;border:1px solid;border-radius:4px;padding:1px 5px">${esc(zone.name)}</span>` +
+        `</div>` +
+        `<div class="geomap-popup-meta" style="margin-top:4px">Last seen: ${timeAgo}</div>` +
+        `</div>`;
 
-    const marker = L.marker([z.lat, z.lng], { icon })
-      .bindPopup(
-        `<div style="min-width:180px;max-height:300px;overflow-y:auto">` +
-        `<strong>${esc(z.name)}</strong><hr class="geomap-popup-hr">${popupHtml}</div>`
-      )
-      .addTo(geomapMap);
-    userMarkers.push(marker);
+      const marker = L.marker([pinLat, pinLng], { icon })
+        .bindPopup(popup)
+        .addTo(geomapMap);
+
+      userMarkers.push(marker);
+      userMarkerMap[u.id] = marker;
+    });
   });
 }
 
@@ -189,7 +216,7 @@ function renderGeomapList(users, zones) {
     const color    = zone ? zone.color : "var(--accent)";
     const timeAgo  = u.last_seen_at ? fmtRelTime(u.last_seen_at) : "—";
 
-    return `<div class="geomap-user-row" onclick="geomapFocusZone(${u.zone_id || "null"})">
+    return `<div class="geomap-user-row" onclick="geomapFocusUser(${u.id})">
       <div class="geomap-user-avatar" style="background:${color}20;color:${color}">${initials}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(u.full_name)}</div>
@@ -208,6 +235,13 @@ function geomapFocusZone(zoneId) {
   if (!zoneId || !geomapMap || !allGeomapData) return;
   const zone = (allGeomapData.zones || []).find(z => z.id === zoneId);
   if (zone) geomapMap.setView([zone.lat, zone.lng], 17);
+}
+
+function geomapFocusUser(userId) {
+  const marker = userMarkerMap[userId];
+  if (!marker || !geomapMap) return;
+  geomapMap.setView(marker.getLatLng(), 18);
+  marker.openPopup();
 }
 
 // ── Zone CRUD modal ───────────────────────────────────────────────────
