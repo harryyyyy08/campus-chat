@@ -98,13 +98,16 @@ function getAgeBadge(requestedAt) {
 
   if (diffDays >= 5) {
     label = `${diffDays}d ago — expiring soon`;
-    style = "background:rgba(234,179,8,0.15);color:#b45309;border:1px solid rgba(234,179,8,0.3);";
+    style =
+      "background:rgba(234,179,8,0.15);color:#b45309;border:1px solid rgba(234,179,8,0.3);";
   } else if (diffDays >= 1) {
     label = `${diffDays}d ago`;
-    style = "background:var(--accent-soft,rgba(139,92,246,0.08));color:var(--text-secondary);border:1px solid var(--border);";
+    style =
+      "background:var(--accent-soft,rgba(139,92,246,0.08));color:var(--text-secondary);border:1px solid var(--border);";
   } else {
     label = diffHours > 0 ? `${diffHours}h ago` : "Just now";
-    style = "background:rgba(34,197,94,0.1);color:#16a34a;border:1px solid rgba(34,197,94,0.25);";
+    style =
+      "background:rgba(34,197,94,0.1);color:#16a34a;border:1px solid rgba(34,197,94,0.25);";
   }
 
   return `<span style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;${style}">${label}</span>`;

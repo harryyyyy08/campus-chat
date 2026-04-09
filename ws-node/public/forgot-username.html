@@ -14,8 +14,13 @@
   <link rel="stylesheet" href="css/login.css" />
   <link rel="stylesheet" href="vendor/altcha/altcha.css" />
   <style>
-    .state { display: none; }
-    .state.active { display: block; }
+    .state {
+      display: none;
+    }
+
+    .state.active {
+      display: block;
+    }
 
     .fp-info {
       font-size: 13px;
@@ -60,7 +65,10 @@
       text-decoration: none;
       margin-top: 16px;
     }
-    .fp-back-link:hover { text-decoration: underline; }
+
+    .fp-back-link:hover {
+      text-decoration: underline;
+    }
 
     .username-reveal {
       background: var(--bg-elevated);
@@ -88,7 +96,9 @@
       letter-spacing: 0.5px;
     }
 
-    .field-group + .field-group { margin-top: 16px; }
+    .field-group+.field-group {
+      margin-top: 16px;
+    }
 
     .field-group select {
       width: 100%;
@@ -167,8 +177,8 @@
         <p class="login-footer-text" style="margin-top:12px;">
           <a href="forgot-password.html" style="color:var(--accent);font-size:13px;">Forgot your password instead?</a>
         </p>
-        <p class="login-footer-text" style="margin-top:4px;">
-          <a href="login.html" style="color:var(--text-muted);font-size:12px;">← Back to Login</a>
+        <p class="login-footer-text" style="margin-top:8px;">
+          <a href="login.html" style="color:var(--accent);font-size:13px;">← Back to Login</a>
         </p>
       </div>
 
@@ -189,10 +199,11 @@
           <div class="username-reveal-value" id="foundUsername"></div>
         </div>
 
-        <a class="btn-primary" href="login.html"
-          style="display:block;text-align:center;text-decoration:none;">Go to Login</a>
+        <a class="btn-primary" href="login.html" style="display:block;text-align:center;text-decoration:none;">Go to
+          Login</a>
         <p class="login-footer-text" style="margin-top:12px;">
-          <a href="forgot-password.html" style="color:var(--accent);font-size:13px;">Need to reset your password too?</a>
+          <a href="forgot-password.html" style="color:var(--accent);font-size:13px;">Need to reset your password
+            too?</a>
         </p>
       </div>
 
@@ -211,7 +222,9 @@
           No matching account was found with that name and department.<br><br>
           Please contact your administrator for help.
         </div>
-        <button class="btn-primary" onclick="resetForm()" style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-strong);">Try Again</button>
+        <button class="btn-primary" onclick="resetForm()"
+          style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-strong);">Try
+          Again</button>
         <a class="fp-back-link" href="login.html">← Back to Login</a>
       </div>
 
