@@ -341,3 +341,63 @@
 .btn-modal-danger:hover {
   background: rgba(239, 68, 68, 0.18);
 }
+
+/* ── Pick on Map button ──────────────────────────────────────────────── */
+.btn-pick-map {
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1.5px dashed var(--accent, #8B5CF6);
+  color: var(--accent, #8B5CF6);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-pick-map:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* ── Pick mode instruction banner (floats over the Leaflet map) ──────── */
+#geomapMap {
+  position: relative; /* needed so absolute-positioned banner stays inside */
+}
+.pick-mode-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: var(--bg-modal, #1e1e2e);
+  color: var(--text-primary, #e0e0e0);
+  border: 1px solid var(--accent, #8B5CF6);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  pointer-events: all;
+  white-space: nowrap;
+}
+.pick-mode-cancel {
+  background: transparent;
+  border: 1px solid var(--border-strong, #555);
+  color: var(--text-secondary, #aaa);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+}
+.pick-mode-cancel:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Crosshair cursor during pick mode */
+#geomapMap.pick-mode-cursor,
+#geomapMap.pick-mode-cursor .leaflet-container {
+  cursor: crosshair !important;
+}
