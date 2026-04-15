@@ -31,3 +31,29 @@ function bearer_token(): ?string {
   if (preg_match('/Bearer\s+(.*)$/i', $hdr, $m)) return trim($m[1]);
   return null;
 }
+
+/**
+ * Returns true when $ip falls within the given $cidr range.
+ * Supports both IPv4 and IPv6.
+ */
+function ip_in_cidr(string $ip, string $cidr): bool {
+  if (strpos($cidr, '/') === false) return $ip === $cidr;
+  [$network, $bits] = explode('/', $cidr, 2);
+  $bits   = (int)$bits;
+  $ipBin  = inet_pton($ip);
+  $netBin = inet_pton($network);
+  if ($ipBin === false || $netBin === false) return false;
+  if (strlen($ipBin) !== strlen($netBin))    return false; // v4 vs v6 mismatch
+  $fullBytes = (int)floor($bits / 8);
+  $rem       = $bits % 8;
+  if ($fullBytes > 0 && substr($ipBin, 0, $fullBytes) !== substr($netBin, 0, $fullBytes)) {
+    return false;
+  }
+  if ($rem > 0 && $fullBytes < strlen($ipBin)) {
+    $mask = 0xFF & (0xFF << (8 - $rem));
+    if ((ord($ipBin[$fullBytes]) & $mask) !== (ord($netBin[$fullBytes]) & $mask)) {
+      return false;
+    }
+  }
+  return true;
+}

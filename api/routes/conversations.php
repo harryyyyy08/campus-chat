@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Conversations Routes Module
  * 
@@ -24,19 +25,23 @@
 
 // ── POST /conversations/direct ───────────────────────────────────
 if ($method === "POST" && $path === "/conversations/direct") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
   $me_id = (int)$claims["sub"];
   $other_username = trim((string)($in["other_username"] ?? ""));
   if ($other_username === "") json_response(["error" => "other_username required"], 400);
 
   $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE username = ? AND status = 'active'");
-  $stmt->execute([$other_username]); $other = $stmt->fetch();
+  $stmt->execute([$other_username]);
+  $other = $stmt->fetch();
   if (!$other) json_response(["error" => "User not found"], 404);
   $other_id = (int)$other["id"];
   if ($other_id === $me_id) json_response(["error" => "Cannot create conversation with yourself"], 400);
 
   $stmt = $pdo->prepare("SELECT c.id AS conversation_id FROM conversations c JOIN conversation_members cm1 ON cm1.conversation_id = c.id AND cm1.user_id = ? JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id = ? WHERE c.type = 'direct' LIMIT 1");
-  $stmt->execute([$me_id, $other_id]); $existing = $stmt->fetch();
+  $stmt->execute([$me_id, $other_id]);
+  $existing = $stmt->fetch();
   if ($existing) json_response(["conversation_id" => (int)$existing["conversation_id"], "created" => false, "other_user" => ["id" => $other_id, "username" => $other["username"], "full_name" => $other["full_name"]]]);
 
   $pdo->beginTransaction();
@@ -44,15 +49,21 @@ if ($method === "POST" && $path === "/conversations/direct") {
     $pdo->prepare("INSERT INTO conversations (type) VALUES ('direct')")->execute();
     $cid = (int)$pdo->lastInsertId();
     $ins = $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')");
-    $ins->execute([$cid, $me_id]); $ins->execute([$cid, $other_id]);
+    $ins->execute([$cid, $me_id]);
+    $ins->execute([$cid, $other_id]);
     $pdo->commit();
     json_response(["conversation_id" => $cid, "created" => true, "other_user" => ["id" => $other_id, "username" => $other["username"], "full_name" => $other["full_name"]]], 201);
-  } catch (Exception $e) { $pdo->rollBack(); json_response(["error" => "Failed: " . $e->getMessage()], 500); }
+  } catch (Exception $e) {
+    $pdo->rollBack();
+    json_response(["error" => "Failed: " . $e->getMessage()], 500);
+  }
 }
 
 // ── POST /conversations/group ────────────────────────────────────
 if ($method === "POST" && $path === "/conversations/group") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
   $me_id = (int)$claims["sub"];
   $name  = trim((string)($in["name"] ?? ""));
   $member_ids = array_values(array_unique(array_filter(array_map('intval', (array)($in["member_ids"] ?? [])), fn($id) => $id !== $me_id)));
@@ -71,31 +82,51 @@ if ($method === "POST" && $path === "/conversations/group") {
     foreach ($member_ids as $uid) $ins->execute([$cid, $uid]);
     $pdo->commit();
     json_response(["conversation_id" => $cid, "created" => true, "name" => $name], 201);
-  } catch (Exception $e) { $pdo->rollBack(); json_response(["error" => "Failed: " . $e->getMessage()], 500); }
+  } catch (Exception $e) {
+    $pdo->rollBack();
+    json_response(["error" => "Failed: " . $e->getMessage()], 500);
+  }
 }
 
 // ── POST /conversations/members ──────────────────────────────────
 if ($method === "POST" && $path === "/conversations/members") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
-  $me_id = (int)$claims["sub"]; $cid = (int)($in["conversation_id"] ?? 0); $new_uid = (int)($in["user_id"] ?? 0);
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
+  $me_id = (int)$claims["sub"];
+  $cid = (int)($in["conversation_id"] ?? 0);
+  $new_uid = (int)($in["user_id"] ?? 0);
   if (!$cid || !$new_uid) json_response(["error" => "conversation_id and user_id required"], 400);
-  $stmt = $pdo->prepare("SELECT type FROM conversations WHERE id = ?"); $stmt->execute([$cid]); $conv = $stmt->fetch();
+  $stmt = $pdo->prepare("SELECT type FROM conversations WHERE id = ?");
+  $stmt->execute([$cid]);
+  $conv = $stmt->fetch();
   if (!$conv || $conv["type"] !== "group") json_response(["error" => "Not a group conversation"], 400);
-  $stmt = $pdo->prepare("SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?"); $stmt->execute([$cid, $me_id]);
+  $stmt = $pdo->prepare("SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
+  $stmt->execute([$cid, $me_id]);
   if ($stmt->fetchColumn() !== "admin") json_response(["error" => "Only admins can add members"], 403);
-  $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?"); $stmt->execute([$cid, $new_uid]);
+  $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
+  $stmt->execute([$cid, $new_uid]);
   if ($stmt->fetchColumn()) json_response(["error" => "User is already a member"], 409);
   $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')")->execute([$cid, $new_uid]);
-  $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE id = ?"); $stmt->execute([$new_uid]); $u = $stmt->fetch(); $u["id"] = (int)$u["id"];
+  $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE id = ?");
+  $stmt->execute([$new_uid]);
+  $u = $stmt->fetch();
+  $u["id"] = (int)$u["id"];
   json_response(["added" => true, "user" => $u, "conversation_id" => $cid], 201);
 }
 
 // ── DELETE /conversations/members ────────────────────────────────
 if ($method === "DELETE" && $path === "/conversations/members") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
-  $me_id = (int)$claims["sub"]; $cid = (int)($in["conversation_id"] ?? 0); $rem_uid = (int)($in["user_id"] ?? 0);
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
+  $me_id = (int)$claims["sub"];
+  $cid = (int)($in["conversation_id"] ?? 0);
+  $rem_uid = (int)($in["user_id"] ?? 0);
   if (!$cid || !$rem_uid) json_response(["error" => "conversation_id and user_id required"], 400);
-  $stmt = $pdo->prepare("SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?"); $stmt->execute([$cid, $me_id]); $my_role = $stmt->fetchColumn();
+  $stmt = $pdo->prepare("SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
+  $stmt->execute([$cid, $me_id]);
+  $my_role = $stmt->fetchColumn();
   if ($my_role !== "admin" && $rem_uid !== $me_id) json_response(["error" => "Only admins can remove members"], 403);
   $pdo->prepare("DELETE FROM conversation_members WHERE conversation_id = ? AND user_id = ?")->execute([$cid, $rem_uid]);
   json_response(["removed" => true, "conversation_id" => $cid, "user_id" => $rem_uid]);
@@ -103,15 +134,22 @@ if ($method === "DELETE" && $path === "/conversations/members") {
 
 // ── POST /conversations/leave ────────────────────────────────────
 if ($method === "POST" && $path === "/conversations/leave") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
-  $me_id = (int)$claims["sub"]; $cid = (int)($in["conversation_id"] ?? 0);
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
+  $me_id = (int)$claims["sub"];
+  $cid = (int)($in["conversation_id"] ?? 0);
   if (!$cid) json_response(["error" => "conversation_id required"], 400);
-  $stmt = $pdo->prepare("SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?"); $stmt->execute([$cid, $me_id]); $my_role = $stmt->fetchColumn();
+  $stmt = $pdo->prepare("SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
+  $stmt->execute([$cid, $me_id]);
+  $my_role = $stmt->fetchColumn();
   if (!$my_role) json_response(["error" => "Not a member"], 403);
   if ($my_role === "admin") {
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM conversation_members WHERE conversation_id = ? AND role = 'admin'"); $stmt->execute([$cid]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM conversation_members WHERE conversation_id = ? AND role = 'admin'");
+    $stmt->execute([$cid]);
     if ((int)$stmt->fetchColumn() <= 1) {
-      $stmt = $pdo->prepare("SELECT COUNT(*) FROM conversation_members WHERE conversation_id = ? AND user_id <> ?"); $stmt->execute([$cid, $me_id]);
+      $stmt = $pdo->prepare("SELECT COUNT(*) FROM conversation_members WHERE conversation_id = ? AND user_id <> ?");
+      $stmt->execute([$cid, $me_id]);
       if ((int)$stmt->fetchColumn() > 0) json_response(["error" => "Promote another admin before leaving"], 400);
     }
   }
@@ -122,33 +160,50 @@ if ($method === "POST" && $path === "/conversations/leave") {
 
 // ── GET /conversations/unread ────────────────────────────────────
 if ($method === "GET" && $path === "/conversations/unread") {
-  $claims = require_auth(); $pdo = db(); $user_id = (int)$claims["sub"];
-  $stmt = $pdo->prepare("SELECT m.conversation_id, COUNT(m.id) AS unread_count FROM messages m JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ? LEFT JOIN conversation_read_status crs ON crs.conversation_id = m.conversation_id AND crs.user_id = ? WHERE m.sender_id <> ? AND (crs.last_read_msg_id IS NULL OR m.id > crs.last_read_msg_id) GROUP BY m.conversation_id");
-  $stmt->execute([$user_id, $user_id, $user_id]);
-  $counts = []; foreach ($stmt->fetchAll() as $r) $counts[(int)$r["conversation_id"]] = (int)$r["unread_count"];
+  $claims = require_auth();
+  $pdo = db();
+  $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT m.conversation_id, COUNT(m.id) AS unread_count FROM messages m JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ? LEFT JOIN conversation_read_status crs ON crs.conversation_id = m.conversation_id AND crs.user_id = ? LEFT JOIN message_hidden mh ON mh.message_id = m.id AND mh.user_id = ? WHERE m.sender_id <> ? AND (crs.last_read_msg_id IS NULL OR m.id > crs.last_read_msg_id) AND mh.message_id IS NULL GROUP BY m.conversation_id");
+  $stmt->execute([$user_id, $user_id, $user_id, $user_id]);
+  $counts = [];
+  foreach ($stmt->fetchAll() as $r) $counts[(int)$r["conversation_id"]] = (int)$r["unread_count"];
   json_response(["unread" => $counts]);
 }
 
 // ── GET /conversations ───────────────────────────────────────────
 if ($method === "GET" && $path === "/conversations") {
-  $claims = require_auth(); $pdo = db(); $user_id = (int)$claims["sub"];
-  $stmt = $pdo->prepare("SELECT c.id AS conversation_id, c.type, c.name, COALESCE(c.is_request, 0) AS is_request, MAX(m.created_at) AS last_message_time FROM conversations c JOIN conversation_members cm ON cm.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id WHERE cm.user_id = ? GROUP BY c.id, c.type, c.name ORDER BY last_message_time DESC, c.id DESC");
-  $stmt->execute([$user_id]); $convs = $stmt->fetchAll();
+  $claims = require_auth();
+  $pdo = db();
+  $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT c.id AS conversation_id, c.type, c.name, COALESCE(c.is_request, 0) AS is_request, MAX(m.created_at) AS last_message_time FROM conversations c JOIN conversation_members cm ON cm.conversation_id = c.id LEFT JOIN messages m ON m.conversation_id = c.id LEFT JOIN conversation_hidden ch ON ch.conversation_id = c.id AND ch.user_id = ? WHERE cm.user_id = ? AND ch.conversation_id IS NULL GROUP BY c.id, c.type, c.name ORDER BY last_message_time DESC, c.id DESC");
+  $stmt->execute([$user_id, $user_id]);
+  $convs = $stmt->fetchAll();
   foreach ($convs as &$c) {
-    $cid = (int)$c["conversation_id"]; $c["conversation_id"] = $cid;
+    $cid = (int)$c["conversation_id"];
+    $c["conversation_id"] = $cid;
     $mstmt = $pdo->prepare("SELECT u.id, u.username, u.full_name, cm.role FROM conversation_members cm JOIN users u ON u.id = cm.user_id WHERE cm.conversation_id = ? ORDER BY cm.role DESC, u.full_name");
-    $mstmt->execute([$cid]); $members = $mstmt->fetchAll();
-    foreach ($members as &$m) { $m["id"] = (int)$m["id"]; if ($m["id"] === $user_id) $c["my_role"] = $m["role"]; }
+    $mstmt->execute([$cid]);
+    $members = $mstmt->fetchAll();
+    foreach ($members as &$m) {
+      $m["id"] = (int)$m["id"];
+      if ($m["id"] === $user_id) $c["my_role"] = $m["role"];
+    }
     $c["members"] = $members;
     $lstmt = $pdo->prepare("SELECT id, sender_id, body, attachment_id, status, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at DESC, id DESC LIMIT 1");
-    $lstmt->execute([$cid]); $last = $lstmt->fetch();
-    if ($last) { $last["id"] = (int)$last["id"]; $last["sender_id"] = (int)$last["sender_id"]; $last["has_attachment"] = !empty($last["attachment_id"]); }
+    $lstmt->execute([$cid]);
+    $last = $lstmt->fetch();
+    if ($last) {
+      $last["id"] = (int)$last["id"];
+      $last["sender_id"] = (int)$last["sender_id"];
+      $last["has_attachment"] = !empty($last["attachment_id"]);
+    }
     $c["last_message"] = $last ?: null;
     $c["is_request"] = (bool)($c["is_request"] ?? false);
     // If pending request, fetch request metadata
     if ($c["is_request"]) {
       $rq = $pdo->prepare("SELECT id AS request_id, requester_id, recipient_id, status FROM message_requests WHERE conversation_id = ? LIMIT 1");
-      $rq->execute([$cid]); $rdata = $rq->fetch();
+      $rq->execute([$cid]);
+      $rdata = $rq->fetch();
       if ($rdata) {
         $c["request_id"]    = (int)$rdata["request_id"];
         $c["requester_id"]  = (int)$rdata["requester_id"];
@@ -167,23 +222,29 @@ if ($method === "GET" && $path === "/conversations") {
 // ── POST /conversations/request ──────────────────────────────────
 // Send a message request (student-to-student only, no existing conv)
 if ($method === "POST" && $path === "/conversations/request") {
-  $claims = require_auth(); $pdo = db(); $in = json_input();
+  $claims = require_auth();
+  $pdo = db();
+  $in = json_input();
   $me_id  = (int)$claims["sub"];
   $body   = trim((string)($in["body"] ?? ""));
   $other_username = trim((string)($in["other_username"] ?? ""));
   if ($other_username === "" || $body === "") json_response(["error" => "other_username and body required"], 400);
 
   $stmt = $pdo->prepare("SELECT id, role FROM users WHERE id = ?");
-  $stmt->execute([$me_id]); $me = $stmt->fetch();
+  $stmt->execute([$me_id]);
+  $me = $stmt->fetch();
   $stmt = $pdo->prepare("SELECT id, role FROM users WHERE username = ? AND status = 'active'");
-  $stmt->execute([$other_username]); $other = $stmt->fetch();
+  $stmt->execute([$other_username]);
+  $other = $stmt->fetch();
   if (!$other) json_response(["error" => "User not found"], 404);
   $other_id = (int)$other["id"];
   if ($other_id === $me_id) json_response(["error" => "Cannot send request to yourself"], 400);
 
   // Faculty/admin skip the request system
-  if (in_array($me["role"], ["faculty","admin","super_admin"]) ||
-      in_array($other["role"], ["faculty","admin","super_admin"])) {
+  if (
+    in_array($me["role"], ["faculty", "admin", "super_admin"]) ||
+    in_array($other["role"], ["faculty", "admin", "super_admin"])
+  ) {
     json_response(["error" => "Use direct chat for faculty/admin conversations"], 400);
   }
 
@@ -192,12 +253,14 @@ if ($method === "POST" && $path === "/conversations/request") {
     JOIN conversation_members cm1 ON cm1.conversation_id = c.id AND cm1.user_id = ?
     JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id = ?
     WHERE c.type = 'direct' LIMIT 1");
-  $stmt->execute([$me_id, $other_id]); $existing = $stmt->fetchColumn();
+  $stmt->execute([$me_id, $other_id]);
+  $existing = $stmt->fetchColumn();
   if ($existing) json_response(["error" => "Already chatting — use direct message.", "conversation_id" => (int)$existing], 409);
 
   // Existing pending request?
   $stmt = $pdo->prepare("SELECT id, status FROM message_requests WHERE requester_id = ? AND recipient_id = ?");
-  $stmt->execute([$me_id, $other_id]); $req = $stmt->fetch();
+  $stmt->execute([$me_id, $other_id]);
+  $req = $stmt->fetch();
   if ($req && $req["status"] === "pending") json_response(["error" => "You already have a pending request to this user"], 409);
 
   $pdo->beginTransaction();
@@ -223,7 +286,9 @@ if ($method === "POST" && $path === "/conversations/request") {
 
 // ── GET /conversations/requests ──────────────────────────────────
 if ($method === "GET" && $path === "/conversations/requests") {
-  $claims = require_auth(); $pdo = db(); $user_id = (int)$claims["sub"];
+  $claims = require_auth();
+  $pdo = db();
+  $user_id = (int)$claims["sub"];
   $stmt = $pdo->prepare("
     SELECT mr.id AS request_id, mr.conversation_id, mr.status, mr.created_at,
            u.id AS requester_id, u.username, u.full_name,
@@ -244,10 +309,13 @@ if ($method === "GET" && $path === "/conversations/requests") {
 
 // ── POST /conversations/requests/{id}/accept ─────────────────────
 if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/accept$#', $path, $m)) {
-  $claims = require_auth(); $pdo = db();
-  $req_id = (int)$m[1]; $user_id = (int)$claims["sub"];
+  $claims = require_auth();
+  $pdo = db();
+  $req_id = (int)$m[1];
+  $user_id = (int)$claims["sub"];
   $stmt = $pdo->prepare("SELECT * FROM message_requests WHERE id = ? AND recipient_id = ? AND status = 'pending'");
-  $stmt->execute([$req_id, $user_id]); $req = $stmt->fetch();
+  $stmt->execute([$req_id, $user_id]);
+  $req = $stmt->fetch();
   if (!$req) json_response(["error" => "Request not found"], 404);
   $pdo->beginTransaction();
   try {
@@ -256,15 +324,21 @@ if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/accept$#',
     $pdo->prepare("INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'member')")->execute([$req["conversation_id"], $user_id]);
     $pdo->commit();
     json_response(["accepted" => true, "conversation_id" => (int)$req["conversation_id"], "requester_id" => (int)$req["requester_id"]]);
-  } catch (Exception $e) { $pdo->rollBack(); json_response(["error" => $e->getMessage()], 500); }
+  } catch (Exception $e) {
+    $pdo->rollBack();
+    json_response(["error" => $e->getMessage()], 500);
+  }
 }
 
 // ── POST /conversations/requests/{id}/decline ────────────────────
 if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/decline$#', $path, $m)) {
-  $claims = require_auth(); $pdo = db();
-  $req_id = (int)$m[1]; $user_id = (int)$claims["sub"];
+  $claims = require_auth();
+  $pdo = db();
+  $req_id = (int)$m[1];
+  $user_id = (int)$claims["sub"];
   $stmt = $pdo->prepare("SELECT * FROM message_requests WHERE id = ? AND recipient_id = ? AND status = 'pending'");
-  $stmt->execute([$req_id, $user_id]); $req = $stmt->fetch();
+  $stmt->execute([$req_id, $user_id]);
+  $req = $stmt->fetch();
   if (!$req) json_response(["error" => "Request not found"], 404);
   $pdo->beginTransaction();
   try {
@@ -279,16 +353,97 @@ if ($method === "POST" && preg_match('#^/conversations/requests/(\d+)/decline$#'
 
 // ── GET /conversations/requests/count ────────────────────────────
 if ($method === "GET" && $path === "/conversations/requests/count") {
-  $claims = require_auth(); $pdo = db(); $user_id = (int)$claims["sub"];
+  $claims = require_auth();
+  $pdo = db();
+  $user_id = (int)$claims["sub"];
   $stmt = $pdo->prepare("SELECT COUNT(*) FROM message_requests WHERE recipient_id = ? AND status = 'pending'");
   $stmt->execute([$user_id]);
   json_response(["count" => (int)$stmt->fetchColumn()]);
 }
 
+// ── DELETE /conversations/{id} ───────────────────────────────────
+if ($method === "DELETE" && preg_match('#^/conversations/(\d+)$#', $path, $m)) {
+  $claims = require_auth();
+  $pdo = db();
+  $conv_id = (int)$m[1];
+  $user_id = (int)$claims["sub"];
+
+  // Verify caller is a member
+  $stmt = $pdo->prepare("SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?");
+  $stmt->execute([$conv_id, $user_id]);
+  if (!$stmt->fetch()) json_response(["error" => "Not a member of this conversation"], 403);
+
+  $pdo->beginTransaction();
+  try {
+    // Mark conversation as hidden for current user only
+    $pdo->prepare("INSERT IGNORE INTO conversation_hidden (conversation_id, user_id) VALUES (?, ?)")->execute([$conv_id, $user_id]);
+    $pdo->prepare("DELETE FROM conversation_read_status WHERE conversation_id = ? AND user_id = ?")->execute([$conv_id, $user_id]);
+
+    // Hide all existing messages for current user (so old messages don't show if convo reappears)
+    $pdo->prepare("
+      INSERT IGNORE INTO message_hidden (message_id, user_id)
+      SELECT id, ? FROM messages WHERE conversation_id = ?
+    ")->execute([$user_id, $conv_id]);
+
+    // Check if all members have hidden this conversation
+    $stmt = $pdo->prepare("
+      SELECT COUNT(*) FROM conversation_members cm
+      LEFT JOIN conversation_hidden ch ON ch.conversation_id = cm.conversation_id AND ch.user_id = cm.user_id
+      WHERE cm.conversation_id = ? AND ch.conversation_id IS NULL
+    ");
+    $stmt->execute([$conv_id]);
+    $visible_remaining = (int)$stmt->fetchColumn();
+
+    // If no one can see it anymore, fully delete
+    if ($visible_remaining === 0) {
+      $pdo->prepare("DELETE FROM message_reactions WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_reads WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_hidden WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_flags WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM messages WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM message_requests WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM conversation_hidden WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM conversation_members WHERE conversation_id = ?")->execute([$conv_id]);
+      $pdo->prepare("DELETE FROM conversations WHERE id = ?")->execute([$conv_id]);
+    }
+
+    $pdo->commit();
+    json_response(["success" => true]);
+  } catch (Exception $e) {
+    $pdo->rollBack();
+    json_response(["error" => $e->getMessage()], 500);
+  }
+}
+
+// ── GET /conversations/member-ids ────────────────────────────────
+// Returns ALL conversation IDs the user belongs to (no hidden filter)
+// Used by WebSocket server to join socket rooms on connect
+if ($method === "GET" && $path === "/conversations/member-ids") {
+  $claims = require_auth();
+  $pdo = db();
+  $user_id = (int)$claims["sub"];
+  $stmt = $pdo->prepare("SELECT conversation_id FROM conversation_members WHERE user_id = ?");
+  $stmt->execute([$user_id]);
+  $ids = array_map("intval", $stmt->fetchAll(PDO::FETCH_COLUMN));
+  json_response(["conversation_ids" => $ids]);
+}
+
+// ── DELETE /conversations/{id}/hidden ────────────────────────────
+// Un-hide a conversation for the current user (called when new message arrives)
+if ($method === "DELETE" && preg_match('#^/conversations/(\d+)/hidden$#', $path, $m)) {
+  $claims = require_auth();
+  $pdo = db();
+  $conv_id = (int)$m[1];
+  $user_id = (int)$claims["sub"];
+  $pdo->prepare("DELETE FROM conversation_hidden WHERE conversation_id = ? AND user_id = ?")->execute([$conv_id, $user_id]);
+  json_response(["success" => true]);
+}
+
 // ── GET /conversations/is-request ────────────────────────────────
 // Lightweight check used by Node.js server before marking delivered
 if ($method === "GET" && $path === "/conversations/is-request") {
-  require_auth(); $pdo = db();
+  require_auth();
+  $pdo = db();
   $cid = (int)($_GET["id"] ?? 0);
   if (!$cid) json_response(["is_request" => false]);
   $stmt = $pdo->prepare("SELECT COALESCE(is_request, 0) AS is_request FROM conversations WHERE id = ?");

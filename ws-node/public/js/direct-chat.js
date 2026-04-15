@@ -98,6 +98,13 @@ async function startChat() {
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || "Could not start chat."); return; }
+    // Un-hide if conversation was previously deleted for me
+    if (!data.created) {
+      await fetch(`${API_BASE}/conversations/${data.conversation_id}/hidden`, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + token },
+      }).catch(() => {});
+    }
     socket.emit("join_conversation", { conversation_id: data.conversation_id });
     await loadConversations();
     openConversation(data.conversation_id);
@@ -114,6 +121,11 @@ async function sendMessageRequest(username, firstMsg) {
     const data = await res.json();
     if (res.status === 409 && data.conversation_id) {
       closeModal("newChatModal");
+      // Un-hide the existing conversation in case it was deleted for me
+      await fetch(`${API_BASE}/conversations/${data.conversation_id}/hidden`, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + token },
+      }).catch(() => {});
       await loadConversations();
       openConversation(data.conversation_id);
       return;

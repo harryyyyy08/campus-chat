@@ -30,6 +30,10 @@
  */
 
 
+// Suppress PHP error output — errors must not corrupt JSON responses
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/helpers.php";
 require_once __DIR__ . "/jwt.php";
@@ -41,7 +45,7 @@ $allowed = preg_match('/^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\
 if ($allowed) header("Access-Control-Allow-Origin: " . $origin);
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
 
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") { http_response_code(204); exit; }
 
@@ -80,6 +84,8 @@ require_once __DIR__ . "/routes/auth.php";
 require_once __DIR__ . "/routes/conversations.php";
 require_once __DIR__ . "/routes/messages.php";
 require_once __DIR__ . "/routes/uploads.php";
+require_once __DIR__ . "/routes/departments.php";
+require_once __DIR__ . "/routes/location.php";
 require_once __DIR__ . "/routes/admin.php";
 require_once __DIR__ . "/routes/announcements.php";
 
