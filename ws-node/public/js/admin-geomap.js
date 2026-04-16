@@ -1,29 +1,48 @@
 // ── Geomap module ─────────────────────────────────────────────────────
 // Requires: adminToken, API_BASE (from admin-auth.js), showToast (admin-users.js)
 
-let leafletLoaded    = false;
-let geomapMap        = null;   // Leaflet map instance
-let zoneCircles      = [];     // Leaflet Circle layers
-let userMarkers      = [];     // Leaflet Marker layers
-let userMarkerMap    = {};     // { [userId]: L.Marker } for sidebar click-to-focus
-let allGeomapData    = null;   // { zones, users }
-let pickModeActive   = false;  // true while map-click picker is active
-let pickModeMarker   = null;   // temporary L.Marker shown after picking
-let pickModeSavedData = null;  // form values saved before picker opens
+let leafletLoaded = false;
+let geomapMap = null; // Leaflet map instance
+let zoneCircles = []; // Leaflet Circle layers
+let userMarkers = []; // Leaflet Marker layers
+let userMarkerMap = {}; // { [userId]: L.Marker } for sidebar click-to-focus
+let allGeomapData = null; // { zones, users }
+let pickModeActive = false; // true while map-click picker is active
+let pickModeMarker = null; // temporary L.Marker shown after picking
+let pickModeSavedData = null; // form values saved before picker opens
+const GEOMAP_DEFAULT_CENTER = [7.0731, 125.6128];
+const GEOMAP_DEFAULT_ZOOM = 14;
+
+function refreshGeomapSizeSoon() {
+  if (!geomapMap) return;
+  requestAnimationFrame(() => {
+    if (geomapMap) geomapMap.invalidateSize();
+  });
+  setTimeout(() => {
+    if (geomapMap) geomapMap.invalidateSize();
+  }, 160);
+}
 
 // ── Lazy-load Leaflet from local vendor folder ────────────────────────
 function ensureLeaflet(cb) {
-  if (leafletLoaded) { cb(); return; }
+  if (leafletLoaded) {
+    cb();
+    return;
+  }
 
   const link = document.createElement("link");
-  link.rel  = "stylesheet";
+  link.rel = "stylesheet";
   link.href = "vendor/leaflet/leaflet.min.css";
   document.head.appendChild(link);
 
-  const script    = document.createElement("script");
-  script.src      = "vendor/leaflet/leaflet.min.js";
-  script.onload   = () => { leafletLoaded = true; cb(); };
-  script.onerror  = () => showToast("Failed to load Leaflet. Check vendor/leaflet/.");
+  const script = document.createElement("script");
+  script.src = "vendor/leaflet/leaflet.min.js";
+  script.onload = () => {
+    leafletLoaded = true;
+    cb();
+  };
+  script.onerror = () =>
+    showToast("Failed to load Leaflet. Check vendor/leaflet/.");
   document.head.appendChild(script);
 }
 
@@ -34,13 +53,34 @@ async function loadGeomap() {
   if (dept) url += `?department_id=${encodeURIComponent(dept)}`;
 
   try {
-    const res  = await fetch(url, { headers: { Authorization: "Bearer " + adminToken } });
-    const data = await res.json();
-    if (!res.ok) { showToast(data.error || "Failed to load geomap."); return; }
+    const res = await fetch(url, {
+      headers: { Authorization: "Bearer " + adminToken },
+    });
+    const raw = await res.text();
+    let data = null;
+
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch (_parseErr) {
+      showToast("Invalid geomap response from server.");
+      return;
+    }
+
+    if (!res.ok) {
+      showToast(data.error || "Failed to load geomap.");
+      return;
+    }
+    if (!Array.isArray(data.zones) || !Array.isArray(data.users)) {
+      showToast("Geomap data is incomplete.");
+      return;
+    }
 
     allGeomapData = data;
     populateGeomapDeptFilter(data.users);
-    ensureLeaflet(() => renderGeomap());
+    ensureLeaflet(() => {
+      renderGeomap();
+      refreshGeomapSizeSoon();
+    });
   } catch {
     showToast("Connection error loading geomap.");
   }
@@ -51,14 +91,19 @@ function populateGeomapDeptFilter(users) {
   const sel = document.getElementById("geomapDeptFilter");
   if (!sel) return;
   const current = sel.value;
-  const depts   = [...new Map(
-    users.filter(u => u.department).map(u => [u.department, u.department])
-  ).entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const depts = [
+    ...new Map(
+      users
+        .filter((u) => u.department)
+        .map((u) => [u.department, u.department]),
+    ).entries(),
+  ].sort((a, b) => a[0].localeCompare(b[0]));
 
   sel.innerHTML = '<option value="">All Departments</option>';
   depts.forEach(([name]) => {
     const opt = document.createElement("option");
-    opt.value = name; opt.textContent = name;
+    opt.value = name;
+    opt.textContent = name;
     if (name === current) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -67,17 +112,25 @@ function populateGeomapDeptFilter(users) {
 // ── Main render ───────────────────────────────────────────────────────
 function renderGeomap() {
   if (!allGeomapData) return;
-  const { zones, users } = allGeomapData;
-  const filter  = document.getElementById("geomapFilter")?.value || "all";
-  const now     = Date.now();
-  const ACTIVE  = 15 * 60 * 1000; // 15 minutes
+  const zones = (allGeomapData.zones || []).filter(
+    (z) =>
+      Number.isFinite(parseFloat(z.lat)) && Number.isFinite(parseFloat(z.lng)),
+  );
+  const users = Array.isArray(allGeomapData.users) ? allGeomapData.users : [];
+  const filter = document.getElementById("geomapFilter")?.value || "all";
+  const now = Date.now();
+  const ACTIVE = 15 * 60 * 1000; // 15 minutes
 
-  const visible = filter === "online"
-    ? users.filter(u => {
-        if (!u.last_seen_at) return false;
-        return (now - new Date(u.last_seen_at.replace(" ", "T") + "Z").getTime()) < ACTIVE;
-      })
-    : users;
+  const visible =
+    filter === "online"
+      ? users.filter((u) => {
+          if (!u.last_seen_at) return false;
+          return (
+            now - new Date(u.last_seen_at.replace(" ", "T") + "Z").getTime() <
+            ACTIVE
+          );
+        })
+      : users;
 
   initOrResetMap(zones);
   drawZoneCircles(zones);
@@ -88,8 +141,8 @@ function renderGeomap() {
 // ── Init or reset Leaflet map ─────────────────────────────────────────
 function initOrResetMap(zones) {
   // Clear old layers first
-  zoneCircles.forEach(c => c.remove());
-  userMarkers.forEach(m => m.remove());
+  zoneCircles.forEach((c) => c.remove());
+  userMarkers.forEach((m) => m.remove());
   zoneCircles = [];
   userMarkers = [];
   userMarkerMap = {};
@@ -97,16 +150,18 @@ function initOrResetMap(zones) {
   if (!geomapMap) {
     geomapMap = L.map("geomapMap");
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
+      attribution:
+        "© <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
       maxZoom: 19,
     }).addTo(geomapMap);
+    geomapMap.setView(GEOMAP_DEFAULT_CENTER, GEOMAP_DEFAULT_ZOOM);
   }
 
-  geomapMap.invalidateSize();
+  refreshGeomapSizeSoon();
 
   if (zones.length === 0) return;
-  const lats = zones.map(z => z.lat);
-  const lngs = zones.map(z => z.lng);
+  const lats = zones.map((z) => z.lat);
+  const lngs = zones.map((z) => z.lng);
   geomapMap.fitBounds([
     [Math.min(...lats) - 0.002, Math.min(...lngs) - 0.002],
     [Math.max(...lats) + 0.002, Math.max(...lngs) + 0.002],
@@ -115,38 +170,40 @@ function initOrResetMap(zones) {
 
 // ── Draw zone circles ─────────────────────────────────────────────────
 function drawZoneCircles(zones) {
-  zones.forEach(z => {
+  zones.forEach((z) => {
     const circle = L.circle([z.lat, z.lng], {
-      radius:      z.radius_m,
-      color:       z.color,
-      fillColor:   z.color,
+      radius: z.radius_m,
+      color: z.color,
+      fillColor: z.color,
       fillOpacity: 0.15,
-      weight:      2,
+      weight: 2,
     })
-    .bindPopup(
-      `<strong>${esc(z.name)}</strong><br>` +
-      `<span style="font-size:12px;color:var(--text-secondary,#888)">${esc(z.building)}</span><br>` +
-      `<code>${esc(z.cidr)}</code>` +
-      (z.description ? `<br><span style="font-size:11px;color:var(--text-secondary,#888)">${esc(z.description)}</span>` : "") +
-      `<br><br><a href="#" onclick="openZoneModal(geomapZoneById(${z.id}));return false"` +
-      ` style="font-size:12px;color:var(--accent,#8B5CF6)">Edit zone</a>`
-    )
-    .addTo(geomapMap);
+      .bindPopup(
+        `<strong>${esc(z.name)}</strong><br>` +
+          `<span style="font-size:12px;color:var(--text-secondary,#888)">${esc(z.building)}</span><br>` +
+          `<code>${esc(z.cidr)}</code>` +
+          (z.description
+            ? `<br><span style="font-size:11px;color:var(--text-secondary,#888)">${esc(z.description)}</span>`
+            : "") +
+          `<br><br><a href="#" onclick="openZoneModal(geomapZoneById(${z.id}));return false"` +
+          ` style="font-size:12px;color:var(--accent,#8B5CF6)">Edit zone</a>`,
+      )
+      .addTo(geomapMap);
     zoneCircles.push(circle);
   });
 }
 
 function geomapZoneById(id) {
-  return (allGeomapData?.zones || []).find(z => z.id === id) || null;
+  return (allGeomapData?.zones || []).find((z) => z.id === id) || null;
 }
 
 // ── Draw individual user pin markers ──────────────────────────────────
 function drawUserMarkers(users, zones) {
-  const zoneMap = Object.fromEntries(zones.map(z => [z.id, z]));
+  const zoneMap = Object.fromEntries(zones.map((z) => [z.id, z]));
 
   // Group users by zone to calculate circular offsets
   const byZone = {};
-  users.forEach(u => {
+  users.forEach((u) => {
     if (u.zone_id) (byZone[u.zone_id] = byZone[u.zone_id] || []).push(u);
   });
 
@@ -162,21 +219,23 @@ function drawUserMarkers(users, zones) {
 
     zUsers.forEach((u, i) => {
       const angle = (2 * Math.PI * i) / N;
-      const dLat  = offsetDist > 0 ? (offsetDist / 111320) * Math.cos(angle) : 0;
-      const dLng  = offsetDist > 0
-        ? (offsetDist / (111320 * Math.cos(baseLat * Math.PI / 180))) * Math.sin(angle)
-        : 0;
+      const dLat = offsetDist > 0 ? (offsetDist / 111320) * Math.cos(angle) : 0;
+      const dLng =
+        offsetDist > 0
+          ? (offsetDist / (111320 * Math.cos((baseLat * Math.PI) / 180))) *
+            Math.sin(angle)
+          : 0;
 
       const pinLat = baseLat + dLat;
       const pinLng = baseLng + dLng;
       const initials = (u.full_name || u.username).charAt(0).toUpperCase();
-      const color    = zone.color;
-      const timeAgo  = u.last_seen_at ? fmtRelTime(u.last_seen_at) : "—";
+      const color = zone.color;
+      const timeAgo = u.last_seen_at ? fmtRelTime(u.last_seen_at) : "—";
 
       const icon = L.divIcon({
         className: "",
         html: `<div class="geomap-user-pin" style="background:${color};border-color:${color}">${initials}</div>`,
-        iconSize:   [28, 28],
+        iconSize: [28, 28],
         iconAnchor: [14, 14],
       });
 
@@ -186,7 +245,7 @@ function drawUserMarkers(users, zones) {
         `<div class="geomap-popup-username" style="margin-bottom:4px">@${esc(u.username)}</div>` +
         `<div class="geomap-popup-meta">${esc(u.department || u.role)}</div>` +
         `<div class="geomap-popup-meta" style="margin-top:2px">` +
-          `<span style="border-color:${color}40;color:${color};background:${color}15;display:inline-block;font-size:10px;border:1px solid;border-radius:4px;padding:1px 5px">${esc(zone.name)}</span>` +
+        `<span style="border-color:${color}40;color:${color};background:${color}15;display:inline-block;font-size:10px;border:1px solid;border-radius:4px;padding:1px 5px">${esc(zone.name)}</span>` +
         `</div>` +
         `<div class="geomap-popup-meta" style="margin-top:4px">Last seen: ${timeAgo}</div>` +
         `</div>`;
@@ -211,32 +270,35 @@ function renderGeomapList(users, zones) {
     return;
   }
 
-  const zoneMap = Object.fromEntries(zones.map(z => [z.id, z]));
+  const zoneMap = Object.fromEntries(zones.map((z) => [z.id, z]));
 
-  el.innerHTML = users.map(u => {
-    const initials = (u.full_name || u.username).charAt(0).toUpperCase();
-    const zone     = u.zone_id ? zoneMap[u.zone_id] : null;
-    const color    = zone ? zone.color : "var(--accent)";
-    const timeAgo  = u.last_seen_at ? fmtRelTime(u.last_seen_at) : "—";
+  el.innerHTML = users
+    .map((u) => {
+      const initials = (u.full_name || u.username).charAt(0).toUpperCase();
+      const zone = u.zone_id ? zoneMap[u.zone_id] : null;
+      const color = zone ? zone.color : "var(--accent)";
+      const timeAgo = u.last_seen_at ? fmtRelTime(u.last_seen_at) : "—";
 
-    return `<div class="geomap-user-row" onclick="geomapFocusUser(${u.id})">
+      return `<div class="geomap-user-row" onclick="geomapFocusUser(${u.id})">
       <div class="geomap-user-avatar" style="background:${color}20;color:${color}">${initials}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(u.full_name)}</div>
         <div style="font-size:11px;color:var(--text-muted)">@${esc(u.username)}</div>
-        ${zone
-          ? `<span class="geomap-zone-badge" style="border-color:${color}40;color:${color};background:${color}15">${esc(zone.name)}</span>`
-          : `<span class="geomap-unresolved">Unknown location</span>`
+        ${
+          zone
+            ? `<span class="geomap-zone-badge" style="border-color:${color}40;color:${color};background:${color}15">${esc(zone.name)}</span>`
+            : `<span class="geomap-unresolved">Unknown location</span>`
         }
       </div>
       <div style="font-size:11px;color:var(--text-muted);flex-shrink:0;text-align:right">${timeAgo}</div>
     </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 function geomapFocusZone(zoneId) {
   if (!zoneId || !geomapMap || !allGeomapData) return;
-  const zone = (allGeomapData.zones || []).find(z => z.id === zoneId);
+  const zone = (allGeomapData.zones || []).find((z) => z.id === zoneId);
   if (zone) geomapMap.setView([zone.lat, zone.lng], 17);
 }
 
@@ -250,10 +312,10 @@ function geomapFocusUser(userId) {
 // ── Zone CRUD modal ───────────────────────────────────────────────────
 function openZoneModal(zone) {
   const isEdit = !!zone;
-  const title  = isEdit ? "Edit Zone" : "Add Zone";
+  const title = isEdit ? "Edit Zone" : "Add Zone";
 
   const modal = document.createElement("div");
-  modal.id        = "zoneModal";
+  modal.id = "zoneModal";
   modal.className = "zone-modal-overlay";
 
   modal.innerHTML = `
@@ -266,27 +328,27 @@ function openZoneModal(zone) {
       <div class="zone-modal-body">
         <div class="zone-field">
           <label class="form-label">Zone Name *</label>
-          <input id="zm_name" class="form-input" value="${esc(zone?.name || '')}" placeholder="e.g. Main Building AP1">
+          <input id="zm_name" class="form-input" value="${esc(zone?.name || "")}" placeholder="e.g. Main Building AP1">
         </div>
 
         <div class="zone-field">
           <label class="form-label">Building *</label>
-          <input id="zm_building" class="form-input" value="${esc(zone?.building || '')}" placeholder="e.g. Main Building">
+          <input id="zm_building" class="form-input" value="${esc(zone?.building || "")}" placeholder="e.g. Main Building">
         </div>
 
         <div class="zone-field">
           <label class="form-label">IP Range (CIDR) *</label>
-          <input id="zm_cidr" class="form-input" value="${esc(zone?.cidr || '')}" placeholder="e.g. 192.168.1.0/24">
+          <input id="zm_cidr" class="form-input" value="${esc(zone?.cidr || "")}" placeholder="e.g. 192.168.1.0/24">
         </div>
 
         <div class="zone-field-row">
           <div class="zone-field">
             <label class="form-label">Latitude *</label>
-            <input id="zm_lat" class="form-input" type="number" step="any" value="${zone?.lat ?? ''}" placeholder="e.g. 7.1985">
+            <input id="zm_lat" class="form-input" type="number" step="any" value="${zone?.lat ?? ""}" placeholder="e.g. 7.1985">
           </div>
           <div class="zone-field">
             <label class="form-label">Longitude *</label>
-            <input id="zm_lng" class="form-input" type="number" step="any" value="${zone?.lng ?? ''}" placeholder="e.g. 125.630">
+            <input id="zm_lng" class="form-input" type="number" step="any" value="${zone?.lng ?? ""}" placeholder="e.g. 125.630">
           </div>
         </div>
 
@@ -303,24 +365,24 @@ function openZoneModal(zone) {
           </div>
           <div class="zone-field">
             <label class="form-label">Zone Color</label>
-            <input id="zm_color" type="color" class="zone-color-input" value="${zone?.color ?? '#8B5CF6'}">
+            <input id="zm_color" type="color" class="zone-color-input" value="${zone?.color ?? "#8B5CF6"}">
           </div>
         </div>
 
         <div class="zone-field">
           <label class="form-label">Description</label>
-          <textarea id="zm_desc" class="form-input" rows="2" placeholder="Optional notes">${esc(zone?.description || '')}</textarea>
+          <textarea id="zm_desc" class="form-input" rows="2" placeholder="Optional notes">${esc(zone?.description || "")}</textarea>
         </div>
 
-        <input type="hidden" id="zm_zone_id" value="${zone?.id ?? ''}">
+        <input type="hidden" id="zm_zone_id" value="${zone?.id ?? ""}">
         <div id="zm_error" class="zone-modal-error"></div>
       </div>
 
-      <div class="zone-modal-footer ${isEdit ? 'has-delete' : ''}">
+      <div class="zone-modal-footer ${isEdit ? "has-delete" : ""}">
         ${isEdit ? `<button onclick="deleteZone(${zone.id})" class="btn-modal-danger">Delete Zone</button>` : ""}
         <div style="display:flex;gap:8px">
           <button onclick="closeZoneModal()" class="btn-modal-cancel">Cancel</button>
-          <button onclick="saveZone(${isEdit ? zone.id : 'null'})" class="btn-modal-primary">
+          <button onclick="saveZone(${isEdit ? zone.id : "null"})" class="btn-modal-primary">
             ${isEdit ? "Save Changes" : "Create Zone"}
           </button>
         </div>
@@ -328,7 +390,9 @@ function openZoneModal(zone) {
     </div>`;
 
   document.body.appendChild(modal);
-  modal.addEventListener("click", e => { if (e.target === modal) closeZoneModal(); });
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeZoneModal();
+  });
 }
 
 function closeZoneModal() {
@@ -337,49 +401,85 @@ function closeZoneModal() {
     geomapMap?.off("click", onPickModeClick);
     exitPickModeUI();
   }
-  if (pickModeMarker) { pickModeMarker.remove(); pickModeMarker = null; }
+  if (pickModeMarker) {
+    pickModeMarker.remove();
+    pickModeMarker = null;
+  }
   pickModeSavedData = null;
   document.getElementById("zoneModal")?.remove();
 }
 
 async function saveZone(id) {
-  const name     = document.getElementById("zm_name").value.trim();
+  const name = document.getElementById("zm_name").value.trim();
   const building = document.getElementById("zm_building").value.trim();
-  const cidr     = document.getElementById("zm_cidr").value.trim();
-  const lat      = parseFloat(document.getElementById("zm_lat").value);
-  const lng      = parseFloat(document.getElementById("zm_lng").value);
-  const radius_m = parseInt(document.getElementById("zm_radius").value, 10) || 80;
-  const color    = document.getElementById("zm_color").value.trim();
+  const cidr = document.getElementById("zm_cidr").value.trim();
+  const lat = parseFloat(document.getElementById("zm_lat").value);
+  const lng = parseFloat(document.getElementById("zm_lng").value);
+  const radius_m =
+    parseInt(document.getElementById("zm_radius").value, 10) || 80;
+  const color = document.getElementById("zm_color").value.trim();
   const description = document.getElementById("zm_desc").value.trim() || null;
 
   const errEl = document.getElementById("zm_error");
   const cidrRx = /^\d{1,3}(\.\d{1,3}){3}\/([0-9]|[12]\d|3[012])$/;
 
-  const showErr = msg => { errEl.textContent = msg; errEl.style.display = "block"; };
-  const hideErr = ()  => { errEl.style.display = "none"; };
+  const showErr = (msg) => {
+    errEl.textContent = msg;
+    errEl.style.display = "block";
+  };
+  const hideErr = () => {
+    errEl.style.display = "none";
+  };
 
-  if (!name || !building)        { showErr("Name and building are required."); return; }
-  if (!cidrRx.test(cidr))        { showErr("Invalid CIDR (e.g. 192.168.1.0/24)."); return; }
-  if (isNaN(lat) || isNaN(lng))  { showErr("Latitude and longitude are required."); return; }
+  if (!name || !building) {
+    showErr("Name and building are required.");
+    return;
+  }
+  if (!cidrRx.test(cidr)) {
+    showErr("Invalid CIDR (e.g. 192.168.1.0/24).");
+    return;
+  }
+  if (isNaN(lat) || isNaN(lng)) {
+    showErr("Latitude and longitude are required.");
+    return;
+  }
   hideErr();
 
-  const isEdit  = id !== null;
-  const url     = isEdit ? `${API_BASE}/admin/location-zones/${id}` : `${API_BASE}/admin/location-zones`;
-  const method  = isEdit ? "PUT" : "POST";
+  const isEdit = id !== null;
+  const url = isEdit
+    ? `${API_BASE}/admin/location-zones/${id}`
+    : `${API_BASE}/admin/location-zones`;
+  const method = isEdit ? "PUT" : "POST";
 
   try {
-    const res  = await fetch(url, {
+    const res = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + adminToken },
-      body: JSON.stringify({ name, building, cidr, lat, lng, radius_m, color, description }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + adminToken,
+      },
+      body: JSON.stringify({
+        name,
+        building,
+        cidr,
+        lat,
+        lng,
+        radius_m,
+        color,
+        description,
+      }),
     });
     const data = await res.json();
-    if (!res.ok) { showErr(data.error || "Failed to save."); return; }
+    if (!res.ok) {
+      showErr(data.error || "Failed to save.");
+      return;
+    }
     closeZoneModal();
     showToast(isEdit ? "Zone updated." : "Zone created.");
     loadGeomap();
   } catch {
-    errEl.textContent = "Connection error."; errEl.style.display = "";
+    errEl.textContent = "Connection error.";
+    errEl.style.display = "";
   }
 }
 
@@ -387,12 +487,15 @@ async function deleteZone(id) {
   if (!confirm("Delete this zone? This cannot be undone.")) return;
   closeZoneModal();
   try {
-    const res  = await fetch(`${API_BASE}/admin/location-zones/${id}`, {
+    const res = await fetch(`${API_BASE}/admin/location-zones/${id}`, {
       method: "DELETE",
       headers: { Authorization: "Bearer " + adminToken },
     });
     const data = await res.json();
-    if (!res.ok) { showToast(data.error || "Failed to delete zone."); return; }
+    if (!res.ok) {
+      showToast(data.error || "Failed to delete zone.");
+      return;
+    }
     showToast("Zone deleted.");
     loadGeomap();
   } catch {
@@ -404,14 +507,14 @@ async function deleteZone(id) {
 function enterPickMode() {
   // Save all current form values so we can restore them later
   pickModeSavedData = {
-    zoneId:      document.getElementById("zm_zone_id")?.value || null,
-    name:        document.getElementById("zm_name").value,
-    building:    document.getElementById("zm_building").value,
-    cidr:        document.getElementById("zm_cidr").value,
-    lat:         document.getElementById("zm_lat").value,
-    lng:         document.getElementById("zm_lng").value,
-    radius_m:    document.getElementById("zm_radius").value,
-    color:       document.getElementById("zm_color").value,
+    zoneId: document.getElementById("zm_zone_id")?.value || null,
+    name: document.getElementById("zm_name").value,
+    building: document.getElementById("zm_building").value,
+    cidr: document.getElementById("zm_cidr").value,
+    lat: document.getElementById("zm_lat").value,
+    lng: document.getElementById("zm_lng").value,
+    radius_m: document.getElementById("zm_radius").value,
+    color: document.getElementById("zm_color").value,
     description: document.getElementById("zm_desc").value,
   };
 
@@ -421,7 +524,7 @@ function enterPickMode() {
 
   // Show instruction banner inside the map container
   const banner = document.createElement("div");
-  banner.id        = "pickModeBanner";
+  banner.id = "pickModeBanner";
   banner.className = "pick-mode-banner";
   banner.innerHTML = `📍 Click anywhere on the map to place the zone center.
     <button type="button" onclick="cancelPickMode()" class="pick-mode-cancel">Cancel</button>`;
@@ -442,7 +545,10 @@ function onPickModeClick(e) {
   exitPickModeUI();
 
   // Drop a temporary marker so the user sees where they clicked
-  if (pickModeMarker) { pickModeMarker.remove(); pickModeMarker = null; }
+  if (pickModeMarker) {
+    pickModeMarker.remove();
+    pickModeMarker = null;
+  }
   pickModeMarker = L.marker([lat, lng]).addTo(geomapMap);
 
   // Rebuild the modal with saved values + new coords
@@ -457,7 +563,7 @@ function cancelPickMode() {
   _reopenModalWithCoords(
     parseFloat(saved.lat) || null,
     parseFloat(saved.lng) || null,
-    true  // restoring — don't overwrite with null coords
+    true, // restoring — don't overwrite with null coords
   );
 }
 
@@ -476,7 +582,11 @@ function _reopenModalWithCoords(lat, lng, restoreOriginal = false) {
 
   // Build a zone-like object from saved form state
   const zoneObj = saved.zoneId
-    ? { ...geomapZoneById(Number(saved.zoneId)), ...saved, id: Number(saved.zoneId) }
+    ? {
+        ...geomapZoneById(Number(saved.zoneId)),
+        ...saved,
+        id: Number(saved.zoneId),
+      }
     : { ...saved, id: null };
 
   // Apply the picked (or restored) coordinates
@@ -486,24 +596,32 @@ function _reopenModalWithCoords(lat, lng, restoreOriginal = false) {
   openZoneModal(zoneObj);
 
   // Override the lat/lng inputs directly after the modal renders
-  if (lat !== null) document.getElementById("zm_lat").value = restoreOriginal ? (saved.lat ?? "") : lat.toFixed(7);
-  if (lng !== null) document.getElementById("zm_lng").value = restoreOriginal ? (saved.lng ?? "") : lng.toFixed(7);
+  if (lat !== null)
+    document.getElementById("zm_lat").value = restoreOriginal
+      ? (saved.lat ?? "")
+      : lat.toFixed(7);
+  if (lng !== null)
+    document.getElementById("zm_lng").value = restoreOriginal
+      ? (saved.lng ?? "")
+      : lng.toFixed(7);
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────
 function esc(str) {
   return String(str ?? "")
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function fmtRelTime(dtStr) {
-  const ms  = Date.now() - new Date(dtStr.replace(" ", "T") + "Z").getTime();
+  const ms = Date.now() - new Date(dtStr.replace(" ", "T") + "Z").getTime();
   const sec = Math.floor(ms / 1000);
-  if (sec < 60)        return "just now";
+  if (sec < 60) return "just now";
   const min = Math.floor(sec / 60);
-  if (min < 60)        return `${min}m ago`;
-  const hr  = Math.floor(min / 60);
-  if (hr < 24)         return `${hr}h ago`;
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
   return `${Math.floor(hr / 24)}d ago`;
 }

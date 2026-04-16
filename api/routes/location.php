@@ -59,10 +59,46 @@ function cast_zone(array $z): array
   return $z;
 }
 
+// ── Helper: ensure geomap schema exists ──────────────────────────────
+function ensure_location_schema(PDO $pdo): void
+{
+  $pdo->exec(
+    "CREATE TABLE IF NOT EXISTS location_zones (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(120) NOT NULL,
+      building VARCHAR(120) NOT NULL,
+      cidr VARCHAR(50) NOT NULL,
+      lat DECIMAL(10,7) NOT NULL,
+      lng DECIMAL(10,7) NOT NULL,
+      radius_m SMALLINT UNSIGNED NOT NULL DEFAULT 80,
+      color VARCHAR(20) NOT NULL DEFAULT '#8B5CF6',
+      description TEXT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+  );
+
+  $hasUnique = false;
+  $idxStmt = $pdo->query("SHOW INDEX FROM location_zones WHERE Key_name = 'uq_cidr'");
+  if ($idxStmt) {
+    $hasUnique = (bool) $idxStmt->fetch();
+  }
+
+  if (!$hasUnique) {
+    try {
+      $pdo->exec("ALTER TABLE location_zones ADD UNIQUE KEY uq_cidr (cidr)");
+    } catch (Throwable $_) {
+      // Ignore if another process already created it.
+    }
+  }
+}
+
 // ── GET /admin/location-zones ─────────────────────────────────────────
 if ($method === "GET" && $path === "/admin/location-zones") {
   assert_super_admin();
-  $rows = db()->query("SELECT * FROM location_zones ORDER BY name ASC")->fetchAll();
+  $pdo = db();
+  ensure_location_schema($pdo);
+  $rows = $pdo->query("SELECT * FROM location_zones ORDER BY name ASC")->fetchAll();
   json_response(["zones" => array_map("cast_zone", $rows)]);
 }
 
@@ -88,6 +124,7 @@ if ($method === "POST" && $path === "/admin/location-zones") {
     json_response(["error" => "lat and lng are required"], 400);
 
   $pdo = db();
+  ensure_location_schema($pdo);
   try {
     $stmt = $pdo->prepare(
       "INSERT INTO location_zones (name, building, cidr, lat, lng, radius_m, color, description)
@@ -111,6 +148,7 @@ if ($method === "PUT" && preg_match('#^/admin/location-zones/(\d+)$#', $path, $m
   $id = (int) $m[1];
   $in = json_input();
   $pdo = db();
+  ensure_location_schema($pdo);
 
   $existing = $pdo->prepare("SELECT * FROM location_zones WHERE id = ?");
   $existing->execute([$id]);
@@ -155,6 +193,7 @@ if ($method === "DELETE" && preg_match('#^/admin/location-zones/(\d+)$#', $path,
   assert_super_admin();
   $id = (int) $m[1];
   $pdo = db();
+  ensure_location_schema($pdo);
   $stmt = $pdo->prepare("DELETE FROM location_zones WHERE id = ?");
   $stmt->execute([$id]);
   if ($stmt->rowCount() === 0)
@@ -166,6 +205,7 @@ if ($method === "DELETE" && preg_match('#^/admin/location-zones/(\d+)$#', $path,
 if ($method === "GET" && $path === "/admin/geomap") {
   assert_super_admin();
   $pdo = db();
+  ensure_location_schema($pdo);
 
   // Load all zones
   $zones = array_map(
