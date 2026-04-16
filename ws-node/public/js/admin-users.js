@@ -4,33 +4,73 @@ const ADMIN_ALTCHA_HOST = window.location.hostname || "localhost";
 const ADMIN_ALTCHA_PROTOCOL =
   window.location.protocol === "https:" ? "https:" : "http:";
 const ADMIN_ALTCHA_API_BASE = `${ADMIN_ALTCHA_PROTOCOL}//${ADMIN_ALTCHA_HOST}/campus-chat/api/index.php`;
-const ADMIN_ALTCHA_PROXY_BASE =
+const ADMIN_REQUEST_API_BASE =
   window.location.port === "3001"
     ? `${window.location.origin}/api`
     : ADMIN_ALTCHA_API_BASE;
+const ADMIN_ALTCHA_BASE_CANDIDATES =
+  window.location.port === "3001"
+    ? [ADMIN_REQUEST_API_BASE, ADMIN_ALTCHA_API_BASE]
+    : [ADMIN_ALTCHA_API_BASE];
+let _resolvedAdminAltchaBase = "";
 const ADMIN_ALTCHA_VERIFY_CALL_TIMEOUT_MS = 20000;
 
-function configureAdminAltchaWidget() {
+async function resolveAdminAltchaBase(scope) {
+  if (_resolvedAdminAltchaBase) return _resolvedAdminAltchaBase;
+
+  const probeScope = String(scope || "auth").trim() || "auth";
+  for (const base of ADMIN_ALTCHA_BASE_CANDIDATES) {
+    try {
+      const probeRes = await fetch(
+        `${base}/altcha/challenge?scope=${encodeURIComponent(probeScope)}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        },
+      );
+      if (probeRes.ok) {
+        _resolvedAdminAltchaBase = base;
+        return _resolvedAdminAltchaBase;
+      }
+    } catch (_err) {
+      // Try the next candidate.
+    }
+  }
+
+  _resolvedAdminAltchaBase =
+    ADMIN_ALTCHA_BASE_CANDIDATES[ADMIN_ALTCHA_BASE_CANDIDATES.length - 1];
+  return _resolvedAdminAltchaBase;
+}
+
+async function configureAdminAltchaWidget() {
   const widget = document.getElementById("adminLoginAltcha");
   if (!widget) return;
+  const defaultBase = ADMIN_ALTCHA_BASE_CANDIDATES[0];
   widget.setAttribute(
     "challengeurl",
-    `${ADMIN_ALTCHA_PROXY_BASE}/altcha/challenge?scope=${encodeURIComponent(ADMIN_ALTCHA_SCOPE)}`,
+    `${defaultBase}/altcha/challenge?scope=${encodeURIComponent(ADMIN_ALTCHA_SCOPE)}`,
   );
   widget.setAttribute(
     "workerurl",
     new URL("vendor/altcha/worker.js", window.location.href).href,
   );
+  widget.setAttribute("verifyurl", `${defaultBase}/altcha/verify-code`);
+
+  const altchaBase = await resolveAdminAltchaBase(ADMIN_ALTCHA_SCOPE);
+  if (altchaBase === defaultBase) return;
   widget.setAttribute(
-    "verifyurl",
-    `${ADMIN_ALTCHA_PROXY_BASE}/altcha/verify-code`,
+    "challengeurl",
+    `${altchaBase}/altcha/challenge?scope=${encodeURIComponent(ADMIN_ALTCHA_SCOPE)}`,
   );
+  widget.setAttribute("verifyurl", `${altchaBase}/altcha/verify-code`);
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", configureAdminAltchaWidget);
+  document.addEventListener("DOMContentLoaded", () => {
+    configureAdminAltchaWidget().catch(() => {});
+  });
 } else {
-  configureAdminAltchaWidget();
+  configureAdminAltchaWidget().catch(() => {});
 }
 
 async function readAdminAltchaPayload() {
@@ -81,7 +121,7 @@ async function adminLogin() {
   }
 
   try {
-    const res = await fetch(`${ADMIN_ALTCHA_PROXY_BASE}/login`, {
+    const res = await fetch(`${ADMIN_REQUEST_API_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password, altcha }),
@@ -183,6 +223,9 @@ function switchAdminTab(btn, tab) {
     document.getElementById("adminToolbar").classList.add("hidden");
     document.getElementById("userTableWrap").classList.add("hidden");
     loadGeomap();
+    if (typeof refreshGeomapSizeSoon === "function") {
+      refreshGeomapSizeSoon();
+    }
   } else {
     document.getElementById("geomapPanel").classList.add("hidden");
   }
