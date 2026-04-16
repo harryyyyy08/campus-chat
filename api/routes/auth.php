@@ -691,9 +691,12 @@ if ($method === "POST" && $path === "/forgot-password") {
   $rl["count"]++;
   file_put_contents($rl_file, json_encode($rl), LOCK_EX);
 
-  // Prevent username enumeration — same response shape regardless
-  if (!$user || $user["status"] !== "active") {
-    json_response(["method" => "admin", "message" => "If this account exists, a reset request has been submitted. Please contact your administrator."]);
+  if (!$user) {
+    json_response(["error" => "Username not found."], 404);
+  }
+
+  if ($user["status"] !== "active") {
+    json_response(["error" => "Account is not active. Please contact your administrator."], 403);
   }
 
   // Check if user has security questions set
@@ -924,9 +927,12 @@ if ($method === "POST" && $path === "/request-admin-reset") {
   $rl["count"]++;
   file_put_contents($rl_file, json_encode($rl), LOCK_EX);
 
-  // Always return success to prevent username enumeration
-  if (!$user || $user["status"] !== "active") {
-    json_response(["submitted" => true, "message" => "If this account exists, a reset request has been submitted. Please contact your administrator."]);
+  if (!$user) {
+    json_response(["error" => "Username not found."], 404);
+  }
+
+  if ($user["status"] !== "active") {
+    json_response(["error" => "Account is not active. Please contact your administrator."], 403);
   }
 
   // Check if there's already a pending admin reset request for this user

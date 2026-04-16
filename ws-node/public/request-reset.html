@@ -193,8 +193,8 @@
           so they can verify your identity and approve the request.<br><br>
           Once approved, you will receive a temporary password.
         </div>
-        <a class="btn-primary" href="login.html"
-          style="display:block;text-align:center;text-decoration:none;">Back to Login</a>
+        <a class="btn-primary" href="login.html" style="display:block;text-align:center;text-decoration:none;">Back to
+          Login</a>
       </div>
 
       <!-- State 3: Already Pending -->
@@ -202,20 +202,22 @@
         <div class="fp-success-icon" style="background:rgba(234,179,8,0.12);color:#eab308;">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
             stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
           </svg>
         </div>
         <div class="fp-success-title" style="color:var(--text-primary);">Request Already Pending</div>
         <div class="fp-success-body">
           You already submitted a password reset request <strong id="pendingAgo"></strong>.<br><br>
-          Your request is waiting for administrator approval. Please <strong>contact your administrator in person or via phone</strong> to verify your identity and speed up the process.
+          Your request is waiting for administrator approval. Please <strong>contact your administrator in person or via
+            phone</strong> to verify your identity and speed up the process.
         </div>
         <div class="rr-callout" style="text-align:left;">
-          <strong>⚠️ Note:</strong> Requests that are not acted upon will automatically expire after <strong>7 days</strong>. If your request expires, you can submit a new one.
+          <strong>⚠️ Note:</strong> Requests that are not acted upon will automatically expire after <strong>7
+            days</strong>. If your request expires, you can submit a new one.
         </div>
-        <a class="btn-primary" href="login.html"
-          style="display:block;text-align:center;text-decoration:none;">Back to Login</a>
+        <a class="btn-primary" href="login.html" style="display:block;text-align:center;text-decoration:none;">Back to
+          Login</a>
         <a class="fp-back-link" href="forgot-password.html">← Try Forgot Password again</a>
       </div>
 
@@ -295,7 +297,12 @@
           return;
         }
 
-        showState("stateSuccess");
+        if (data.submitted) {
+          showState("stateSuccess");
+          return;
+        }
+
+        errEl.textContent = data.message || "Unable to submit request. Please try again.";
       } catch {
         errEl.textContent = "Connection error. Is the server running?";
       } finally {
