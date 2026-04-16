@@ -1,4 +1,68 @@
 // ── Login ──────────────────────────────────────────────
+const ADMIN_ALTCHA_SCOPE = "admin-login";
+const ADMIN_ALTCHA_HOST = window.location.hostname || "localhost";
+const ADMIN_ALTCHA_PROTOCOL =
+  window.location.protocol === "https:" ? "https:" : "http:";
+const ADMIN_ALTCHA_API_BASE = `${ADMIN_ALTCHA_PROTOCOL}//${ADMIN_ALTCHA_HOST}/campus-chat/api/index.php`;
+const ADMIN_ALTCHA_PROXY_BASE =
+  window.location.port === "3001"
+    ? `${window.location.origin}/api`
+    : ADMIN_ALTCHA_API_BASE;
+const ADMIN_ALTCHA_VERIFY_CALL_TIMEOUT_MS = 20000;
+
+function configureAdminAltchaWidget() {
+  const widget = document.getElementById("adminLoginAltcha");
+  if (!widget) return;
+  widget.setAttribute(
+    "challengeurl",
+    `${ADMIN_ALTCHA_PROXY_BASE}/altcha/challenge?scope=${encodeURIComponent(ADMIN_ALTCHA_SCOPE)}`,
+  );
+  widget.setAttribute(
+    "workerurl",
+    new URL("vendor/altcha/worker.js", window.location.href).href,
+  );
+  widget.setAttribute(
+    "verifyurl",
+    `${ADMIN_ALTCHA_PROXY_BASE}/altcha/verify-code`,
+  );
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", configureAdminAltchaWidget);
+} else {
+  configureAdminAltchaWidget();
+}
+
+async function readAdminAltchaPayload() {
+  const widget = document.getElementById("adminLoginAltcha");
+  if (!widget) return "";
+
+  const readPayload = () => {
+    const hidden = widget.querySelector('input[type="hidden"][name="altcha"]');
+    return hidden ? String(hidden.value || "").trim() : "";
+  };
+
+  let payload = readPayload();
+  if (payload) return payload;
+
+  if (typeof widget.verify === "function") {
+    try {
+      await Promise.race([
+        widget.verify(),
+        new Promise((_, reject) => {
+          setTimeout(
+            () => reject(new Error("ALTCHA verify timeout")),
+            ADMIN_ALTCHA_VERIFY_CALL_TIMEOUT_MS,
+          );
+        }),
+      ]);
+    } catch (_err) {
+      // The widget renders error state by itself.
+    }
+    payload = readPayload();
+  }
+  return payload;
+}
 async function adminLogin() {
   const username = document.getElementById("adminUsername").value.trim();
   const password = document.getElementById("adminPassword").value;
@@ -10,11 +74,17 @@ async function adminLogin() {
     return;
   }
 
+  const altcha = await readAdminAltchaPayload();
+  if (!altcha) {
+    errEl.textContent = "Please complete the security verification.";
+    return;
+  }
+
   try {
-    const res = await fetch(`${API_BASE}/login`, {
+    const res = await fetch(`${ADMIN_ALTCHA_PROXY_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, altcha }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -66,7 +136,7 @@ function switchAdminTab(btn, tab) {
   const isStorage = tab === "storage";
   const isChats = tab === "chats";
   const isFlagged = tab === "flagged";
-  const isGeomap  = tab === "geomap";
+  const isGeomap = tab === "geomap";
   const isUserTab = !isStorage && !isChats && !isFlagged && !isGeomap;
 
   document

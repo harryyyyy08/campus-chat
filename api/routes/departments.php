@@ -98,7 +98,17 @@ if ($method === "PUT" && preg_match('#^/admin/departments/(\d+)$#', $path, $m)) 
 
   // Users reference department by ID, so only announcement targets need name update.
   $old_name = $old["name"];
-  $pdo->prepare("UPDATE announcements SET department = ? WHERE department = ?")->execute([$name, $old_name]);
+  try {
+    $has_announcements = $pdo->query("SHOW TABLES LIKE 'announcements'");
+    if ($has_announcements && $has_announcements->fetchColumn()) {
+      $has_department_col = $pdo->query("SHOW COLUMNS FROM announcements LIKE 'department'");
+      if ($has_department_col && $has_department_col->fetchColumn()) {
+        $pdo->prepare("UPDATE announcements SET department = ? WHERE department = ?")->execute([$name, $old_name]);
+      }
+    }
+  } catch (Throwable $e) {
+    error_log("Department rename: skipped announcements department sync - " . $e->getMessage());
+  }
 
   json_response(["updated" => true, "id" => $dept_id, "name" => $name]);
 }

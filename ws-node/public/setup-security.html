@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusChat — Set Security Questions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <style>
+    .sq-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 22px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .sq-notice svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      color: #8b5cf6;
+    }
+
+    .field-group+.field-group {
+      margin-top: 16px;
+    }
+
+    .field-group select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--anim);
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b5cf6' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+
+    .field-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .field-group select option {
+      background: var(--bg-modal);
+      color: var(--text-primary);
+    }
+
+    .answer-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      opacity: 0.7;
+    }
+
+    .sq-section-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sq-section-label .sq-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sq-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loginWrap">
+    <div class="login-card" style="max-width: 440px;">
+
+      <!-- Logo -->
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </div>
+        <div>
+          <div class="login-logo-text">Campus<span>Chat</span></div>
+          <div class="login-subtitle">INTRANET MESSAGING</div>
+        </div>
+      </div>
+
+      <h2 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0 0 14px;">Set Security Questions</h2>
+
+      <div class="sq-notice">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <span>Please set your security questions. These will be used to recover your account if you forget your
+          password.</span>
+      </div>
+
+      <!-- Question 1 -->
+      <div class="sq-section-label"><span class="sq-num">1</span> Security Question 1</div>
+      <div class="field-group">
+        <label for="sq1Select">Choose a question</label>
+        <select id="sq1Select">
+          <option value="">— Select a question —</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="sq1Answer">Your Answer</label>
+        <input id="sq1Answer" type="text" placeholder="Type your answer" autocomplete="off" />
+        <div class="answer-hint">Answers are case-insensitive (stored as lowercase)</div>
+      </div>
+
+      <div class="sq-divider"></div>
+
+      <!-- Question 2 -->
+      <div class="sq-section-label"><span class="sq-num">2</span> Security Question 2</div>
+      <div class="field-group">
+        <label for="sq2Select">Choose a question</label>
+        <select id="sq2Select">
+          <option value="">— Select a question —</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="sq2Answer">Your Answer</label>
+        <input id="sq2Answer" type="text" placeholder="Type your answer" autocomplete="off" />
+        <div class="answer-hint">Answers are case-insensitive (stored as lowercase)</div>
+      </div>
+      <div class="sq-divider"></div>
+
+      <!-- Question 3 -->
+      <div class="sq-section-label"><span class="sq-num">3</span> Security Question 3</div>
+      <div class="field-group">
+        <label for="sq3Select">Choose a question</label>
+        <select id="sq3Select">
+          <option value="">— Select a question —</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="sq3Answer">Your Answer</label>
+        <input id="sq3Answer" type="text" placeholder="Type your answer" autocomplete="off" />
+        <div class="answer-hint">Answers are case-insensitive (stored as lowercase)</div>
+      </div>
+
+      <p id="sqError" style="color:var(--error,#ef4444);font-size:13px;margin:12px 0 0;min-height:18px;"></p>
+      <button class="btn-primary" onclick="saveQuestions()" style="margin-top:12px;">Save Security Questions</button>
+
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const t = localStorage.getItem("cc_theme") || "light";
+      document.documentElement.setAttribute("data-theme", t);
+
+      // Must have a valid token
+      const token = localStorage.getItem("cc_token");
+      if (!token) {
+        window.location.href = "login.html";
+      }
+    })();
+
+    const _host = window.location.hostname || "localhost";
+    const _protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const API_BASE = `${_protocol}//${_host}/campus-chat/api/index.php`;
+
+    // Auto-lowercase answer inputs
+    document.getElementById("sq1Answer").addEventListener("input", function () {
+      this.value = this.value.toLowerCase();
+    });
+    document.getElementById("sq2Answer").addEventListener("input", function () {
+      this.value = this.value.toLowerCase();
+    });
+    document.getElementById("sq3Answer").addEventListener("input", function () {
+      this.value = this.value.toLowerCase();
+    });
+
+    // Load questions from API
+    async function loadQuestions() {
+      try {
+        const res = await fetch(`${API_BASE}/security-questions/list`);
+        const data = await res.json();
+        const qs = data.questions;
+
+        const sel1 = document.getElementById("sq1Select");
+        const sel2 = document.getElementById("sq2Select");
+        const sel3 = document.getElementById("sq3Select");
+
+        // Set 1
+        for (const [idx, text] of Object.entries(qs["1"])) {
+          const opt = document.createElement("option");
+          opt.value = idx;
+          opt.textContent = text;
+          sel1.appendChild(opt);
+        }
+        // Set 2
+        for (const [idx, text] of Object.entries(qs["2"])) {
+          const opt = document.createElement("option");
+          opt.value = idx;
+          opt.textContent = text;
+          sel2.appendChild(opt);
+        }
+        // Set 3
+        for (const [idx, text] of Object.entries(qs["3"])) {
+          const opt = document.createElement("option");
+          opt.value = idx;
+          opt.textContent = text;
+          sel3.appendChild(opt);
+        }
+      } catch {
+        document.getElementById("sqError").textContent = "Failed to load questions.";
+      }
+    }
+
+    loadQuestions();
+
+    // Enter key
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") saveQuestions();
+    });
+
+    async function saveQuestions() {
+      const q1Index = document.getElementById("sq1Select").value;
+      const q1Answer = document.getElementById("sq1Answer").value.trim().toLowerCase();
+      const q2Index = document.getElementById("sq2Select").value;
+      const q2Answer = document.getElementById("sq2Answer").value.trim().toLowerCase();
+      const q3Index = document.getElementById("sq3Select").value;
+      const q3Answer = document.getElementById("sq3Answer").value.trim().toLowerCase();
+      const errEl = document.getElementById("sqError");
+      errEl.textContent = "";
+
+      if (!q1Index) { errEl.textContent = "Please select Question 1."; return; }
+      if (q1Answer.length < 2) { errEl.textContent = "Answer 1 must be at least 2 characters."; return; }
+      if (!q2Index) { errEl.textContent = "Please select Question 2."; return; }
+      if (q2Answer.length < 2) { errEl.textContent = "Answer 2 must be at least 2 characters."; return; }
+      if (!q3Index) { errEl.textContent = "Please select Question 3."; return; }
+      if (q3Answer.length < 2) { errEl.textContent = "Answer 3 must be at least 2 characters."; return; }
+
+      const btn = document.querySelector(".btn-primary");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+
+      try {
+        const token = localStorage.getItem("cc_token");
+        const res = await fetch(`${API_BASE}/security-questions/setup`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            q1_index: parseInt(q1Index),
+            q1_answer: q1Answer,
+            q2_index: parseInt(q2Index),
+            q2_answer: q2Answer,
+            q3_index: parseInt(q3Index),
+            q3_answer: q3Answer,
+          }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || "Failed to save.";
+          return;
+        }
+
+        // Redirect to main app
+        window.location.href = "index.html";
+      } catch {
+        errEl.textContent = "Connection error. Is the server running?";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Security Questions";
+      }
+    }
+  </script>
+</body>
+
+</html>

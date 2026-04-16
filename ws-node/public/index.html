@@ -280,18 +280,13 @@
           </svg>
           <span id="annNavBadge" class="request-nav-badge hidden"></span>
         </a>
-        <button id="themeToggleBtn" title="Toggle theme" onclick="toggleTheme()">
-          <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        <button type="button" class="icon-btn" title="Settings" onclick="openSettingsModal()" aria-haspopup="dialog"
+          aria-controls="settingsDialogPanel">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </button>
         <button class="icon-btn" title="Logout" onclick="logout()">
@@ -458,6 +453,129 @@
     </svg>
   </button>
 
+  <!-- MODAL: Settings -->
+  <div class="modal-overlay" id="settingsModal" role="presentation">
+    <div id="settingsDialogPanel" class="modal-box settings-modal-box" role="dialog" aria-modal="true"
+      aria-labelledby="settingsModalTitle">
+      <div class="modal-title" id="settingsModalTitle">
+        Settings
+        <button type="button" class="modal-close" onclick="closeModal('settingsModal')" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div id="settingsMenuView" class="settings-view">
+        <button type="button" class="settings-item" onclick="toggleThemeFromSettings()" aria-label="Toggle theme">
+          <span class="settings-item-label">Theme</span>
+          <span class="settings-theme-pill" id="settingsThemePill" aria-live="polite">
+            <svg id="settingsThemePillIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+            <span id="settingsThemePillText">Light</span>
+          </span>
+        </button>
+
+        <button type="button" class="settings-item" onclick="openSettingsChangePasswordView()"
+          aria-label="Open change password">
+          <span class="settings-item-label">Change Password</span>
+          <span class="settings-item-chevron" aria-hidden="true">></span>
+        </button>
+
+        <button type="button" class="settings-item" onclick="openSettingsSecurityQuestions()"
+          aria-label="Open change security questions">
+          <span class="settings-item-label">Change Security Questions</span>
+          <span class="settings-item-chevron" aria-hidden="true">></span>
+        </button>
+      </div>
+
+      <div id="settingsPasswordView" class="settings-view hidden">
+        <h3 class="settings-section-heading">Change Password</h3>
+        <p class="settings-section-hint">Use at least 8 characters. Choose a strong password you have not used
+          elsewhere.
+        </p>
+        <form id="changePasswordForm" onsubmit="submitChangePassword(event)" novalidate>
+          <label class="modal-label" for="settingsCurrentPw">Current password</label>
+          <div class="password-field">
+            <input id="settingsCurrentPw" class="modal-input" type="password" name="current_password"
+              autocomplete="current-password" />
+            <button type="button" class="password-toggle" aria-label="Show password" data-target="settingsCurrentPw">
+              <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94" />
+                <path d="M1 1l22 22" />
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24" />
+                <path d="M23 12s-1.67 3.11-4.59 5.59" />
+              </svg>
+            </button>
+          </div>
+          <label class="modal-label" for="settingsNewPw">New password</label>
+          <div class="password-field">
+            <input id="settingsNewPw" class="modal-input" type="password" name="new_password"
+              autocomplete="new-password" />
+            <button type="button" class="password-toggle" aria-label="Show password" data-target="settingsNewPw">
+              <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94" />
+                <path d="M1 1l22 22" />
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24" />
+                <path d="M23 12s-1.67 3.11-4.59 5.59" />
+              </svg>
+            </button>
+          </div>
+          <label class="modal-label" for="settingsConfirmPw">Confirm new password</label>
+          <div class="password-field">
+            <input id="settingsConfirmPw" class="modal-input" type="password" name="confirm_password"
+              autocomplete="new-password" />
+            <button type="button" class="password-toggle" aria-label="Show password" data-target="settingsConfirmPw">
+              <svg class="icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg class="icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.94" />
+                <path d="M1 1l22 22" />
+                <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                <path d="M14.12 14.12a3 3 0 0 0-4.24-4.24" />
+                <path d="M23 12s-1.67 3.11-4.59 5.59" />
+              </svg>
+            </button>
+          </div>
+          <div id="settingsFormFeedback" class="modal-feedback" role="status" aria-live="polite"></div>
+          <div class="modal-actions">
+            <button type="button" class="btn-ghost" onclick="showSettingsMenuView()">Back</button>
+            <button type="submit" class="btn-modal-primary" id="settingsChangePwBtn">Update password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: New Direct Chat -->
   <div class="modal-overlay" id="newChatModal">
     <div class="modal-box">
@@ -590,6 +708,24 @@
   <script src="js/groups.js"></script>
   <script src="js/voice.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/settings.js"></script>
+  <script>
+    function setupPasswordToggles() {
+      document.querySelectorAll(".password-toggle").forEach((btn) => {
+        const targetId = btn.getAttribute("data-target");
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        btn.addEventListener("click", () => {
+          const willShow = input.type === "password";
+          input.type = willShow ? "text" : "password";
+          btn.classList.toggle("is-visible", willShow);
+          btn.setAttribute("aria-label", willShow ? "Hide password" : "Show password");
+        });
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", setupPasswordToggles);
+  </script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

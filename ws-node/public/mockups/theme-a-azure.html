@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup A — Azure Pro | CampusChat Design Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── PREVIEW SHELL ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #0F172A;
+      color: #F8FAFC;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .preview-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .preview-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: #60A5FA;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .preview-title { font-size: 32px; font-weight: 800; letter-spacing: -0.04em; color: #F8FAFC; }
+    .preview-desc { font-size: 15px; color: #94A3B8; margin-top: 8px; }
+
+    .screens-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .screen-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748B;
+      margin-bottom: 12px;
+    }
+
+    .screen-frame {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+
+    /* ─── AZURE DESIGN SYSTEM ───────────────────────── */
+    :root {
+      --az-accent:    #2563EB;
+      --az-accent-lt: #3B82F6;
+      --az-accent-glow: rgba(59,130,246,0.2);
+      --az-bg:        #F8FAFC;
+      --az-sidebar:   #FFFFFF;
+      --az-chat:      #F1F5F9;
+      --az-input:     #FFFFFF;
+      --az-border:    #E2E8F0;
+      --az-border-s:  #CBD5E1;
+      --az-text-1:    #0F172A;
+      --az-text-2:    #475569;
+      --az-text-3:    #94A3B8;
+      --az-bubble-in: #FFFFFF;
+      --az-bubble-out: #2563EB;
+      --az-active:    #EFF6FF;
+      --az-hover:     #F8FAFC;
+      --az-green:     #10B981;
+    }
+
+    /* ─── LOGIN PAGE ─── */
+    .az-login-page {
+      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #EFF6FF 100%);
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .az-login-page::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+    }
+    .az-login-page::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: -80px;
+      width: 250px; height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%);
+    }
+    .az-login-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 60px rgba(37,99,235,0.12), 0 4px 16px rgba(0,0,0,0.06);
+      border: 1px solid rgba(226,232,240,0.8);
+      position: relative;
+      z-index: 1;
+    }
+    .az-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .az-logo-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+    }
+    .az-logo-text { font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.03em; }
+    .az-logo-text span { color: #2563EB; }
+    .az-logo-sub { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #94A3B8; text-transform: uppercase; margin-top: 2px; }
+    .az-field { margin-bottom: 16px; }
+    .az-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+    .az-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      font-size: 14px;
+      color: #0F172A;
+      background: #F8FAFC;
+      outline: none;
+      font-family: inherit;
+    }
+    .az-input:focus { border-color: #2563EB; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+    .az-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 8px;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+      letter-spacing: 0.01em;
+    }
+    .az-footer-text { text-align: center; font-size: 13px; color: #94A3B8; margin-top: 20px; }
+    .az-footer-text a { color: #2563EB; font-weight: 600; }
+
+    /* ─── CHAT APP ─── */
+    .az-app {
+      display: flex;
+      height: 600px;
+      background: var(--az-chat);
+    }
+
+    /* Sidebar */
+    .az-sidebar {
+      width: 280px;
+      background: #FFFFFF;
+      border-right: 1px solid var(--az-border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .az-sidebar-header {
+      padding: 16px 14px 12px;
+      border-bottom: 1px solid var(--az-border);
+    }
+    .az-sidebar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .az-sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .az-sidebar-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .az-sidebar-title { font-size: 16px; font-weight: 800; color: #0F172A; letter-spacing: -0.03em; }
+    .az-actions { display: flex; gap: 2px; }
+    .az-icon-btn {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #64748B;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .az-icon-btn:hover { background: #EFF6FF; color: #2563EB; }
+    .az-icon-btn.accent { background: #EFF6FF; color: #2563EB; }
+    .az-search {
+      display: flex;
+      align-items: center;
+      background: #F1F5F9;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 0 12px;
+      gap: 8px;
+    }
+    .az-search input {
+      border: none; background: transparent; outline: none;
+      font-size: 13px; color: #0F172A; width: 100%; padding: 8px 0;
+      font-family: inherit;
+    }
+    .az-search input::placeholder { color: #94A3B8; }
+    .az-search svg { color: #94A3B8; flex-shrink: 0; }
+
+    .az-tabs {
+      display: flex;
+      padding: 10px 14px 0;
+      border-bottom: 1px solid var(--az-border);
+      gap: 4px;
+    }
+    .az-tab {
+      flex: 1; padding: 7px 8px;
+      background: none; border: none; border-radius: 8px;
+      font-size: 12px; font-weight: 600; color: #64748B;
+      cursor: pointer; margin-bottom: 8px; font-family: inherit;
+    }
+    .az-tab.active { background: #EFF6FF; color: #2563EB; }
+
+    .az-online-strip {
+      display: flex;
+      gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--az-border);
+      overflow-x: auto;
+      min-height: 66px;
+      align-items: center;
+    }
+    .az-online-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .az-avatar-wrap { position: relative; }
+    .az-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, #60A5FA, #2563EB);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase;
+    }
+    .az-avatar.grp { background: linear-gradient(135deg, #34D399, #059669); }
+    .az-avatar.p2 { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
+    .az-avatar.p3 { background: linear-gradient(135deg, #FCD34D, #D97706); }
+    .az-online-dot {
+      position: absolute; bottom: 1px; right: 1px;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #10B981; border: 2px solid #fff;
+    }
+    .az-online-name { font-size: 10px; color: #64748B; max-width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .az-conv-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+    .az-conv {
+      padding: 10px 10px 10px 12px;
+      border-radius: 12px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; transition: background 0.12s; position: relative;
+    }
+    .az-conv:hover { background: var(--az-hover); }
+    .az-conv.active { background: var(--az-active); }
+    .az-conv.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; height: 60%; width: 3px;
+      background: #2563EB; border-radius: 0 3px 3px 0;
+    }
+    .az-conv-info { flex: 1; min-width: 0; }
+    .az-conv-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+    .az-conv-name { font-size: 14px; font-weight: 600; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .az-conv-time { font-size: 11px; color: #94A3B8; flex-shrink: 0; }
+    .az-conv-preview { font-size: 12.5px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .az-conv-preview.unread { color: #0F172A; font-weight: 500; }
+    .az-badge {
+      background: #2563EB; color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 999px;
+      min-width: 18px; text-align: center;
+    }
+
+    .az-footer {
+      padding: 10px 12px;
+      border-top: 1px solid var(--az-border);
+      display: flex; align-items: center; gap: 8px;
+      background: #FAFBFC;
+    }
+    .az-my-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #60A5FA, #2563EB);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .az-my-name { font-size: 13px; font-weight: 600; color: #0F172A; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .az-my-status { font-size: 11px; color: #10B981; font-weight: 500; }
+
+    /* Chat area */
+    .az-chat { flex: 1; display: flex; flex-direction: column; }
+    .az-chat-header {
+      padding: 14px 20px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--az-border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .az-chat-name { font-size: 15px; font-weight: 700; color: #0F172A; }
+    .az-chat-status { font-size: 12px; color: #10B981; font-weight: 500; }
+    .az-chat-actions { margin-left: auto; display: flex; gap: 4px; }
+
+    .az-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .az-msg { display: flex; gap: 10px; }
+    .az-msg.out { flex-direction: row-reverse; }
+    .az-msg-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+      flex-shrink: 0; align-self: flex-end;
+    }
+    .az-bubble {
+      max-width: 68%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px; line-height: 1.5; color: #0F172A;
+      background: #FFFFFF;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .az-bubble.in { border-bottom-left-radius: 4px; }
+    .az-bubble.out { background: #2563EB; color: #fff; border-bottom-right-radius: 4px; }
+    .az-msg-time { font-size: 11px; color: #94A3B8; margin-top: 4px; text-align: right; }
+    .az-msg-time.in { text-align: left; margin-left: 42px; }
+
+    .az-typing { padding: 0 20px 8px; font-size: 12px; color: #94A3B8; font-style: italic; height: 24px; }
+
+    .az-input-bar {
+      padding: 12px 16px;
+      background: #FFFFFF;
+      border-top: 1px solid var(--az-border);
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .az-input-tools { display: flex; gap: 2px; }
+    .az-tool-btn {
+      width: 34px; height: 34px;
+      border-radius: 8px; border: none;
+      background: transparent; color: #94A3B8;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: color 0.12s, background 0.12s;
+    }
+    .az-tool-btn:hover { color: #2563EB; background: #EFF6FF; }
+    .az-textarea-wrap { flex: 1; }
+    .az-textarea {
+      width: 100%;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-size: 14px;
+      color: #0F172A;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      background: #F8FAFC;
+      line-height: 1.5;
+    }
+    .az-textarea:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: #fff; }
+    .az-send-btn {
+      width: 38px; height: 38px;
+      border-radius: 10px; border: none;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 3px 10px rgba(37,99,235,0.35);
+      flex-shrink: 0;
+    }
+
+    /* Color palette display */
+    .palette-section {
+      max-width: 1400px;
+      margin: 24px auto 0;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .palette-label { font-size: 12px; color: #64748B; font-weight: 600; }
+    .palette-swatches { display: flex; gap: 8px; }
+    .swatch { width: 32px; height: 32px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.1); position: relative; }
+    .swatch[title]::after { content: attr(title); position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #1E293B; color: #fff; font-size: 10px; padding: 3px 6px; border-radius: 4px; white-space: nowrap; display: none; }
+    .swatch:hover::after { display: block; }
+    .feature-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+    .feature-tag {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #CBD5E1;
+      font-size: 12px; font-weight: 500;
+      padding: 5px 12px; border-radius: 999px;
+    }
+    .nav-links { text-align: center; margin-top: 32px; }
+    .nav-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: #94A3B8; font-size: 13px; font-weight: 600;
+      padding: 10px 20px; border-radius: 10px; text-decoration: none; margin: 0 6px;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.12); color: #F8FAFC; }
+    .nav-link.active-theme { background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.4); color: #60A5FA; }
+    .date-chip { font-size: 11px; color: #64748B; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); padding: 3px 10px; border-radius: 999px; margin: 0 auto 8px; display: block; width: fit-content; }
+  </style>
+</head>
+<body>
+
+  <div class="preview-header">
+    <div class="preview-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Theme A of 3
+    </div>
+    <div class="preview-title">Azure Pro</div>
+    <div class="preview-desc">Clean, professional blue — Microsoft Teams × Linear aesthetic</div>
+  </div>
+
+  <div class="screens-grid">
+    <!-- LOGIN -->
+    <div>
+      <div class="screen-label">Login Page</div>
+      <div class="screen-frame">
+        <div class="az-login-page">
+          <div class="az-login-card">
+            <div class="az-logo">
+              <div class="az-logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="az-logo-text">Campus<span>Chat</span></div>
+                <div class="az-logo-sub">Intranet Messaging</div>
+              </div>
+            </div>
+            <div class="az-field">
+              <label class="az-label">Username</label>
+              <input class="az-input" type="text" placeholder="Enter your username" />
+            </div>
+            <div class="az-field">
+              <label class="az-label">Password</label>
+              <input class="az-input" type="password" placeholder="••••••••" />
+            </div>
+            <button class="az-btn">Sign In</button>
+            <p class="az-footer-text">Don't have an account? <a href="#">Register here</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div>
+      <div class="screen-label">Chat Interface</div>
+      <div class="screen-frame">
+        <div class="az-app">
+          <!-- SIDEBAR -->
+          <div class="az-sidebar">
+            <div class="az-sidebar-header">
+              <div class="az-sidebar-top">
+                <div class="az-sidebar-brand">
+                  <div class="az-sidebar-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <span class="az-sidebar-title">Messages</span>
+                </div>
+                <div class="az-actions">
+                  <div class="az-icon-btn accent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                  <div class="az-icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                </div>
+              </div>
+              <div class="az-search">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input placeholder="Search conversations…" />
+              </div>
+            </div>
+            <div class="az-tabs">
+              <button class="az-tab active">All</button>
+              <button class="az-tab">Direct</button>
+              <button class="az-tab">Groups</button>
+            </div>
+            <div class="az-online-strip">
+              <div class="az-online-item">
+                <div class="az-avatar-wrap"><div class="az-avatar">JD</div><div class="az-online-dot"></div></div>
+                <span class="az-online-name">Juan</span>
+              </div>
+              <div class="az-online-item">
+                <div class="az-avatar-wrap"><div class="az-avatar p2">MR</div><div class="az-online-dot"></div></div>
+                <span class="az-online-name">Maria</span>
+              </div>
+              <div class="az-online-item">
+                <div class="az-avatar-wrap"><div class="az-avatar p3">KL</div><div class="az-online-dot"></div></div>
+                <span class="az-online-name">Karl</span>
+              </div>
+            </div>
+            <div class="az-conv-list">
+              <div class="az-conv active">
+                <div class="az-avatar" style="width:44px;height:44px;font-size:15px;flex-shrink:0;position:relative">JD<div class="az-online-dot" style="width:11px;height:11px;border-width:2.5px"></div></div>
+                <div class="az-conv-info">
+                  <div class="az-conv-row"><span class="az-conv-name">Juan Dela Cruz</span><span class="az-conv-time">2m</span></div>
+                  <div class="az-conv-preview unread">Hey, check mo na yung file!</div>
+                </div>
+                <div class="az-badge">3</div>
+              </div>
+              <div class="az-conv">
+                <div class="az-avatar grp" style="width:44px;height:44px;font-size:18px;flex-shrink:0">👥</div>
+                <div class="az-conv-info">
+                  <div class="az-conv-row"><span class="az-conv-name">BSIT 3-A</span><span class="az-conv-time">1h</span></div>
+                  <div class="az-conv-preview">Maria: Saan na ang lecture notes?</div>
+                </div>
+              </div>
+              <div class="az-conv">
+                <div class="az-avatar p2" style="width:44px;height:44px;font-size:15px;flex-shrink:0">MR</div>
+                <div class="az-conv-info">
+                  <div class="az-conv-row"><span class="az-conv-name">Maria Reyes</span><span class="az-conv-time">3h</span></div>
+                  <div class="az-conv-preview">OK sige, bukas na lang</div>
+                </div>
+              </div>
+              <div class="az-conv">
+                <div class="az-avatar p3" style="width:44px;height:44px;font-size:15px;flex-shrink:0">KL</div>
+                <div class="az-conv-info">
+                  <div class="az-conv-row"><span class="az-conv-name">Karl Lim</span><span class="az-conv-time">Yst</span></div>
+                  <div class="az-conv-preview">Thanks for the help!</div>
+                </div>
+              </div>
+              <div class="az-conv">
+                <div class="az-avatar grp" style="width:44px;height:44px;font-size:18px;flex-shrink:0">📢</div>
+                <div class="az-conv-info">
+                  <div class="az-conv-row"><span class="az-conv-name">Faculty Lounge</span><span class="az-conv-time">Yst</span></div>
+                  <div class="az-conv-preview">Prof: Class suspended bukas</div>
+                </div>
+              </div>
+            </div>
+            <div class="az-footer">
+              <div class="az-my-avatar">ME</div>
+              <div style="flex:1;min-width:0">
+                <div class="az-my-name">My Account</div>
+                <div class="az-my-status">● Online</div>
+              </div>
+              <div class="az-icon-btn" style="color:#64748B"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+              <div class="az-icon-btn" style="color:#64748B"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg></div>
+            </div>
+          </div>
+
+          <!-- CHAT AREA -->
+          <div class="az-chat">
+            <div class="az-chat-header">
+              <div class="az-avatar" style="width:38px;height:38px;font-size:13px;flex-shrink:0;position:relative">JD<div class="az-online-dot" style="width:10px;height:10px;border-width:2px"></div></div>
+              <div>
+                <div class="az-chat-name">Juan Dela Cruz</div>
+                <div class="az-chat-status">● Active now</div>
+              </div>
+              <div class="az-chat-actions">
+                <div class="az-icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="az-icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+              </div>
+            </div>
+            <div class="az-messages">
+              <div class="date-chip">Today</div>
+              <div class="az-msg">
+                <div class="az-msg-avatar" style="background:linear-gradient(135deg,#60A5FA,#2563EB)">JD</div>
+                <div>
+                  <div class="az-bubble in">Kumusta na? May tanong ako sa assignment natin</div>
+                  <div class="az-msg-time in">10:24 AM</div>
+                </div>
+              </div>
+              <div class="az-msg out">
+                <div class="az-msg-avatar" style="background:linear-gradient(135deg,#34D399,#059669)">ME</div>
+                <div>
+                  <div class="az-bubble out">Oo! Sige tanong mo 😊</div>
+                  <div class="az-msg-time">10:25 AM ✓✓</div>
+                </div>
+              </div>
+              <div class="az-msg">
+                <div class="az-msg-avatar" style="background:linear-gradient(135deg,#60A5FA,#2563EB)">JD</div>
+                <div>
+                  <div class="az-bubble in">Hey, check mo na yung file na pinadala ko! May important na changes doon</div>
+                  <div class="az-msg-time in">10:26 AM</div>
+                </div>
+              </div>
+              <div class="az-msg out">
+                <div class="az-msg-avatar" style="background:linear-gradient(135deg,#34D399,#059669)">ME</div>
+                <div>
+                  <div class="az-bubble out">Sige titingnan ko ngayon 👍</div>
+                  <div class="az-msg-time">10:27 AM ✓✓</div>
+                </div>
+              </div>
+            </div>
+            <div class="az-typing">Juan is typing…</div>
+            <div class="az-input-bar">
+              <div class="az-input-tools">
+                <div class="az-tool-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+                <div class="az-tool-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+                <div class="az-tool-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>
+              </div>
+              <div class="az-textarea-wrap">
+                <textarea class="az-textarea" rows="1" placeholder="Message Juan…"></textarea>
+              </div>
+              <div class="az-send-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Palette -->
+  <div class="palette-section">
+    <span class="palette-label">Color Palette</span>
+    <div class="palette-swatches">
+      <div class="swatch" style="background:#2563EB" title="Primary Blue"></div>
+      <div class="swatch" style="background:#3B82F6" title="Accent Blue"></div>
+      <div class="swatch" style="background:#60A5FA" title="Light Blue"></div>
+      <div class="swatch" style="background:#EFF6FF" title="Blue Tint"></div>
+      <div class="swatch" style="background:#FFFFFF" title="White"></div>
+      <div class="swatch" style="background:#F1F5F9" title="Surface"></div>
+      <div class="swatch" style="background:#0F172A" title="Dark Text"></div>
+      <div class="swatch" style="background:#10B981" title="Online Green"></div>
+    </div>
+  </div>
+  <div class="feature-tags">
+    <span class="feature-tag">✦ Clean white sidebar</span>
+    <span class="feature-tag">✦ Blue gradient bubbles</span>
+    <span class="feature-tag">✦ Inter font</span>
+    <span class="feature-tag">✦ Subtle shadow system</span>
+    <span class="feature-tag">✦ Pill search bar</span>
+    <span class="feature-tag">✦ Brand icon in sidebar</span>
+    <span class="feature-tag">✦ Professional tone</span>
+  </div>
+
+  <div class="nav-links">
+    <a class="nav-link active-theme" href="theme-a-azure.html">Theme A: Azure Pro</a>
+    <a class="nav-link" href="theme-b-violet.html">Theme B: Violet Dusk</a>
+    <a class="nav-link" href="theme-c-warm.html">Theme C: Warm Campus</a>
+  </div>
+
+</body>
+</html>
