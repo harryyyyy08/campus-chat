@@ -1,12 +1,15 @@
 // ── Geomap module ─────────────────────────────────────────────────────
 // Requires: adminToken, API_BASE (from admin-auth.js), showToast (admin-users.js)
 
-let leafletLoaded  = false;
-let geomapMap      = null;   // Leaflet map instance
-let zoneCircles    = [];     // Leaflet Circle layers
-let userMarkers    = [];     // Leaflet Marker layers
-let userMarkerMap  = {};     // { [userId]: L.Marker } for sidebar click-to-focus
-let allGeomapData  = null;   // { zones, users }
+let leafletLoaded    = false;
+let geomapMap        = null;   // Leaflet map instance
+let zoneCircles      = [];     // Leaflet Circle layers
+let userMarkers      = [];     // Leaflet Marker layers
+let userMarkerMap    = {};     // { [userId]: L.Marker } for sidebar click-to-focus
+let allGeomapData    = null;   // { zones, users }
+let pickModeActive   = false;  // true while map-click picker is active
+let pickModeMarker   = null;   // temporary L.Marker shown after picking
+let pickModeSavedData = null;  // form values saved before picker opens
 
 // ── Lazy-load Leaflet from local vendor folder ────────────────────────
 function ensureLeaflet(cb) {
@@ -287,6 +290,12 @@ function openZoneModal(zone) {
           </div>
         </div>
 
+        <div class="zone-field">
+          <button type="button" onclick="enterPickMode()" class="btn-pick-map">
+            📍 Pick on Map
+          </button>
+        </div>
+
         <div class="zone-field-row">
           <div class="zone-field">
             <label class="form-label">Radius (metres)</label>
@@ -303,6 +312,7 @@ function openZoneModal(zone) {
           <textarea id="zm_desc" class="form-input" rows="2" placeholder="Optional notes">${esc(zone?.description || '')}</textarea>
         </div>
 
+        <input type="hidden" id="zm_zone_id" value="${zone?.id ?? ''}">
         <div id="zm_error" class="zone-modal-error"></div>
       </div>
 
@@ -322,6 +332,13 @@ function openZoneModal(zone) {
 }
 
 function closeZoneModal() {
+  // Clean up pick mode if it was left active when modal is force-closed
+  if (pickModeActive) {
+    geomapMap?.off("click", onPickModeClick);
+    exitPickModeUI();
+  }
+  if (pickModeMarker) { pickModeMarker.remove(); pickModeMarker = null; }
+  pickModeSavedData = null;
   document.getElementById("zoneModal")?.remove();
 }
 
@@ -381,6 +398,96 @@ async function deleteZone(id) {
   } catch {
     showToast("Connection error.");
   }
+}
+
+// ── Map coordinate picker ─────────────────────────────────────────────
+function enterPickMode() {
+  // Save all current form values so we can restore them later
+  pickModeSavedData = {
+    zoneId:      document.getElementById("zm_zone_id")?.value || null,
+    name:        document.getElementById("zm_name").value,
+    building:    document.getElementById("zm_building").value,
+    cidr:        document.getElementById("zm_cidr").value,
+    lat:         document.getElementById("zm_lat").value,
+    lng:         document.getElementById("zm_lng").value,
+    radius_m:    document.getElementById("zm_radius").value,
+    color:       document.getElementById("zm_color").value,
+    description: document.getElementById("zm_desc").value,
+  };
+
+  // Hide modal temporarily (keep it in DOM so values aren't lost)
+  const modal = document.getElementById("zoneModal");
+  if (modal) modal.style.display = "none";
+
+  // Show instruction banner inside the map container
+  const banner = document.createElement("div");
+  banner.id        = "pickModeBanner";
+  banner.className = "pick-mode-banner";
+  banner.innerHTML = `📍 Click anywhere on the map to place the zone center.
+    <button type="button" onclick="cancelPickMode()" class="pick-mode-cancel">Cancel</button>`;
+  document.getElementById("geomapMap").appendChild(banner);
+
+  // Crosshair cursor on map
+  document.getElementById("geomapMap").classList.add("pick-mode-cursor");
+
+  // One-time click listener on Leaflet map
+  pickModeActive = true;
+  geomapMap.once("click", onPickModeClick);
+}
+
+function onPickModeClick(e) {
+  if (!pickModeActive) return;
+  const { lat, lng } = e.latlng;
+
+  exitPickModeUI();
+
+  // Drop a temporary marker so the user sees where they clicked
+  if (pickModeMarker) { pickModeMarker.remove(); pickModeMarker = null; }
+  pickModeMarker = L.marker([lat, lng]).addTo(geomapMap);
+
+  // Rebuild the modal with saved values + new coords
+  _reopenModalWithCoords(lat, lng);
+}
+
+function cancelPickMode() {
+  geomapMap.off("click", onPickModeClick);
+  exitPickModeUI();
+  // Restore modal with the original coordinates
+  const saved = pickModeSavedData;
+  _reopenModalWithCoords(
+    parseFloat(saved.lat) || null,
+    parseFloat(saved.lng) || null,
+    true  // restoring — don't overwrite with null coords
+  );
+}
+
+function exitPickModeUI() {
+  pickModeActive = false;
+  document.getElementById("pickModeBanner")?.remove();
+  document.getElementById("geomapMap").classList.remove("pick-mode-cursor");
+}
+
+function _reopenModalWithCoords(lat, lng, restoreOriginal = false) {
+  const saved = pickModeSavedData;
+  if (!saved) return;
+
+  // Remove the hidden modal before opening a fresh one
+  document.getElementById("zoneModal")?.remove();
+
+  // Build a zone-like object from saved form state
+  const zoneObj = saved.zoneId
+    ? { ...geomapZoneById(Number(saved.zoneId)), ...saved, id: Number(saved.zoneId) }
+    : { ...saved, id: null };
+
+  // Apply the picked (or restored) coordinates
+  if (lat !== null) zoneObj.lat = lat;
+  if (lng !== null) zoneObj.lng = lng;
+
+  openZoneModal(zoneObj);
+
+  // Override the lat/lng inputs directly after the modal renders
+  if (lat !== null) document.getElementById("zm_lat").value = restoreOriginal ? (saved.lat ?? "") : lat.toFixed(7);
+  if (lng !== null) document.getElementById("zm_lng").value = restoreOriginal ? (saved.lng ?? "") : lng.toFixed(7);
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────
