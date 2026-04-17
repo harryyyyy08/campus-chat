@@ -455,6 +455,11 @@
       if (e.target === termsModal) closeTermsModal();
     });
 
+    function isEventInsideAltcha(event) {
+      const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+      return path.some(node => typeof node?.tagName === "string" && node.tagName.toUpperCase() === "ALTCHA-WIDGET");
+    }
+
     // ── Enter key ──────────────────────────────────
     document.addEventListener("keydown", e => {
       if (e.key === "Escape" && termsModal && !termsModal.classList.contains("hidden")) {
@@ -464,6 +469,7 @@
 
       if (e.key !== "Enter") return;
       if (termsModal && !termsModal.classList.contains("hidden")) return;
+      if (isEventInsideAltcha(e)) return;
       const submitBtn = document.getElementById("regSubmitBtn");
       if (submitBtn?.disabled) return;
       submitRegistration();

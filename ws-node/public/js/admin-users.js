@@ -153,7 +153,15 @@ async function adminLogin() {
 }
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !adminToken) adminLogin();
+  if (e.key !== "Enter") return;
+  const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+  const isInsideAltcha = path.some(
+    (node) =>
+      typeof node?.tagName === "string" &&
+      node.tagName.toUpperCase() === "ALTCHA-WIDGET",
+  );
+  if (isInsideAltcha) return;
+  if (!adminToken) adminLogin();
 });
 
 function adminLogout() {

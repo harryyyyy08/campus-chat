@@ -1,4 +1,4 @@
-const CACHE_NAME = "campuschat-v3";
+const CACHE_NAME = "campuschat-v4";
 
 // ── Install: skip waiting immediately ────────────────────────────
 self.addEventListener("install", () => self.skipWaiting());
@@ -20,6 +20,7 @@ self.addEventListener("fetch", (event) => {
 
   // Bypass SW entirely for API, socket, and uploads
   if (
+    url.pathname.startsWith("/api/") ||
     url.pathname.includes("/campus-chat/api") ||
     url.pathname.includes("/socket.io") ||
     url.pathname.includes("/uploads/")
@@ -34,7 +35,9 @@ self.addEventListener("fetch", (event) => {
     event.request.mode === "navigate"
   ) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request).catch(() =>
+        caches.match(event.request).then((r) => r || new Response("Offline", { status: 503 }))
+      )
     );
     return;
   }
@@ -55,6 +58,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Default: network-first
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+  // Default: network-first (always return a valid Response)
+  event.respondWith(
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then((r) => r || new Response("Offline", { status: 503 }))
+    )
+  );
 });

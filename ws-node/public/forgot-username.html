@@ -342,8 +342,15 @@
     loadDepartments();
 
     // Enter key
+    function isEventInsideAltcha(event) {
+      const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+      return path.some(node => typeof node?.tagName === "string" && node.tagName.toUpperCase() === "ALTCHA-WIDGET");
+    }
+
     document.addEventListener("keydown", e => {
-      if (e.key === "Enter" && document.getElementById("stateInput").classList.contains("active")) {
+      if (e.key !== "Enter") return;
+      if (isEventInsideAltcha(e)) return;
+      if (document.getElementById("stateInput").classList.contains("active")) {
         findUsername();
       }
     });

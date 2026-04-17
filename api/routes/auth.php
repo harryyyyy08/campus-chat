@@ -667,29 +667,10 @@ if ($method === "POST" && $path === "/forgot-password") {
   if ($username === "")
     json_response(["error" => "Username is required"], 400);
 
-  // Rate limit: max 5 requests per username+IP per hour
-  $ip = $_SERVER["REMOTE_ADDR"] ?? "unknown";
-  $rl_key = $username . "|" . $ip;
-  $rl_file = sys_get_temp_dir() . "/cc_fpr_" . md5($rl_key) . ".json";
-  $now = time();
-  $window = 60 * 60;
-  $rl_raw = file_exists($rl_file) ? json_decode((string) file_get_contents($rl_file), true) : null;
-  $rl = is_array($rl_raw) ? $rl_raw : ["count" => 0, "since" => $now];
-  $rl["count"] = (int) ($rl["count"] ?? 0);
-  $rl["since"] = (int) ($rl["since"] ?? $now);
-  if (($now - $rl["since"]) > $window)
-    $rl = ["count" => 0, "since" => $now];
-  if ($rl["count"] >= 5) {
-    json_response(["error" => "Too many requests. Please try again after 1 hour."], 429);
-  }
-
   $pdo = db();
   $stmt = $pdo->prepare("SELECT id, status FROM users WHERE username = ?");
   $stmt->execute([$username]);
   $user = $stmt->fetch();
-
-  $rl["count"]++;
-  file_put_contents($rl_file, json_encode($rl), LOCK_EX);
 
   if (!$user) {
     json_response(["error" => "Username not found."], 404);
@@ -903,29 +884,10 @@ if ($method === "POST" && $path === "/request-admin-reset") {
   if ($username === "")
     json_response(["error" => "Username is required"], 400);
 
-  // Rate limit: max 5 requests per IP per hour
-  $ip = $_SERVER["REMOTE_ADDR"] ?? "unknown";
-  $rl_key = "admin_reset|" . $ip;
-  $rl_file = sys_get_temp_dir() . "/cc_arr_" . md5($rl_key) . ".json";
-  $now = time();
-  $window = 60 * 60;
-  $rl_raw = file_exists($rl_file) ? json_decode((string) file_get_contents($rl_file), true) : null;
-  $rl = is_array($rl_raw) ? $rl_raw : ["count" => 0, "since" => $now];
-  $rl["count"] = (int) ($rl["count"] ?? 0);
-  $rl["since"] = (int) ($rl["since"] ?? $now);
-  if (($now - $rl["since"]) > $window)
-    $rl = ["count" => 0, "since" => $now];
-  if ($rl["count"] >= 5) {
-    json_response(["error" => "Too many requests. Please try again after 1 hour."], 429);
-  }
-
   $pdo = db();
   $stmt = $pdo->prepare("SELECT id, status FROM users WHERE username = ?");
   $stmt->execute([$username]);
   $user = $stmt->fetch();
-
-  $rl["count"]++;
-  file_put_contents($rl_file, json_encode($rl), LOCK_EX);
 
   if (!$user) {
     json_response(["error" => "Username not found."], 404);
