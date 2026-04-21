@@ -10,11 +10,16 @@ async function adminLogin() {
     return;
   }
 
+  if (!_altchaAdminPayload) {
+    errEl.textContent = "Please complete the CAPTCHA verification.";
+    return;
+  }
+
   try {
     const res = await fetch(`${API_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, altcha: _altchaAdminPayload }),
     });
     const data = await res.json();
     if (!res.ok) {

@@ -12,6 +12,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="vendor/altcha/altcha.css" />
+  <script type="module" src="vendor/altcha/altcha.js"></script>
 </head>
 
 <body>
@@ -60,6 +62,8 @@
         </div>
       </div>
 
+      <altcha-widget id="altchaWidget" hidelogo hidefooter></altcha-widget>
+
       <button class="btn-primary" onclick="doLogin()">Sign In</button>
       <p id="loginError"></p>
 
@@ -71,20 +75,51 @@
         <a href="register.html">Register here</a>
       </p>
 
+      <div class="theme-toggle-row">
+        <button class="theme-btn" id="themeSun" aria-label="Light mode">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button class="theme-btn" id="themeMoon" aria-label="Dark mode">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+
     </div>
   </div>
 
   <script>
     // ── Theme ──────────────────────────────────────
-    (function () {
-      const t = localStorage.getItem("cc_theme") || "light";
+    function applyTheme(t) {
       document.documentElement.setAttribute("data-theme", t);
-    })();
+      localStorage.setItem("cc_theme", t);
+      const sun = document.getElementById("themeSun");
+      const moon = document.getElementById("themeMoon");
+      if (sun) sun.classList.toggle("active", t === "light");
+      if (moon) moon.classList.toggle("active", t === "dark");
+    }
+    (function () { applyTheme(localStorage.getItem("cc_theme") || "light"); })();
+    document.getElementById("themeSun").addEventListener("click", () => applyTheme("light"));
+    document.getElementById("themeMoon").addEventListener("click", () => applyTheme("dark"));
 
     // ── Config ─────────────────────────────────────
     const _host = window.location.hostname;
     const API_BASE = `http://${_host}/campus-chat/api/index.php`;
     const WS_URL = `http://${_host}:3001`;
+    document.getElementById("altchaWidget").setAttribute(
+      "challengeurl", `${API_BASE}/altcha/challenge?scope=login`
+    );
+    let _altchaPayload = "";
+    document.getElementById("altchaWidget").addEventListener("statechange", ev => {
+      _altchaPayload = ev.detail?.state === "verified" ? (ev.detail.payload || "") : "";
+    });
+
     // ── Password toggle ────────────────────────────
     document.querySelectorAll(".password-toggle").forEach(btn => {
       const input = document.getElementById(btn.dataset.target);
@@ -121,6 +156,11 @@
         return;
       }
 
+      if (!_altchaPayload) {
+        errEl.textContent = "Please complete the CAPTCHA verification.";
+        return;
+      }
+
       const btn = document.querySelector(".btn-primary");
       btn.disabled = true;
       btn.textContent = "Signing in…";
@@ -129,7 +169,7 @@
         const res = await fetch(`${API_BASE}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ username, password, altcha: _altchaPayload }),
         });
         const data = await res.json();
 

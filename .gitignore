@@ -26,4 +26,9 @@ ws-node/npm-debug.log*
 kali-pentest-checklist.txt
 kali-ws-room-join-beginner.txt
 
+# Machine-specific deployment files (hardcoded paths)
+DEPLOYMENT_PLAN.md
+start-server.bat
+start-server-silent.vbs
+
 .gitignore

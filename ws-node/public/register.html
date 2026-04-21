@@ -12,6 +12,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="vendor/altcha/altcha.css" />
+  <script type="module" src="vendor/altcha/altcha.js"></script>
 </head>
 
 <body>
@@ -103,6 +105,8 @@
         </select>
       </div>
 
+      <altcha-widget id="altchaRegWidget" hidelogo hidefooter></altcha-widget>
+
       <button class="btn-primary" onclick="submitRegistration()">Submit Registration</button>
       <p id="regError"></p>
 
@@ -158,6 +162,13 @@
 
     const _host = window.location.hostname;
     const API_BASE = `http://${_host}/campus-chat/api/index.php`;
+    document.getElementById("altchaRegWidget").setAttribute(
+      "challengeurl", `${API_BASE}/altcha/challenge?scope=register`
+    );
+    let _altchaPayload = "";
+    document.getElementById("altchaRegWidget").addEventListener("statechange", ev => {
+      _altchaPayload = ev.detail?.state === "verified" ? (ev.detail.payload || "") : "";
+    });
     // ── Load departments into dropdown ──────────────
     (async function loadDepartments() {
       try {
@@ -230,6 +241,7 @@
       if (username.length < 3) { errEl.textContent = "Username must be at least 3 characters."; return; }
       if (password.length < 8) { errEl.textContent = "Password must be at least 8 characters."; return; }
       if (password !== password2) { errEl.textContent = "Passwords do not match."; return; }
+      if (!_altchaPayload) { errEl.textContent = "Please complete the CAPTCHA verification."; return; }
 
       const btn = document.querySelector(".btn-primary");
       btn.disabled = true; btn.textContent = "Submitting…";
@@ -238,7 +250,7 @@
         const res = await fetch(`${API_BASE}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ full_name, username, password, role, department_id }),
+          body: JSON.stringify({ full_name, username, password, role, department_id, altcha: _altchaPayload }),
         });
         const data = await res.json();
         if (!res.ok) { errEl.textContent = data.error || "Registration failed."; return; }

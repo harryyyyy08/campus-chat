@@ -23,6 +23,13 @@
       })();
 
       const API_BASE = `http://${window.location.hostname}/campus-chat/api/index.php`;
+      document.getElementById("altchaAdminWidget").setAttribute(
+        "challengeurl", `${API_BASE}/altcha/challenge?scope=admin-login`
+      );
+      let _altchaAdminPayload = "";
+      document.getElementById("altchaAdminWidget").addEventListener("statechange", ev => {
+        _altchaAdminPayload = ev.detail?.state === "verified" ? (ev.detail.payload || "") : "";
+      });
       let adminToken = null;
       let myRole = null; // 'admin' or 'super_admin'
       let currentTab = "pending";
