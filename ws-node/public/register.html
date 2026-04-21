@@ -107,6 +107,14 @@
 
       <altcha-widget id="altchaRegWidget" hidelogo hidefooter></altcha-widget>
 
+      <div class="tnc-check">
+        <input type="checkbox" id="agreeTerms" />
+        <label for="agreeTerms">
+          I have read and agree to the
+          <a href="#" class="tnc-link" onclick="openTnc(event)">Terms and Conditions</a>
+        </label>
+      </div>
+
       <button class="btn-primary" onclick="submitRegistration()">Submit Registration</button>
       <p id="regError"></p>
 
@@ -132,7 +140,99 @@
 
   </div>
 
+  <!-- Terms and Conditions Modal -->
+  <div id="tncModal" class="tnc-modal-backdrop hidden" onclick="closeTncBackdrop(event)">
+    <div class="tnc-modal">
+      <div class="tnc-modal-header">
+        <span class="tnc-modal-title">Terms and Conditions</span>
+        <button class="tnc-modal-close" onclick="closeTnc()" aria-label="Close">&times;</button>
+      </div>
+      <ul class="tnc-list">
+        <li>This system is for official campus communication only. Do not use it for illegal, abusive, or harmful activity.</li>
+        <li>Your account activity, conversations, and uploaded attachments may be reviewed by authorized administrators for security, policy enforcement, and incident response.</li>
+        <li>Admin functions include monitoring reports, message and attachment audits, and account actions when needed for investigations and platform safety.</li>
+        <li>Do not share your password or impersonate another user. You are responsible for actions made through your account.</li>
+        <li>Accounts that violate school policy or system rules may be suspended, restricted, or removed without prior notice.</li>
+      </ul>
+    </div>
+  </div>
+
   <style>
+    .tnc-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .tnc-check input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .tnc-check label { cursor: pointer; line-height: 1.5; }
+    .tnc-link {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .tnc-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+    .tnc-modal {
+      background: var(--bg-sidebar);
+      border-radius: var(--radius-lg);
+      padding: 28px 28px 24px;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+    }
+    .tnc-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .tnc-modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .tnc-modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+    .tnc-modal-close:hover { color: var(--text-primary); }
+    .tnc-list {
+      padding-left: 18px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tnc-list li {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
     .reg-success-icon {
       font-size: 48px;
       margin-bottom: 16px;
@@ -223,6 +323,21 @@
       });
     }
 
+    // ── Terms and Conditions modal ─────────────────
+    function openTnc(e) {
+      e.preventDefault();
+      document.getElementById("tncModal").classList.remove("hidden");
+    }
+    function closeTnc() {
+      document.getElementById("tncModal").classList.add("hidden");
+    }
+    function closeTncBackdrop(e) {
+      if (e.target === document.getElementById("tncModal")) closeTnc();
+    }
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeTnc();
+    });
+
     // ── Submit ─────────────────────────────────────
     async function submitRegistration() {
       const full_name = document.getElementById("reg_full_name").value.trim();
@@ -241,6 +356,7 @@
       if (username.length < 3) { errEl.textContent = "Username must be at least 3 characters."; return; }
       if (password.length < 8) { errEl.textContent = "Password must be at least 8 characters."; return; }
       if (password !== password2) { errEl.textContent = "Passwords do not match."; return; }
+      if (!document.getElementById("agreeTerms").checked) { errEl.textContent = "Please agree to the Terms and Conditions."; return; }
       if (!_altchaPayload) { errEl.textContent = "Please complete the CAPTCHA verification."; return; }
 
       const btn = document.querySelector(".btn-primary");
