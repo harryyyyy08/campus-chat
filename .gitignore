@@ -31,4 +31,7 @@ DEPLOYMENT_PLAN.md
 start-server.bat
 start-server-silent.vbs
 
+# Database files
+campus_chat.sql
+
 .gitignore
